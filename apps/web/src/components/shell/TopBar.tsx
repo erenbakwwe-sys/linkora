@@ -17,12 +17,16 @@ export const TopBar: React.FC = () => {
       {/* Left: Hamburger menu (mobile) + User Welcome & Mode Switcher */}
       <div className="flex items-center space-x-2 sm:space-x-3 text-sm">
         <button
-          onClick={toggle}
-          className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition md:hidden cursor-pointer"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle();
+          }}
+          className="p-2 -ml-1.5 text-slate-200 hover:text-white hover:bg-slate-800 active:bg-slate-700 rounded-xl transition md:hidden cursor-pointer touch-manipulation flex items-center justify-center shrink-0"
           aria-label="Menü öffnen"
           title="Menü öffnen"
         >
-          <Menu className="w-5 h-5 text-slate-200" />
+          <Menu className="w-6 h-6 text-white" />
         </button>
 
         <div className="flex items-center space-x-1.5 sm:space-x-2 bg-slate-800/60 border border-slate-700/60 px-2 sm:px-3 py-1 rounded-xl text-xs font-semibold text-slate-200 shadow-inner">

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { I18nProvider } from '@/context/I18nContext';
+import { SidebarProvider } from '@/context/SidebarContext';
 
 export const metadata: Metadata = {
   title: 'Linkora — Unified Lead Bank & AI Call-Center Platform',
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="de">
       <body className="bg-slate-50 min-h-screen">
         <I18nProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <SidebarProvider>{children}</SidebarProvider>
+          </AuthProvider>
         </I18nProvider>
       </body>
     </html>

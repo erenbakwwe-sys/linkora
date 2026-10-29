@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
@@ -72,6 +73,23 @@ export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const menuGroups: MenuGroup[] = useMemo(
     () => [
@@ -298,22 +316,23 @@ export const Sidebar: React.FC = () => {
         </div>
       </aside>
 
-      {/* Mobile Slide-Out Drawer (visible on mobile when open) */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+      {/* Mobile Slide-Out Drawer rendered to document.body via Portal to prevent any container clipping */}
+      {mounted && isOpen && typeof document !== 'undefined' && createPortal(
+        <div className="md:hidden fixed inset-0 z-[9999] flex select-none">
           {/* Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in"
             onClick={close}
             aria-hidden="true"
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl p-3 flex flex-col z-50 animate-in slide-in-from-left duration-250 select-none">
+          <div className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl p-3 flex flex-col z-[10000] animate-in slide-in-from-left duration-250 select-none">
             {/* Top Close Bar */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 flex-shrink-0">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2">Navigation</span>
               <button
+                type="button"
                 onClick={close}
                 className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 aria-label="Menü schließen"
@@ -327,7 +346,8 @@ export const Sidebar: React.FC = () => {
               {renderMenuContent()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

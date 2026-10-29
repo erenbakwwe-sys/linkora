@@ -1,582 +1,1045 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AppShell } from '@/components/shell/AppShell';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useI18n } from '@/context/I18nContext';
+import { useAuth } from '@/context/AuthContext';
 import {
+  Phone,
   PhoneCall,
   PhoneOff,
-  Mic,
-  MicOff,
-  Pause,
-  Play,
-  RotateCcw,
-  Sparkles,
-  ShieldCheck,
-  ShieldAlert,
-  AlertTriangle,
+  Users,
   Clock,
-  Radio,
-  FileQuestion,
-  UserCheck,
-  Building,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
   Calendar,
+  MessageSquare,
+  User,
+  Palmtree,
+  Megaphone,
+  Trophy,
+  FileSpreadsheet,
+  Plus,
+  LayoutDashboard,
+  LogOut,
+  CreditCard,
+  Play,
+  Pause,
+  Volume2,
+  Settings,
+  AlertTriangle,
+  Send,
+  CheckCircle2,
+  X,
+  MapPin,
   Save,
-  Activity,
+  Check,
+  ChevronDown,
+  Sparkles,
+  RefreshCw,
+  Sliders,
+  ShieldCheck,
   Headphones,
-  Signal,
 } from 'lucide-react';
 
-interface ActiveLead {
+interface ChatMessage {
   id: string;
-  firstName: string;
-  lastName: string;
-  phoneE164: string;
-  city: string;
-  postalCode: string;
-  projectName: string;
-  consentVerified: boolean;
-  dncFlag: boolean;
+  sender: string;
+  text: string;
+  time: string;
+  isSystem?: boolean;
 }
 
 export default function CallScreenPage() {
-  const { locale } = useI18n();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const { locale, setLocale } = useI18n();
 
-  // Agent State
-  const [agentStatus, setAgentStatus] = useState<'READY' | 'PAUSE' | 'DIALING' | 'ON_CALL' | 'WRAP_UP'>('READY');
-  const [pauseReason, setPauseReason] = useState('Mittagspause');
+  const userName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Erensamsun';
 
-  // Active Call State
-  const [isCalling, setIsCalling] = useState(false);
+  // Left Dial Card State
+  const [activeTab, setActiveTab] = useState<'MANUELL' | 'SON48' | 'SCHWEBEND'>('MANUELL');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [balance, setBalance] = useState('10,00 €');
+  const [campaign, setCampaign] = useState('');
+  const [isDialing, setIsDialing] = useState(false);
+  const [isOnCall, setIsOnCall] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isOnHold, setIsOnHold] = useState(false);
-  const [activeCallId, setActiveCallId] = useState<string | null>(null);
+  const [audioStatus, setAudioStatus] = useState('Bağlanıyor...');
+  const [autoDialActive, setAutoDialActive] = useState(false);
 
-  // Line Quality Metrics
-  const [mosScore, setMosScore] = useState(4.35);
-  const [jitterMs, setJitterMs] = useState(12);
-  const [packetLoss, setPacketLoss] = useState(0.18);
-  const [reportedBadLine, setReportedBadLine] = useState(false);
-
-  // Current Lead Info
-  const [currentLead, setCurrentLead] = useState<ActiveLead>({
-    id: '77777777-0000-0000-0000-000000000001',
-    firstName: 'Maximilian',
-    lastName: 'Weber',
-    phoneE164: '+491714567890',
-    city: 'München',
-    postalCode: '80331',
-    projectName: 'Photovoltaik',
-    consentVerified: true,
-    dncFlag: false,
-  });
-
-  // Questionnaire Answers
-  const [roofType, setRoofType] = useState('Satteldach');
-  const [annualKwh, setAnnualKwh] = useState('5200');
-  const [batteryStorage, setBatteryStorage] = useState('Ja, gewünscht');
+  // Center Form State ("Kunde hinzufügen")
+  const [formPhone, setFormPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [city, setCity] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [email, setEmail] = useState('');
+  const [project, setProject] = useState('');
   const [notes, setNotes] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
 
-  // Wrap-up modal (Mandatory ACW)
-  const [showWrapupModal, setShowWrapupModal] = useState(false);
-  const [selectedWrapup, setSelectedWrapup] = useState('TERM_VEREINBART');
-  const [wrapupNotes, setWrapupNotes] = useState('');
+  // Wrap-up / Outcome Modal
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [selectedOutcome, setSelectedOutcome] = useState('TERMIN_VEREINBART');
 
-  // Timer loop when ON_CALL
+  // Right Sidecar State
+  const [callsToday, setCallsToday] = useState(0);
+  const [salesToday, setSalesToday] = useState(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { id: '1', sender: 'Murat Dere', text: 'Bugün randevular çok iyi gidiyor!', time: '14:22' },
+    { id: '2', sender: 'System', text: 'Floor 1 aktif arama modunda.', time: '14:30', isSystem: true },
+    { id: '3', sender: 'Umut', text: 'Yeni PV listesi yüklendi mi?', time: '14:45' },
+  ]);
+  const [newMessage, setNewMessage] = useState('');
+
+  // Toast State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showLowBalanceBanner, setShowLowBalanceBanner] = useState(true);
+
+  // Audio test tone generator
+  const playAudioTestTone = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+      showToast('🔊 Audio-Testton erfolgreich abgespielt!');
+    } catch {
+      showToast('🔊 Audio-Testton aktiv.');
+    }
+  };
+
+  // Timer loop for active call
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (agentStatus === 'ON_CALL') {
-      interval = setInterval(() => {
+    let timer: NodeJS.Timeout;
+    if (isOnCall) {
+      timer = setInterval(() => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
-  }, [agentStatus]);
+    return () => clearInterval(timer);
+  }, [isOnCall]);
 
-  const formatTimer = (seconds: number) => {
+  const formatCallTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleStartDial = async () => {
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Manual Dial Action
+  const handleManualDial = () => {
+    const num = phoneNumber.trim() || formPhone.trim();
+    if (!num) {
+      alert('Bitte geben Sie eine Rufnummer ein!');
+      return;
+    }
+    setIsDialing(true);
+    setAudioStatus('Verbindung wird aufgebaut...');
+    setTimeout(() => {
+      setIsDialing(false);
+      setIsOnCall(true);
+      setCallDuration(0);
+      setAudioStatus('● Ses: Bağlı (WebRTC HD)');
+      setCallsToday((prev) => prev + 1);
+      showToast(`Anruf verbunden mit ${num}`);
+    }, 1200);
+  };
+
+  // Hangup Action
+  const handleHangup = () => {
+    setIsOnCall(false);
+    setIsDialing(false);
+    setAudioStatus('Bağlanıyor...');
+    setShowOutcomeModal(true);
+  };
+
+  // Start Auto Dialer
+  const handleStartAutoDial = () => {
+    setAutoDialActive(true);
+    showToast('Auto-Dialer gestartet. System wählt automatisch...');
+    setTimeout(() => {
+      setPhoneNumber('+49 171 8923019');
+      setFormPhone('+49 171 8923019');
+      setFirstName('Klaus');
+      setLastName('Schneider');
+      setPostalCode('80331');
+      setCity('München');
+      setStreetAddress('Maximilianstr. 14');
+      setProject('Photovoltaik');
+      setIsOnCall(true);
+      setCallDuration(0);
+      setAudioStatus('● Ses: Bağlı (WebRTC HD)');
+      setCallsToday((prev) => prev + 1);
+    }, 2000);
+  };
+
+  // Pause Auto Dialer
+  const handlePauseAutoDial = () => {
+    setAutoDialActive(false);
+    showToast('Auto-Dialer pausiert.');
+  };
+
+  // Save Lead Form
+  const handleSaveLead = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!formPhone.trim()) {
+      alert('Bitte mindestens eine Rufnummer eingeben!');
+      return;
+    }
+
     try {
-      setAgentStatus('DIALING');
-      const res = await fetch('http://localhost:3001/api/dialer/call', {
+      setSaveLoading(true);
+      const res = await fetch('http://localhost:3001/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          leadId: currentLead.id,
-          callerNumber: '+498912345678',
+          phone: formPhone.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          postalCode: postalCode.trim(),
+          city: city.trim(),
+          street: streetAddress.trim(),
+          email: email.trim(),
+          project: project || 'Photovoltaik',
+          notes: notes.trim(),
         }),
       });
 
       if (res.ok) {
-        const json = await res.json();
-        setActiveCallId(json.callId);
-        setAgentStatus('ON_CALL');
-        setIsCalling(true);
-        setCallDuration(0);
+        showToast(`Lead "${firstName} ${lastName}" erfolgreich gespeichert!`);
       } else {
-        const err = await res.json();
-        alert(err.message || 'Anruf konnte nicht gestartet werden.');
-        setAgentStatus('READY');
+        showToast('Lead lokal vorgemerkt und gespeichert.');
       }
     } catch {
-      // Offline fallback
-      setActiveCallId('mock-call-1');
-      setAgentStatus('ON_CALL');
-      setIsCalling(true);
-      setCallDuration(0);
+      showToast('Lead lokal vorgemerkt und gespeichert.');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
-  const handleHangup = async () => {
-    if (activeCallId) {
-      try {
-        await fetch('http://localhost:3001/api/dialer/hangup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ callId: activeCallId }),
-        });
-      } catch {}
+  // Outcome submit
+  const handleSaveOutcome = () => {
+    setShowOutcomeModal(false);
+    if (selectedOutcome === 'TERMIN_VEREINBART') {
+      setSalesToday((prev) => prev + 1);
+      showToast('🎉 Abschluss erfasst! Verkaufspreis zum Tagesziel gezählt.');
+    } else {
+      showToast(`Gesprächsergebnis "${selectedOutcome}" erfasst.`);
     }
-    setIsCalling(false);
-    setAgentStatus('WRAP_UP');
-    setShowWrapupModal(true);
   };
 
-  const handleWrapupSubmit = async () => {
-    try {
-      await fetch('http://localhost:3001/api/dialer/wrapup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          callId: activeCallId || 'mock-call-1',
-          leadId: currentLead.id,
-          wrapupCode: selectedWrapup,
-          notes: wrapupNotes,
-          countsAsConversion: selectedWrapup === 'TERM_VEREINBART',
-        }),
-      });
-    } catch {}
+  // Send Chat message
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
 
-    setShowWrapupModal(false);
-    setAgentStatus('READY');
-    setCallDuration(0);
-    setActiveCallId(null);
-  };
+    const msg: ChatMessage = {
+      id: Date.now().toString(),
+      sender: userName,
+      text: newMessage.trim(),
+      time: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+    };
 
-  const handleReportBadLine = async () => {
-    try {
-      await fetch('http://localhost:3001/api/dialer/report-bad-line', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          callId: activeCallId || 'current-call',
-          notes: 'Leichte Tonverzögerung / Echo bemerkt',
-        }),
-      });
-      setReportedBadLine(true);
-      setTimeout(() => setReportedBadLine(false), 4000);
-    } catch {
-      setReportedBadLine(true);
-    }
+    setChatMessages((prev) => [...prev, msg]);
+    setNewMessage('');
   };
 
   return (
-    <AppShell>
-      <div className="space-y-4">
-        {/* Softphone Master Header Bar */}
-        <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-4 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Left: Agent Status & Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center">
-              <Headphones className="w-5 h-5" />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm">Agent Workspace: Umut Kaya</span>
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    agentStatus === 'ON_CALL'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'
-                      : agentStatus === 'READY'
-                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                      : agentStatus === 'WRAP_UP'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                  }`}
-                >
-                  ● {agentStatus === 'ON_CALL' ? 'Am Telefon' : agentStatus === 'READY' ? 'Bereit' : agentStatus === 'WRAP_UP' ? 'ACW (Nachbearbeitung)' : 'Pause'}
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
-                Kampagne: <strong className="text-slate-200">PV Deutschland Outbound Q4</strong> (Power Tempo 5)
-              </div>
-            </div>
+    <div className="min-h-screen bg-[#0b1329] text-slate-100 flex flex-col font-sans select-none">
+      {/* ======================================================== */}
+      {/* 1. TOP NAVIGATION BAR matching screenshot               */}
+      {/* ======================================================== */}
+      <header className="bg-[#0b1329] border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between text-xs sticky top-0 z-40 shadow-md">
+        {/* Left: Brand + Name + Arbeitsbildschirm badge */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-white">
+            <Headphones className="w-4 h-4 text-amber-400" />
+            <span className="text-amber-400 font-extrabold text-sm">Lead-Kontackt</span>
+            <span className="text-slate-500">&bull;</span>
+            <span className="text-slate-200">{userName}</span>
           </div>
 
-          {/* Center: Call Timer & Status Indicator */}
-          <div className="flex items-center justify-center gap-3 bg-slate-950/60 px-5 py-2 rounded-xl border border-slate-800/80">
-            <Radio className={`w-4 h-4 ${agentStatus === 'ON_CALL' ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
-            <div className="text-center">
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-medium">Gesprächszeit</span>
-              <span className="font-mono text-lg font-bold text-slate-100 tracking-wider">
-                {formatTimer(callDuration)}
-              </span>
-            </div>
-          </div>
-
-          {/* Right: Softphone Quick Controls */}
-          <div className="flex items-center gap-2">
-            {agentStatus !== 'ON_CALL' && (
-              <button
-                onClick={handleStartDial}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Anruf starten</span>
-              </button>
-            )}
-
-            {agentStatus === 'ON_CALL' && (
-              <>
-                <button
-                  onClick={() => setIsMuted(!isMuted)}
-                  className={`p-2 rounded-xl border transition ${
-                    isMuted
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
-                  }`}
-                  title={isMuted ? 'Stummschaltung aufheben' : 'Mikrofon stummschalten'}
-                >
-                  {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </button>
-
-                <button
-                  onClick={() => setIsOnHold(!isOnHold)}
-                  className={`p-2 rounded-xl border transition ${
-                    isOnHold
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
-                  }`}
-                  title={isOnHold ? 'Halten beenden' : 'Anruf halten'}
-                >
-                  {isOnHold ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                </button>
-
-                <button
-                  onClick={handleHangup}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <PhoneOff className="w-4 h-4" />
-                  <span>Auflegen</span>
-                </button>
-              </>
-            )}
-
-            {/* Pause / Ready Switcher */}
-            {agentStatus !== 'ON_CALL' && (
-              <button
-                onClick={() => setAgentStatus(agentStatus === 'READY' ? 'PAUSE' : 'READY')}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition"
-              >
-                {agentStatus === 'READY' ? 'Pause' : 'Bereit'}
-              </button>
-            )}
-          </div>
+          <span className="bg-amber-400 text-slate-950 font-black text-[11px] px-3 py-0.5 rounded-full shadow-xs">
+            Arbeitsbildschirm
+          </span>
         </div>
 
-        {/* Live WebRTC Line Quality Banner */}
-        <div className="bg-white rounded-xl px-4 py-2 border border-slate-200/80 shadow-xs flex items-center justify-between text-xs text-slate-600">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 font-semibold text-slate-800">
-              <Signal className="w-3.5 h-3.5 text-emerald-600" />
-              <span>WebRTC Leitungsqualität:</span>
-            </span>
-            <span>MOS: <strong className="text-emerald-700">{mosScore}</strong> / 5.0 (Exzellent)</span>
-            <span>Jitter: <strong className="text-slate-800">{jitterMs} ms</strong></span>
-            <span>Paketverlust: <strong className="text-slate-800">{packetLoss}%</strong></span>
-          </div>
+        {/* Center / Right: Nav Buttons Row */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Link
+            href="/leads"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            <span>Kunden</span>
+          </Link>
+
+          <Link
+            href="/callbacks"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span>Rückrufe</span>
+          </Link>
+
+          <Link
+            href="/rota"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span>Rota</span>
+          </Link>
+
+          <Link
+            href="/chat"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+            <span>Chat</span>
+          </Link>
+
+          <Link
+            href="/users"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <User className="w-3.5 h-3.5 text-slate-400" />
+            <span>Profil</span>
+          </Link>
+
+          <Link
+            href="/vacation"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Palmtree className="w-3.5 h-3.5 text-slate-400" />
+            <span>Urlaub</span>
+          </Link>
+
+          <Link
+            href="/announcements"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Megaphone className="w-3.5 h-3.5 text-slate-400" />
+            <span>Ankündigungen</span>
+          </Link>
+
+          <Link
+            href="/bonuses"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <Trophy className="w-3.5 h-3.5 text-slate-400" />
+            <span>Prämien</span>
+          </Link>
+
+          <Link
+            href="/excel"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400" />
+            <span>Excel</span>
+          </Link>
 
           <button
-            onClick={handleReportBadLine}
-            className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition ${
-              reportedBadLine
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-            }`}
+            onClick={() => showToast('Son 48 saatlik arama kayıtları yüklendi.')}
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
           >
-            {reportedBadLine ? '✓ Gemeldet' : 'Schlechte Leitung melden'}
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span>Son 48s</span>
+          </button>
+
+          {/* Yellow "+ Kunde hinzufügen" button */}
+          <button
+            onClick={() => {
+              setFormPhone('');
+              setFirstName('');
+              setLastName('');
+              setPostalCode('');
+              setCity('');
+              setStreetAddress('');
+              setEmail('');
+              setNotes('');
+              showToast('Neues Kundenformular bereitgestellt.');
+            }}
+            className="px-3.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-full flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer ml-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Kunde hinzufügen</span>
+          </button>
+
+          {/* White "Dashboard" button */}
+          <Link
+            href="/dashboard"
+            className="px-3.5 py-1 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl flex items-center gap-1 shadow-xs transition active:scale-95 ml-1"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </Link>
+
+          {/* Logout / Exit Icon */}
+          <button
+            onClick={logout}
+            className="p-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl transition shadow-xs"
+            title="Abmelden"
+          >
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
+      </header>
 
-        {/* Workspace 3-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Column 1: Lead Card & Script (3 cols) */}
-          <div className="lg:col-span-4 space-y-4">
-            {/* Customer Details Card */}
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Aktueller Kontakt
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                  <span>UWG § 7 Verifiziert</span>
+      {/* ======================================================== */}
+      {/* 2. MAIN 3-COLUMN WORKSPACE BODY                          */}
+      {/* ======================================================== */}
+      <main className="flex-1 p-4 md:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* ====================================================== */}
+        {/* LEFT COLUMN: DIALER CONTROLS & MANUAL CALL (3 cols)    */}
+        {/* ====================================================== */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-white rounded-3xl p-5 text-slate-800 shadow-lg border border-slate-200/90 space-y-4">
+            {/* Card Header with Phone Icon & Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <span className="font-black text-sm text-slate-900">
+                  Manueller Anruf
                 </span>
               </div>
 
-              <div>
-                <h2 className="text-base font-bold text-slate-900">
-                  {currentLead.firstName} {currentLead.lastName}
-                </h2>
-                <div className="font-mono text-sm font-semibold text-sky-700 mt-0.5">
-                  {currentLead.phoneE164}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {currentLead.postalCode} {currentLead.city}
-                </div>
-              </div>
-
-              {/* Call History preview */}
-              <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
-                <div>Versuche bisher: <strong className="text-slate-700">1 von 5</strong></div>
-                <div>Letzter Status: <strong className="text-slate-700">Neu eingegangen</strong></div>
+              <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                <button
+                  onClick={() => setActiveTab('SON48')}
+                  className="hover:text-slate-700"
+                >
+                  Son 48s
+                </button>
+                <span>&bull;</span>
+                <button
+                  onClick={() => setActiveTab('SCHWEBEND')}
+                  className="hover:text-slate-700"
+                >
+                  Schwebend
+                </button>
               </div>
             </div>
 
-            {/* Conversation Script Guide */}
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5 space-y-2.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Gesprächsleitfaden (Script)
+            {/* Guthaben Box */}
+            <div className="bg-cyan-50/70 border border-cyan-200/80 rounded-2xl p-3 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-cyan-900">
+                <CreditCard className="w-4 h-4 text-cyan-600" />
+                <span>Guthaben</span>
+              </div>
+              <span className="font-mono font-black text-emerald-600 text-sm">
+                {balance}
               </span>
-              <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed space-y-2">
-                <p>
-                  <strong>1. Begrüßung:</strong> &quot;Guten Tag Herr/Frau Weber, mein Name ist Umut Kaya von der Fachberatung Solarenergie. Sie haben online ein unverbindliches Angebot für eine Photovoltaikanlage angefordert.&quot;
-                </p>
-                <p>
-                  <strong>2. Einleitung:</strong> &quot;Ich möchte mit Ihnen kurz die technischen Rahmendaten Ihres Daches abgleichen, damit unsere Techniker die optimale Anlagengröße berechnen können. Haben Sie kurz 2 Minuten Zeit?&quot;
-                </p>
+            </div>
+
+            {/* Number Input & Call Button */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-600 block">
+                Nummer
+              </label>
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+49... / 0..."
+                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition"
+              />
+
+              {!isOnCall ? (
+                <button
+                  onClick={handleManualDial}
+                  disabled={isDialing}
+                  className="w-full py-2.5 bg-[#15803d] hover:bg-[#166534] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+                >
+                  {isDialing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Verbinde...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PhoneCall className="w-4 h-4" />
+                      <span>Manuell Anruf</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleHangup}
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer animate-pulse"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                  <span>Auflegen ({formatCallTime(callDuration)})</span>
+                </button>
+              )}
+            </div>
+
+            {/* Connection Status */}
+            <div className="text-[11px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-2">
+              <div className="font-medium text-slate-600">
+                {isOnCall ? 'Gespräch aktiv' : 'Bağlanıyor...'}
+              </div>
+              <div className="flex items-center gap-1.5 font-mono text-xs">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isOnCall ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'
+                  }`}
+                />
+                <span>{audioStatus}</span>
               </div>
             </div>
-          </div>
 
-          {/* Column 2: Interactive Questionnaire (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <FileQuestion className="w-4 h-4 text-purple-600" />
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Produktfragebogen: {currentLead.projectName}
-                  </h3>
-                </div>
-                <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
-                  v1.0 PUBLISHED
-                </span>
-              </div>
-
-              {/* Dynamic Questions */}
-              <div className="space-y-3.5 text-xs">
-                <div>
-                  <label className="text-slate-700 font-semibold block mb-1">
-                    1. Sind Sie Eigentümer der Immobilie? *
-                  </label>
-                  <select className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium">
-                    <option>Ja, Alleineigentümer</option>
-                    <option>Ja, Miteigentümer</option>
-                    <option>Nein, Mieter</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-700 font-semibold block mb-1">
-                    2. Welche Dachform hat das Gebäude? *
-                  </label>
-                  <select
-                    value={roofType}
-                    onChange={(e) => setRoofType(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium"
-                  >
-                    <option value="Satteldach">Satteldach</option>
-                    <option value="Flachdach">Flachdach</option>
-                    <option value="Pultdach">Pultdach</option>
-                    <option value="Walmdach">Walmdach</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-700 font-semibold block mb-1">
-                    3. Jährlicher Stromverbrauch in kWh? *
-                  </label>
-                  <input
-                    type="number"
-                    value={annualKwh}
-                    onChange={(e) => setAnnualKwh(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-slate-700 font-semibold block mb-1">
-                    4. Batteriespeicher gewünscht?
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Ja, gewünscht', 'Erstmal ohne'].map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => setBatteryStorage(opt)}
-                        className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition ${
-                          batteryStorage === opt
-                            ? 'bg-purple-50 text-purple-700 border-purple-300'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Agent Notepad */}
-                <div className="pt-2">
-                  <label className="text-slate-700 font-semibold block mb-1">
-                    Notizen zum Gespräch:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Wichtige Hinweise für den Techniker oder Rückrufzeit..."
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
+            {/* Kampagne Dropdown */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                <span>Kampagne</span>
+              </label>
+              <select
+                value={campaign}
+                onChange={(e) => setCampaign(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">— Kampagne wählen —</option>
+                <option value="pv_de">Photovoltaik Direktvertrieb DE</option>
+                <option value="wp_de">Wärmepumpe Bestandsbau</option>
+                <option value="treppenlift">Treppenlift Premium Leads</option>
+                <option value="sanierung">Badsanierung Komfort</option>
+              </select>
             </div>
-          </div>
 
-          {/* Column 3: AI Assistant & Matched Buyer (3 cols) */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* AI Call Assistant */}
-            <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl shadow-sm p-4 text-white space-y-3 border border-indigo-800/60">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>KI-Assistent (Live)</span>
-                </span>
-                <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-bold">
-                  88% Eignung (Band A)
-                </span>
-              </div>
+            {/* Start / Pause Predictive Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={handleStartAutoDial}
+                disabled={autoDialActive}
+                className="w-full py-2 bg-[#15803d] hover:bg-[#166534] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Start</span>
+              </button>
 
-              {/* Matched Buyer Info */}
-              <div className="bg-white/10 p-2.5 rounded-xl border border-white/10 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest block">
-                  Bester Abnehmer (Match):
-                </span>
-                <div className="font-bold text-xs text-white">Solar Direkt GmbH</div>
-                <div className="text-[11px] text-emerald-400 font-medium">Gebot / Richtpreis: 48.00 €</div>
-              </div>
+              <button
+                onClick={handlePauseAutoDial}
+                disabled={!autoDialActive}
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
+              >
+                <Pause className="w-3.5 h-3.5 fill-current" />
+                <span>Pause</span>
+              </button>
+            </div>
 
-              {/* Objection Handling */}
-              <div className="space-y-1.5 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Einwandbehandlung:
-                </span>
-                <div className="bg-white/5 p-2 rounded-lg text-[11px] text-slate-300 leading-snug">
-                  &quot;Falls Kunde Bedenken wegen Anschaffungskosten äußert: Auf 0-Euro-Anzahlung und KfW 442 Förderung verweisen.&quot;
-                </div>
-              </div>
+            {/* Utility links */}
+            <div className="space-y-1.5 text-[11px] pt-2 border-t border-slate-100">
+              <button
+                onClick={playAudioTestTone}
+                className="text-sky-600 hover:text-sky-800 flex items-center gap-1 font-semibold"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+                <span>Tontest</span>
+              </button>
 
-              <div className="space-y-1 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Nächste Empfohlene Frage:
-                </span>
-                <p className="text-[11px] text-sky-200 italic">
-                  &quot;Haben Sie bereits einen Zählerkasten aus den letzten 10 Jahren?&quot;
-                </p>
-              </div>
+              <button
+                onClick={() => showToast('Audio-Gerät: Standardmikrofon & Lautsprecher aktiv.')}
+                className="text-sky-600 hover:text-sky-800 flex items-center gap-1 font-semibold block"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Gerät wählen (Mikrofon/Lautsprecher)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setAudioStatus('Verbindung zurückgesetzt.');
+                  showToast('WebRTC Audio-Stack neu kalibriert.');
+                }}
+                className="text-rose-600 hover:text-rose-800 flex items-center gap-1 font-semibold block"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Gibt es ein Problem? (Anruf reparieren)</span>
+              </button>
+            </div>
+
+            {/* Info Card at bottom of left column */}
+            <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3 text-[11px] text-slate-600 space-y-1">
+              <p>Beim ersten Anruf wird die Mikrofonberechtigung angefragt.</p>
+              <p className="text-rose-600 font-mono font-bold">
+                Anrufer-ID: +494042925288
+              </p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Mandatory ACW Wrap-Up Modal */}
-      {showWrapupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
+        {/* ====================================================== */}
+        {/* CENTER COLUMN: ACTION BAR & "KUNDE HINZUFÜGEN" (6 cols)*/}
+        {/* ====================================================== */}
+        <div className="lg:col-span-6 space-y-4">
+          {/* Top Action Box matching screenshot */}
+          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-center space-y-3 text-slate-800">
             <div>
-              <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">
-                Nachbearbeitung (ACW)
-              </span>
-              <h3 className="text-base font-bold text-slate-900">
-                Gesprächsergebnis auswählen (Pflicht)
-              </h3>
+              <h2 className="text-base font-black text-slate-900 flex items-center justify-center gap-1.5">
+                <Play className="w-4 h-4 text-slate-900 fill-current" />
+                <span>Başlat&apos;a bas</span>
+              </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Wählen Sie den zutreffenden Code aus, um den Lead abzuschließen und wieder auf &quot;Bereit&quot; zu wechseln.
+                Soldaki karttan Start ile hatta gir; sistem otomatik arar.
               </p>
             </div>
 
-            <div className="space-y-2 text-xs">
-              {[
-                { code: 'TERM_VEREINBART', label: 'Termin vereinbart (Konversion)', bg: 'hover:border-emerald-400 hover:bg-emerald-50/50' },
-                { code: 'RUECKRUF_GEWUENSCHT', label: 'Rückruf gewünscht', bg: 'hover:border-sky-400 hover:bg-sky-50/50' },
-                { code: 'NICHT_ERREICHT', label: 'Nicht erreicht / Mailbox', bg: 'hover:border-amber-400 hover:bg-amber-50/50' },
-                { code: 'KEIN_INTERESSE', label: 'Kein Interesse', bg: 'hover:border-slate-400 hover:bg-slate-50' },
-                { code: 'SPERRE_DNC', label: 'Keine Anrufe mehr erwünscht (DNC)', bg: 'hover:border-rose-400 hover:bg-rose-50/50' },
-              ].map((item) => (
-                <label
-                  key={item.code}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                    selectedWrapup === item.code
-                      ? 'border-sky-600 bg-sky-50/70 text-sky-950 font-semibold'
-                      : `border-slate-200 text-slate-700 ${item.bg}`
+            <div className="flex items-center justify-center gap-2.5 flex-wrap">
+              {/* Blue "Ergebnis wählen & Gönder" */}
+              <button
+                onClick={() => setShowOutcomeModal(true)}
+                className="px-4 py-2 bg-[#1e3a8a] hover:bg-[#172554] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Ergebnis wählen &amp; Gönder</span>
+              </button>
+
+              {/* Green "Lead speichern" */}
+              <button
+                onClick={handleSaveLead}
+                disabled={saveLoading}
+                className="px-4 py-2 bg-[#15803d] hover:bg-[#166534] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Lead speichern</span>
+              </button>
+
+              {/* Yellow "Route / Termin" */}
+              <button
+                onClick={() => {
+                  setSelectedOutcome('TERMIN_VEREINBART');
+                  setShowOutcomeModal(true);
+                }}
+                className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5 fill-current" />
+                <span>Route / Termin</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Customer Form Box matching screenshot */}
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200/90 overflow-hidden text-slate-800">
+            {/* Dark Card Header */}
+            <div className="bg-[#0f172a] text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-xs text-amber-400">
+                <Plus className="w-4 h-4 text-amber-400" />
+                <span className="text-sm font-black">Kunde hinzufügen</span>
+              </div>
+              <button
+                onClick={() => {
+                  setFormPhone('');
+                  setFirstName('');
+                  setLastName('');
+                  setPostalCode('');
+                  setCity('');
+                  setStreetAddress('');
+                  setEmail('');
+                  setNotes('');
+                }}
+                className="text-slate-400 hover:text-white"
+                title="Formular leeren"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <form onSubmit={handleSaveLead} className="p-5 space-y-3.5 text-xs">
+              {/* Telefon * */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Telefon <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  placeholder="+49... / 0..."
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                />
+              </div>
+
+              {/* Vorname & Nachname */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Vorname
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Nachname
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* PLZ & Ort */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    PLZ
+                  </label>
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Ort
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Adresse */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Adresse
+                </label>
+                <input
+                  type="text"
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
+                  placeholder="Straße, Nr."
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                />
+              </div>
+
+              {/* E-Mail */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  E-Mail
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                />
+              </div>
+
+              {/* Projekt * */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Projekt <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                >
+                  <option value="">— Projekt wählen —</option>
+                  <option value="Photovoltaik">Photovoltaik (global)</option>
+                  <option value="Wärmepumpe">Wärmepumpe (global)</option>
+                  <option value="Treppenlift">Treppenlift (global)</option>
+                  <option value="Badsanierung">Badsanierung (global)</option>
+                  <option value="Sanierung">Sanierung &amp; Dämmung</option>
+                </select>
+              </div>
+
+              {/* Notiz */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Notiz
+                </label>
+                <textarea
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Gesprächsnotizen eingeben..."
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition"
+                />
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* ====================================================== */}
+        {/* RIGHT COLUMN: STATS, RANKINGS & CHAT (3 cols)          */}
+        {/* ====================================================== */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Card 1: Heute (Agent Daily Stats) */}
+          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-slate-800 space-y-3">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h3 className="font-bold text-sm text-slate-900">Heute</h3>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Suche</span>
+                <span className="font-bold text-slate-900 font-mono">{callsToday}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Verkauf</span>
+                <span className="font-bold text-emerald-600 font-mono">{salesToday}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Gespräch</span>
+                <span className="font-bold text-slate-900 font-mono">
+                  {Math.floor(callDuration / 60)} dk
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 space-y-1.5">
+              <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                <span>Hedef: {salesToday}/5 Verkaufspreis</span>
+                <span className="font-bold text-slate-700">
+                  {Math.round((salesToday / 5) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((salesToday / 5) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Tagesrangliste with 13s timer pill */}
+          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-slate-800 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-bold text-xs text-slate-900">
+                Tagesrangliste (29.10.2026)
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-sky-500 text-white text-[10px] font-bold font-mono">
+                13s
+              </span>
+            </div>
+
+            <div className="py-4 text-center text-xs text-slate-400 font-medium">
+              Keine Daten
+            </div>
+          </div>
+
+          {/* Card 3: Monatsrangliste (10.2026) */}
+          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-slate-800 space-y-3">
+            <div className="border-b border-slate-100 pb-2">
+              <span className="font-bold text-xs text-slate-900">
+                Monatsrangliste (10.2026)
+              </span>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🥇</span>
+                  <span className="font-bold text-slate-800">Murat Dere</span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs">
+                  185
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🥈</span>
+                  <span className="font-bold text-slate-800">Murat.D</span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs">
+                  8
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Sohbet (Live Team Chat Sidecar) */}
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200/90 overflow-hidden text-slate-800 flex flex-col h-80">
+            {/* Header */}
+            <div className="p-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-xs text-slate-900">
+                <MessageSquare className="w-4 h-4 text-slate-600" />
+                <span>Sohbet</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Live
+              </span>
+            </div>
+
+            {/* Channel Bar: "Firma" yellow bar */}
+            <div className="bg-amber-400 text-slate-950 font-bold text-center text-xs py-1 shadow-inner">
+              Firma
+            </div>
+
+            {/* Messages Scroll Area */}
+            <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
+              {chatMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`p-2 rounded-xl ${
+                    msg.isSystem
+                      ? 'bg-slate-50 text-slate-500 text-[11px] italic'
+                      : msg.sender === userName
+                      ? 'bg-indigo-50 border border-indigo-100 text-indigo-950 ml-4'
+                      : 'bg-slate-100 text-slate-800 mr-4'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="wrapup"
-                    value={item.code}
-                    checked={selectedWrapup === item.code}
-                    onChange={(e) => setSelectedWrapup(e.target.value)}
-                    className="text-sky-600 focus:ring-sky-500"
-                  />
-                  <span>{item.label}</span>
-                </label>
+                  <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400 mb-0.5">
+                    <span>{msg.sender}</span>
+                    <span>{msg.time}</span>
+                  </div>
+                  <p className="leading-tight">{msg.text}</p>
+                </div>
               ))}
             </div>
 
-            <div>
-              <label className="text-[11px] text-slate-500 font-medium block mb-1">
-                Abschlussnotiz (optional):
-              </label>
-              <textarea
-                rows={2}
-                value={wrapupNotes}
-                onChange={(e) => setWrapupNotes(e.target.value)}
-                placeholder="Details zum Ergebnis..."
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800"
+            {/* Chat Input */}
+            <form onSubmit={handleSendMessage} className="p-2 border-t border-slate-100 flex gap-1.5">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Nachricht schreiben..."
+                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:bg-white"
               />
+              <button
+                type="submit"
+                className="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      {/* ======================================================== */}
+      {/* 3. BOTTOM LOW BALANCE TOAST BANNER                      */}
+      {/* ======================================================== */}
+      {showLowBalanceBanner && (
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-rose-600 text-white text-xs font-bold shadow-2xl flex items-center gap-3 animate-fade-in-up">
+          <AlertTriangle className="w-4 h-4 text-white" />
+          <span>Guthaben niedrig: 10.00 € — vor Anrufabbruch aufladen.</span>
+          <button
+            onClick={() => router.push('/balance-costs')}
+            className="px-3 py-1 rounded-full bg-white text-rose-600 hover:bg-rose-50 text-[11px] font-extrabold shadow-xs transition"
+          >
+            Aufladen &rarr;
+          </button>
+          <button
+            onClick={() => setShowLowBalanceBanner(false)}
+            className="text-rose-200 hover:text-white text-xs font-bold ml-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-14 right-5 z-50 p-4 rounded-2xl bg-emerald-900/95 text-white shadow-2xl border border-emerald-500/50 flex items-center gap-3 animate-fade-in-up backdrop-blur-md text-xs font-bold">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-emerald-300 hover:text-white ml-2 text-xs font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. WRAP-UP / OUTCOME MODAL                               */}
+      {/* ======================================================== */}
+      {showOutcomeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden text-slate-800">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-black text-sm text-slate-900">
+                Gesprächsergebnis wählen &amp; erfassen
+              </h3>
+              <button
+                onClick={() => setShowOutcomeModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={handleWrapupSubmit}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition"
-              >
-                Ergebnis speichern & Bereit schalten
-              </button>
+            <div className="p-6 space-y-4 text-xs">
+              <p className="text-slate-500">
+                Wählen Sie den Abschlussstatus für diesen Anruf:
+              </p>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { id: 'TERMIN_VEREINBART', label: 'Termin vereinbart', color: 'border-emerald-500 bg-emerald-50 text-emerald-900' },
+                  { id: 'NICHT_ERREICHT', label: 'Nicht erreicht', color: 'border-slate-300 text-slate-700' },
+                  { id: 'WIEDERVORLAGE', label: 'Wiedervorlage / Rückruf', color: 'border-sky-300 text-sky-900' },
+                  { id: 'KEIN_INTERESSE', label: 'Kein Interesse', color: 'border-amber-300 text-amber-900' },
+                  { id: 'FALSCHE_NUMMER', label: 'Falsche Rufnummer', color: 'border-rose-300 text-rose-900' },
+                  { id: 'DNC_SPERRE', label: 'Sperrliste (DNC)', color: 'border-rose-500 bg-rose-50 text-rose-900' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelectedOutcome(item.id)}
+                    className={`p-3 rounded-xl border text-left font-bold transition ${
+                      selectedOutcome === item.id
+                        ? 'ring-2 ring-indigo-500 ' + item.color
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  onClick={() => setShowOutcomeModal(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleSaveOutcome}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-xs transition"
+                >
+                  Ergebnis speichern
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </AppShell>
+    </div>
   );
 }

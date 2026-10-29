@@ -477,9 +477,10 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Data Table Container */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-100">
                 <tr>
@@ -612,14 +613,108 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="p-4 space-y-3 hover:bg-slate-50/70 transition">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs ${
+                        user.userNumber === '#156'
+                          ? 'bg-gradient-to-br from-amber-600 via-yellow-700 to-black text-amber-300 border border-amber-500/40'
+                          : user.role === 'Teamleiter'
+                          ? 'bg-gradient-to-br from-cyan-500 to-teal-600'
+                          : user.role === 'Agent'
+                          ? 'bg-gradient-to-br from-orange-400 to-amber-600'
+                          : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                      }`}
+                    >
+                      {getAvatarInitials(user.username)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">{user.username}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        {user.userNumber} &bull; Team: {user.team || '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleOpenEdit(user)}
+                    className="p-2 rounded-xl text-indigo-600 bg-indigo-50 border border-indigo-200 shadow-2xs transition active:scale-95 cursor-pointer"
+                    title="Benutzer bearbeiten"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    {user.role === 'Agent' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200">
+                        Agent
+                      </span>
+                    )}
+                    {user.role === 'Teamleiter' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        Teamleiter
+                      </span>
+                    )}
+                    {user.role === 'Firmen-Admin' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Firmen-Admin
+                      </span>
+                    )}
+                    {user.role === 'QC-Prüfer' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                        QC-Prüfer
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[11px] font-bold ${
+                        user.isActive ? 'text-emerald-600' : 'text-slate-400'
+                      }`}
+                    >
+                      {user.isActive ? 'Aktiv' : 'Deaktiviert'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(user)}
+                      className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                        user.isActive ? 'bg-emerald-500' : 'bg-slate-300'
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                          user.isActive ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {user.callerIdNumber && (
+                  <div className="text-[11px] font-mono text-slate-600 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                    <span className="text-slate-400 font-sans">Anrufer-ID:</span>
+                    <span className="font-bold text-slate-800">{user.callerIdNumber}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ======================================================== */}
         {/* EDIT USER MODAL ("Benutzer bearbeiten")                 */}
         {/* ======================================================== */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up">
-            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
               {/* Modal Header */}
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
                 <div>
@@ -824,9 +919,9 @@ export default function UsersPage() {
         {/* NEW USER MODAL                                          */}
         {/* ======================================================== */}
         {showNewUserModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up">
-            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-indigo-600" />
                   <h2 className="text-lg font-black text-slate-900">Neuen Benutzer anlegen</h2>
@@ -840,7 +935,7 @@ export default function UsersPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateUser} className="p-6 space-y-4 text-xs">
+              <form onSubmit={handleCreateUser} className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Vollständiger Name</label>
                   <input
@@ -951,8 +1046,8 @@ export default function UsersPage() {
         {/* ADD TEAM MODAL                                          */}
         {/* ======================================================== */}
         {showTeamModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up">
-            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-indigo-600" />

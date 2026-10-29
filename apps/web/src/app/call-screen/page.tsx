@@ -261,23 +261,32 @@ export default function CallScreenPage() {
       {/* ======================================================== */}
       {/* 1. TOP NAVIGATION BAR matching screenshot               */}
       {/* ======================================================== */}
-      <header className="bg-[#0b1329] border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between text-xs sticky top-0 z-40 shadow-md">
+      <header className="bg-[#0b1329] border-b border-slate-800/80 px-3 sm:px-4 py-2.5 flex flex-col md:flex-row md:items-center md:justify-between text-xs sticky top-0 z-40 shadow-md gap-2.5">
         {/* Left: Brand + Name + Arbeitsbildschirm badge */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-2 font-bold text-white">
-            <Headphones className="w-4 h-4 text-amber-400" />
+            <Headphones className="w-4 h-4 text-amber-400 flex-shrink-0" />
             <span className="text-amber-400 font-extrabold text-sm">Lead-Kontackt</span>
             <span className="text-slate-500">&bull;</span>
-            <span className="text-slate-200">{userName}</span>
+            <span className="text-slate-200 truncate max-w-[110px] sm:max-w-none">{userName}</span>
           </div>
 
-          <span className="bg-amber-400 text-slate-950 font-black text-[11px] px-3 py-0.5 rounded-full shadow-xs">
-            Arbeitsbildschirm
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="bg-amber-400 text-slate-950 font-black text-[11px] px-2.5 sm:px-3 py-0.5 rounded-full shadow-xs">
+              Arbeitsbildschirm
+            </span>
+            <Link
+              href="/dashboard"
+              className="md:hidden px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl flex items-center gap-1 shadow-xs transition"
+              title="Dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
-        {/* Center / Right: Nav Buttons Row */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Center / Right: Nav Buttons Row (Horizontally scrollable on mobile) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 md:pb-0 flex-nowrap md:flex-wrap">
           <Link
             href="/leads"
             className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
@@ -675,7 +684,7 @@ export default function CallScreenPage() {
               </div>
 
               {/* Vorname & Nachname */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
                     Vorname
@@ -701,7 +710,7 @@ export default function CallScreenPage() {
               </div>
 
               {/* PLZ & Ort */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
                     PLZ

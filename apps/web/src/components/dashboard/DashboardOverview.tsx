@@ -91,90 +91,90 @@ export const DashboardOverview: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-4 overflow-y-auto space-y-4 animate-in fade-in duration-300">
+    <div className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-3 sm:space-y-4 animate-in fade-in duration-300">
       {/* 1. KPI Cards Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
         {/* Leads diesen Monat */}
         <div
           onClick={() => router.push('/leads')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">190</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.leads_this_month')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">190</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.leads_this_month')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-600 border border-teal-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <Calendar className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-teal-50 text-teal-600 border border-teal-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
         {/* In QC-Prüfung */}
         <div
           onClick={() => router.push('/qc')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">0</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.in_qc')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">0</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.in_qc')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <Hourglass className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <Hourglass className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
         {/* Bestätigt (Monat) */}
         <div
           onClick={() => router.push('/leads')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">38</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.confirmed_month')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">38</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.confirmed_month')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <CheckCircle2 className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
         {/* Storno (Monat) */}
         <div
           onClick={() => router.push('/returns')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">103</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.storno_month')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">103</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.storno_month')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <XCircle className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
         {/* Offen (fällig) */}
         <div
           onClick={() => router.push('/balance-costs')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">0,00 €</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.open_due')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">0,00 €</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.open_due')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <Banknote className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
         {/* Nächster Monat */}
         <div
           onClick={() => router.push('/cash-income')}
-          className="card-elegant rounded-2xl p-4.5 flex items-center justify-between cursor-pointer group"
+          className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">5.188,94 €</div>
-            <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.next_month')}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">5.188,94 €</div>
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.next_month')}</div>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
-            <CalendarCheck className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
+            <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </div>

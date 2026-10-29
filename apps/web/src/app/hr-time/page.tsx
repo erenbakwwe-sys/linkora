@@ -30,7 +30,7 @@ export default function HrTimePage() {
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null);
 
   const fetchEntries = () => {
-    fetch('http://localhost:3001/api/operations/hr-time')
+    fetch('/api/operations/hr-time')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -49,7 +49,7 @@ export default function HrTimePage() {
 
   const handleClockIn = async () => {
     try {
-      await fetch('http://localhost:3001/api/operations/hr-time/clock-in', {
+      await fetch('/api/operations/hr-time/clock-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: '99999999-0000-0000-0000-000000000005', userName: 'Umut' }),
@@ -62,7 +62,7 @@ export default function HrTimePage() {
 
   const handleClockOut = async () => {
     try {
-      await fetch('http://localhost:3001/api/operations/hr-time/clock-out', {
+      await fetch('/api/operations/hr-time/clock-out', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: '99999999-0000-0000-0000-000000000005', breakMinutes: 30 }),
@@ -75,7 +75,7 @@ export default function HrTimePage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/api/operations/hr-time/${id}/approve`, {
+      await fetch(`/api/operations/hr-time/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

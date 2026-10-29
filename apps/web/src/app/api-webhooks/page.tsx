@@ -32,7 +32,7 @@ export default function ApiWebhooksPage() {
   const [replaySuccess, setReplaySuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/marketplace/webhooks')
+    fetch('/api/marketplace/webhooks')
       .then((res) => res.json())
       .then((data) => {
         if (data?.deliveries && Array.isArray(data.deliveries)) {
@@ -44,7 +44,7 @@ export default function ApiWebhooksPage() {
 
   const handleReplay = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/marketplace/webhooks/replay/${id}`, {
+      const res = await fetch(`/api/marketplace/webhooks/replay/${id}`, {
         method: 'POST',
       });
       const updated = await res.json();

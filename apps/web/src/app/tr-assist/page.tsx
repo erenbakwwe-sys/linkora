@@ -37,7 +37,7 @@ export default function TrAssistPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/ai/tr-call-list')
+    fetch('/api/ai/tr-call-list')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

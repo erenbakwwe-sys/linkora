@@ -19,7 +19,7 @@ export default function BrandingPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:3001/api/tenants/branding', {
+      await fetch('/api/tenants/branding', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

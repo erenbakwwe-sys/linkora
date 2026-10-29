@@ -17,7 +17,7 @@ export default function CashIncomePage() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/finances/kasa')
+    fetch('/api/finances/kasa')
       .then((res) => res.json())
       .then((d) => setData(d))
       .catch((err) => console.error('Failed to load kasa income:', err));

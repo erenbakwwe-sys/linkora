@@ -97,7 +97,7 @@ export default function WallboardPage() {
 
   const fetchAgents = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/dialer/active-agents');
+      const res = await fetch('/api/dialer/active-agents');
       if (res.ok) {
         const json = await res.json();
         if (Array.isArray(json) && json.length > 0) {

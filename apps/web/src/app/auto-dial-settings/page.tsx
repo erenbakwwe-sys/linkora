@@ -39,7 +39,7 @@ export default function AutoDialSettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/auto-dial/settings')
+    fetch('/api/auto-dial/settings')
       .then((res) => res.json())
       .then((data) => setSettings(data))
       .catch(() => {})
@@ -51,7 +51,7 @@ export default function AutoDialSettingsPage() {
     setSaving(true);
     setSavedSuccess(false);
     try {
-      const res = await fetch('http://localhost:3001/api/auto-dial/settings', {
+      const res = await fetch('/api/auto-dial/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),

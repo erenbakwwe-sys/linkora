@@ -36,7 +36,7 @@ export default function BuyersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/marketplace/buyers')
+    fetch('/api/marketplace/buyers')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setBuyers(data);

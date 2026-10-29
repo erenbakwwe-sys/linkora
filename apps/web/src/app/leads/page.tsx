@@ -110,7 +110,7 @@ export default function LeadsPage() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
-      const res = await fetch(`http://localhost:3001/api/v1/leads?${params.toString()}`);
+      const res = await fetch(`/api/v1/leads?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         setLeads(json.data || []);
@@ -135,7 +135,7 @@ export default function LeadsPage() {
     setSelectedLeadId(leadId);
     setDetailLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/leads/${leadId}`);
+      const res = await fetch(`/api/v1/leads/${leadId}`);
       if (res.ok) {
         const json = await res.json();
         setLeadDetail(json);
@@ -151,7 +151,7 @@ export default function LeadsPage() {
     if (!qcAction || !selectedLeadId || !qcReason.trim()) return;
     setSubmittingQc(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/leads/${selectedLeadId}/qc`, {
+      const res = await fetch(`/api/v1/leads/${selectedLeadId}/qc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

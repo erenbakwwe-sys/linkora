@@ -29,7 +29,7 @@ export default function CallOverviewPage() {
   const [cdrs, setCdrs] = useState<CdrItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/finances/cdr')
+    fetch('/api/finances/cdr')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setCdrs(data);

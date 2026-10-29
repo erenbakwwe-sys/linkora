@@ -79,8 +79,8 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const [usersRes, numbersRes] = await Promise.all([
-        fetch('http://localhost:3001/api/users'),
-        fetch('http://localhost:3001/api/users/free-numbers'),
+        fetch('/api/users'),
+        fetch('/api/users/free-numbers'),
       ]);
 
       if (usersRes.ok) {
@@ -126,7 +126,7 @@ export default function UsersPage() {
 
     try {
       setSaveLoading(true);
-      const res = await fetch(`http://localhost:3001/api/users/${editingUser.id}`, {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -160,7 +160,7 @@ export default function UsersPage() {
   // Toggle user active status directly from row switch
   const handleToggleStatus = async (user: UserItem) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/users/${user.id}/toggle-status`, {
+      const res = await fetch(`/api/users/${user.id}/toggle-status`, {
         method: 'POST',
       });
       if (res.ok) {
@@ -183,7 +183,7 @@ export default function UsersPage() {
 
     try {
       setSaveLoading(true);
-      const res = await fetch('http://localhost:3001/api/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -38,7 +38,7 @@ export default function AnalyticsCalibrationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/ai/calibration-report')
+    fetch('/api/ai/calibration-report')
       .then((res) => res.json())
       .then((data) => {
         setReport(data);

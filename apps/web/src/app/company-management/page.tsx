@@ -53,7 +53,7 @@ export default function CompanyManagementPage() {
   const fetchSubCompanies = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3001/api/tenants/sub-companies');
+      const res = await fetch('/api/tenants/sub-companies');
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -83,7 +83,7 @@ export default function CompanyManagementPage() {
 
     try {
       setCreateLoading(true);
-      const res = await fetch('http://localhost:3001/api/tenants/sub-companies', {
+      const res = await fetch('/api/tenants/sub-companies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,7 +126,7 @@ export default function CompanyManagementPage() {
 
     try {
       setEditLoading(true);
-      const res = await fetch(`http://localhost:3001/api/tenants/sub-companies/${editingSub.id}`, {
+      const res = await fetch(`/api/tenants/sub-companies/${editingSub.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -155,7 +155,7 @@ export default function CompanyManagementPage() {
     if (!confirm(`Möchten Sie die Unterfirma "${subName}" wirklich löschen?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tenants/sub-companies/${id}`, {
+      const res = await fetch(`/api/tenants/sub-companies/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {

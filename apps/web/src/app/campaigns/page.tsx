@@ -48,7 +48,7 @@ export default function CampaignsPage() {
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/campaigns');
+      const res = await fetch('/api/campaigns');
       if (res.ok) {
         const json = await res.json();
         setCampaigns(json || []);
@@ -66,7 +66,7 @@ export default function CampaignsPage() {
   const handleTempoChange = async (campaignId: string, newTempo: number) => {
     setUpdatingId(campaignId);
     try {
-      const res = await fetch(`http://localhost:3001/api/campaigns/${campaignId}/tempo`, {
+      const res = await fetch(`/api/campaigns/${campaignId}/tempo`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempo: newTempo }),
@@ -86,7 +86,7 @@ export default function CampaignsPage() {
   const handleStatusToggle = async (campaignId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     try {
-      const res = await fetch(`http://localhost:3001/api/campaigns/${campaignId}/status`, {
+      const res = await fetch(`/api/campaigns/${campaignId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),

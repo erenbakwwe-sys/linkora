@@ -46,7 +46,7 @@ export default function QcQueuePage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/ai/qc-queue')
+    fetch('/api/ai/qc-queue')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -61,7 +61,7 @@ export default function QcQueuePage() {
     if (!selectedItem) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/ai/qc-review/${selectedItem.id}`, {
+      const res = await fetch(`/api/ai/qc-review/${selectedItem.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),

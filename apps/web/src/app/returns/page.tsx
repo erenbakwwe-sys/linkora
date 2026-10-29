@@ -39,8 +39,8 @@ export default function ReturnsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('http://localhost:3001/api/marketplace/returns').then((r) => r.json()),
-      fetch('http://localhost:3001/api/marketplace/credit-notes').then((r) => r.json()),
+      fetch('/api/marketplace/returns').then((r) => r.json()),
+      fetch('/api/marketplace/credit-notes').then((r) => r.json()),
     ])
       .then(([returnsData, creditNotesData]) => {
         if (Array.isArray(returnsData)) setReturns(returnsData);

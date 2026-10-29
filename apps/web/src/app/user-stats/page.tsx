@@ -17,7 +17,7 @@ export default function UserStatsPage() {
   const [stats, setStats] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/reports/user-stats')
+    fetch('/api/reports/user-stats')
       .then((res) => res.json())
       .then((d) => {
         if (Array.isArray(d)) setStats(d);

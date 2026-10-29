@@ -98,7 +98,7 @@ export default function RotaPage() {
   const [conflictAlert, setConflictAlert] = useState<string | null>(null);
 
   const fetchShifts = () => {
-    fetch('http://localhost:3001/api/operations/shifts')
+    fetch('/api/operations/shifts')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -120,7 +120,7 @@ export default function RotaPage() {
   const handleCreateShift = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3001/api/operations/shifts', {
+      const res = await fetch('/api/operations/shifts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

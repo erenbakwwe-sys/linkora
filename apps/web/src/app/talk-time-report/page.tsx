@@ -15,7 +15,7 @@ export default function TalkTimeReportPage() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/reports/talk-time')
+    fetch('/api/reports/talk-time')
       .then((res) => res.json())
       .then((d) => setData(d))
       .catch((err) => console.error('Failed to load talk time report:', err));

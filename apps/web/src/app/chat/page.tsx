@@ -24,7 +24,7 @@ export default function ChatPage() {
   const [inputMsg, setInputMsg] = useState('');
 
   const fetchMessages = () => {
-    fetch('http://localhost:3001/api/operations/chat')
+    fetch('/api/operations/chat')
       .then((res) => res.json())
       .then((d) => {
         if (Array.isArray(d)) setMessages(d);
@@ -41,7 +41,7 @@ export default function ChatPage() {
     if (!inputMsg.trim()) return;
 
     try {
-      await fetch('http://localhost:3001/api/operations/chat', {
+      await fetch('/api/operations/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

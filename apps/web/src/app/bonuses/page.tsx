@@ -23,7 +23,7 @@ export default function BonusesPage() {
   const [bonuses, setBonuses] = useState<BonusAwardItem[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/operations/bonuses')
+    fetch('/api/operations/bonuses')
       .then((res) => res.json())
       .then((d) => {
         if (Array.isArray(d)) setBonuses(d);

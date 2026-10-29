@@ -32,7 +32,7 @@ export default function QualityPoolPage() {
   const [resaleSuccess, setResaleSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/marketplace/quality-pool')
+    fetch('/api/marketplace/quality-pool')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setLeads(data);
@@ -42,7 +42,7 @@ export default function QualityPoolPage() {
 
   const handleResell = async (leadId: string) => {
     try {
-      const res = await fetch('http://localhost:3001/api/marketplace/secondary-sale', {
+      const res = await fetch('/api/marketplace/secondary-sale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

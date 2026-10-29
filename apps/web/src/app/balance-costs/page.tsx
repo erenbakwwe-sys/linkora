@@ -19,7 +19,7 @@ export default function BalanceCostsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchBalance = () => {
-    fetch('http://localhost:3001/api/finances/balance')
+    fetch('/api/finances/balance')
       .then((res) => res.json())
       .then((d) => setBalanceData(d))
       .catch((err) => console.error('Failed to load balance:', err));
@@ -31,7 +31,7 @@ export default function BalanceCostsPage() {
 
   const handleTopup = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/finances/topup', {
+      const res = await fetch('/api/finances/topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: topupAmount }),

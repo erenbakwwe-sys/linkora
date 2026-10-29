@@ -52,7 +52,7 @@ export default function RecordingsPage() {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/recordings');
+      const res = await fetch('/api/recordings');
       if (res.ok) {
         const json = await res.json();
         setRecordings(json || []);

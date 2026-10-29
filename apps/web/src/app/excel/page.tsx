@@ -84,7 +84,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
 
     setIsParsing(true);
     try {
-      const res = await fetch('http://localhost:3001/api/import/preview', {
+      const res = await fetch('/api/import/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ csvContent: raw }),
@@ -138,7 +138,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
         return rowObj;
       });
 
-      const res = await fetch('http://localhost:3001/api/import/execute', {
+      const res = await fetch('/api/import/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -166,7 +166,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
   const fetchQuarantine = async () => {
     setLoadingQuarantine(true);
     try {
-      const res = await fetch('http://localhost:3001/api/import/quarantine');
+      const res = await fetch('/api/import/quarantine');
       if (res.ok) {
         const json = await res.json();
         setQuarantineItems(json || []);
@@ -196,7 +196,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
     if (!editingItem) return;
     setIsReprocessing(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/import/quarantine/${editingItem.id}/reprocess`, {
+      const res = await fetch(`/api/import/quarantine/${editingItem.id}/reprocess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

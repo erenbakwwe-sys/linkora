@@ -28,7 +28,7 @@ export default function AnnouncementsPage() {
   const [content, setContent] = useState('');
 
   const fetchAnnouncements = () => {
-    fetch('http://localhost:3001/api/operations/announcements')
+    fetch('/api/operations/announcements')
       .then((res) => res.json())
       .then((d) => {
         if (Array.isArray(d)) setAnnouncements(d);
@@ -45,7 +45,7 @@ export default function AnnouncementsPage() {
     if (!title.trim() || !content.trim()) return;
 
     try {
-      await fetch('http://localhost:3001/api/operations/announcements', {
+      await fetch('/api/operations/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content, isPinned: true }),

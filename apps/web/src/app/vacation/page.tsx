@@ -30,7 +30,7 @@ export default function VacationPage() {
   const [reason, setReason] = useState('Erholungsurlaub');
 
   const fetchLeaves = () => {
-    fetch('http://localhost:3001/api/operations/vacation')
+    fetch('/api/operations/vacation')
       .then((res) => res.json())
       .then((d) => {
         if (Array.isArray(d)) setLeaves(d);
@@ -45,7 +45,7 @@ export default function VacationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:3001/api/operations/vacation', {
+      await fetch('/api/operations/vacation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function VacationPage() {
 
   const handleUpdateStatus = async (id: string, status: 'APPROVED' | 'REJECTED') => {
     try {
-      await fetch(`http://localhost:3001/api/operations/vacation/${id}/status`, {
+      await fetch(`/api/operations/vacation/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),

@@ -41,7 +41,7 @@ export default function CallbacksPage() {
   const fetchCallbacks = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/v1/callbacks');
+      const res = await fetch('/api/v1/callbacks');
       if (res.ok) {
         const json = await res.json();
         setCallbacks(json || []);
@@ -59,7 +59,7 @@ export default function CallbacksPage() {
 
   const completeCallback = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/callbacks/${id}/complete`, {
+      const res = await fetch(`/api/v1/callbacks/${id}/complete`, {
         method: 'PATCH',
       });
       if (res.ok) {

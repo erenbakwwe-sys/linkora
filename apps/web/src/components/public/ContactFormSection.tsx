@@ -35,7 +35,7 @@ export const ContactFormSection: React.FC = () => {
     setStatusMessage(null);
 
     try {
-      const res = await fetch('http://localhost:3001/api/leads/public-inquiry', {
+      const res = await fetch('/api/leads/public-inquiry', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

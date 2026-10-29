@@ -69,7 +69,7 @@ export default function ProjectsPage() {
 
   const fetchManagementData = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/projects/management-data');
+      const res = await fetch('/api/projects/management-data');
       if (res.ok) {
         const data = await res.json();
         setActiveCompany(data.activeCompany || 'Calendra');
@@ -109,7 +109,7 @@ export default function ProjectsPage() {
   const saveTeamAssignment = async () => {
     if (!selectedTeam) return;
     try {
-      const res = await fetch('http://localhost:3001/api/projects/assign-team', {
+      const res = await fetch('/api/projects/assign-team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +132,7 @@ export default function ProjectsPage() {
   // Deactivate Project Type (Remove from active list)
   const handleDeactivate = async (id: string, name: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/projects/types/${id}`, {
+      const res = await fetch(`/api/projects/types/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -151,7 +151,7 @@ export default function ProjectsPage() {
 
     try {
       setCustomLoading(true);
-      const res = await fetch('http://localhost:3001/api/projects/add-custom-type', {
+      const res = await fetch('/api/projects/add-custom-type', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: customName.trim() }),
@@ -182,7 +182,7 @@ export default function ProjectsPage() {
 
     try {
       setActivateLoading(true);
-      const res = await fetch('http://localhost:3001/api/projects/activate-global-types', {
+      const res = await fetch('/api/projects/activate-global-types', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ names: selectedGlobalToActivate }),

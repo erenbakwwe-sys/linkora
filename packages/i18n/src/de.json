@@ -1,0 +1,112 @@
+{
+  "common": {
+    "welcome": "Willkommen, {user}",
+    "switch_mode": "Modus wechseln",
+    "company": "Firma: {company}",
+    "all_companies": "Alle Firmen (eigene + Unterfirmen)",
+    "live": "Live",
+    "search_menu": "Im Menü suchen…",
+    "freeze": "Einfrieren",
+    "unfreeze": "Fortsetzen",
+    "online": "online",
+    "waiting": "wartend",
+    "guide": "Rehber",
+    "add_user": "Benutzer hinzufügen",
+    "low_balance_warning": "Guthaben niedrig: {amount} € — vor Anrufabbruch aufladen.",
+    "top_up": "Aufladen →",
+    "logout": "Abmelden",
+    "loading": "Wird geladen...",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "groups": {
+      "ARBEIT": "ARBEIT",
+      "LEADS_KUNDEN": "LEADS & KUNDEN",
+      "PROJEKTE_FRAGEN": "PROJEKTE & FRAGEN",
+      "CALL_CENTER_DIALER": "CALL-CENTER / DIALER",
+      "FINANZEN": "FINANZEN",
+      "BERICHTE": "BERICHTE",
+      "BENUTZER": "BENUTZER",
+      "ALLGEMEIN": "ALLGEMEIN",
+      "LEAD_MARKTPLATZ": "LEAD-MARKTPLATZ"
+    },
+    "items": {
+      "call_screen": "Anruf-Bildschirm",
+      "callbacks": "Rückrufe",
+      "rota": "Rota-Tafel",
+      "excel": "Excel",
+      "wallboard": "Team-Wallboard",
+      "hr_time": "HR-Zeit",
+      "tr_assist": "TR KI-Assist",
+      "lead_customers": "Lead-Kunden",
+      "qc_queue": "QC-Prüfung",
+      "project_management": "Projekt-Verwaltung",
+      "database": "Datenbank",
+      "campaigns": "Kampagnen",
+      "auto_dial_settings": "Auto-Anruf-Einstellungen",
+      "call_recordings": "Anrufaufzeichnungen",
+      "cash_income": "Kasa / Einnahmen",
+      "balance_costs": "Guthaben / Kosten",
+      "call_overview": "Anrufübersicht",
+      "user_stats": "Benutzerstatistiken",
+      "analytics_conversion": "Analytik & Konversion",
+      "talk_time_report": "Gesprächszeit-Bericht",
+      "user_management": "Benutzerverwaltung",
+      "new_user": "Neuer Benutzer",
+      "new_team": "Neues Team",
+      "company_management": "Firmenverwaltung",
+      "company_logo": "Firmenlogo",
+      "chat": "Chat",
+      "announcements": "Ankündigungen",
+      "leave": "Urlaub",
+      "bonuses": "Prämien",
+      "profile": "Profil",
+      "lead_upload": "Lead-Upload",
+      "ai_matching": "KI-Matching",
+      "quality_pool": "Qualitätspool (Resale)",
+      "buyers": "Abnehmer",
+      "price_lists": "Preislisten",
+      "returns_credits": "Rückläufer & Gutschriften",
+      "api_webhooks": "API & Webhooks"
+    }
+  },
+  "dashboard": {
+    "kpi": {
+      "leads_this_month": "Leads diesen Monat",
+      "in_qc": "In QC-Prüfung",
+      "confirmed_month": "Bestätigt (Monat)",
+      "storno_month": "Storno (Monat)",
+      "open_due": "Offen (fällig)",
+      "next_month": "Nächster Monat"
+    },
+    "live_panel": {
+      "ready_to_call": "+{count} anrufen",
+      "customers_being_called": "Kunden werden gerade angerufen",
+      "agents_online": "Mitarbeiter online",
+      "agents_joining_line": "Mitarbeiter wählen sich in die Leitung ein",
+      "dialing_manually": "Wählt manuell: {count}"
+    },
+    "active_agents": {
+      "title": "Aktive Mitarbeiter",
+      "view_list": "Liste",
+      "counter": "{online} online · {waiting} wartend",
+      "status_legend": {
+        "on_call": "Am Telefon",
+        "wrap_up": "Nachbearbeitung",
+        "dialing": "Wählt",
+        "joining": "Wählt sich ein",
+        "ready": "Bereit, wartet auf Anruf",
+        "waiting": "Wartend",
+        "pause": "Pause"
+      },
+      "durations": {
+        "label": "Farbton = Dauer:",
+        "light": "hell: 0–5 Min",
+        "medium": "mittel: 5–10 Min",
+        "dark": "dunkel: 10+ Min"
+      }
+    }
+  }
+}

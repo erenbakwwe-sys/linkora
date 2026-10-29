@@ -1,0 +1,112 @@
+{
+  "common": {
+    "welcome": "Hoş geldiniz, {user}",
+    "switch_mode": "Mod Değiştir",
+    "company": "Şirket: {company}",
+    "all_companies": "Tüm Şirketler (Kendi + Alt Şirketler)",
+    "live": "Canlı",
+    "search_menu": "Menüde ara…",
+    "freeze": "Dondur",
+    "unfreeze": "Devam Et",
+    "online": "çevrimiçi",
+    "waiting": "bekleyen",
+    "guide": "Rehber",
+    "add_user": "Kullanıcı Ekle",
+    "low_balance_warning": "Bakiye düşük: {amount} € — aramalar kesilmeden önce yükleme yapın.",
+    "top_up": "Yükle →",
+    "logout": "Çıkış Yap",
+    "loading": "Yükleniyor...",
+    "save": "Kaydet",
+    "cancel": "İptal"
+  },
+  "menu": {
+    "dashboard": "Panel",
+    "groups": {
+      "ARBEIT": "ÇALIŞMA",
+      "LEADS_KUNDEN": "LEADLER & MÜŞTERİLER",
+      "PROJEKTE_FRAGEN": "PROJELER & SORULAR",
+      "CALL_CENTER_DIALER": "ÇAĞRI MERKEZİ / DİALER",
+      "FINANZEN": "FİNANS",
+      "BERICHTE": "RAPORLAR",
+      "BENUTZER": "KULLANICILAR",
+      "ALLGEMEIN": "GENEL",
+      "LEAD_MARKTPLATZ": "LEAD PAZARYERİ"
+    },
+    "items": {
+      "call_screen": "Çağrı Ekranı",
+      "callbacks": "Geri Aramalar",
+      "rota": "Vardiya Tablosu",
+      "excel": "Excel",
+      "wallboard": "Takım Ekranı",
+      "hr_time": "İK Zaman Takibi",
+      "tr_assist": "TR Yapay Zeka Asistanı",
+      "lead_customers": "Lead Müşterileri",
+      "qc_queue": "QC Denetimi",
+      "project_management": "Proje Yönetimi",
+      "database": "Veritabanı",
+      "campaigns": "Kampanyalar",
+      "auto_dial_settings": "Otomatik Arama Ayarları",
+      "call_recordings": "Ses Kayıtları",
+      "cash_income": "Kasa / Gelirler",
+      "balance_costs": "Bakiye / Maliyetler",
+      "call_overview": "Çağrı Özeti",
+      "user_stats": "Kullanıcı İstatistikleri",
+      "analytics_conversion": "Analitik & Dönüşüm",
+      "talk_time_report": "Görüşme Süresi Raporu",
+      "user_management": "Kullanıcı Yönetimi",
+      "new_user": "Yeni Kullanıcı",
+      "new_team": "Yeni Takım",
+      "company_management": "Şirket Yönetimi",
+      "company_logo": "Şirket Logosu",
+      "chat": "Sohbet",
+      "announcements": "Duyurular",
+      "leave": "İzinler",
+      "bonuses": "Primler",
+      "profile": "Profil",
+      "lead_upload": "Lead Yükleme",
+      "ai_matching": "Yapay Zeka Eşleştirme",
+      "quality_pool": "Kalite Havuzu (Yeniden Satış)",
+      "buyers": "Alıcılar",
+      "price_lists": "Fiyat Listeleri",
+      "returns_credits": "İadeler & Alacaklar",
+      "api_webhooks": "API & Webhooklar"
+    }
+  },
+  "dashboard": {
+    "kpi": {
+      "leads_this_month": "Bu Ayki Leadler",
+      "in_qc": "Kalite Kontrolde",
+      "confirmed_month": "Onaylanan (Ay)",
+      "storno_month": "İptal (Ay)",
+      "open_due": "Açık (Vadesi Gelen)",
+      "next_month": "Gelecek Ay"
+    },
+    "live_panel": {
+      "ready_to_call": "+{count} aranacak",
+      "customers_being_called": "Müşteriler şu anda aranıyor",
+      "agents_online": "Çevrimiçi personel",
+      "agents_joining_line": "Personele hat bağlanıyor",
+      "dialing_manually": "Manuel arıyor: {count}"
+    },
+    "active_agents": {
+      "title": "Aktif Personel",
+      "view_list": "Liste",
+      "counter": "{online} çevrimiçi · {waiting} bekleyen",
+      "status_legend": {
+        "on_call": "Telefonda",
+        "wrap_up": "İşlem Yapıyor",
+        "dialing": "Arıyor",
+        "joining": "Hatta Bağlanıyor",
+        "ready": "Hazır, çağrı bekliyor",
+        "waiting": "Bekliyor",
+        "pause": "Mola"
+      },
+      "durations": {
+        "label": "Renk Tonu = Süre:",
+        "light": "açık: 0–5 Dk",
+        "medium": "orta: 5–10 Dk",
+        "dark": "koyu: 10+ Dk"
+      }
+    }
+  }
+}

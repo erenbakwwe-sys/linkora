@@ -1,0 +1,20 @@
+{
+  "name": "@linkora/shared",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "google-libphonenumber": "^3.2.48",
+    "papaparse": "^5.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/google-libphonenumber": "^7.4.31",
+    "@types/papaparse": "^5.5.2",
+    "typescript": "^5.7.3"
+  }
+}

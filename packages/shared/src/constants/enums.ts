@@ -1,0 +1,81 @@
+export enum TenantType {
+  ROOT = 'ROOT',
+  AGENCY_PARENT = 'AGENCY_PARENT',
+  CALL_CENTER_SUB = 'CALL_CENTER_SUB',
+  BUYER_ORG = 'BUYER_ORG',
+}
+
+export enum UserRoleSlug {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  COMPANY_ADMIN = 'COMPANY_ADMIN',
+  TEAM_LEAD = 'TEAM_LEAD',
+  QC_REVIEWER = 'QC_REVIEWER',
+  AGENT = 'AGENT',
+  LEAD_PARTNER = 'LEAD_PARTNER',
+  BUYER = 'BUYER',
+}
+
+export enum UserMode {
+  MANAGER = 'MANAGER',
+  AGENT = 'AGENT',
+}
+
+export enum LeadStatus {
+  NEW = 'NEW',
+  QC_PENDING = 'QC_PENDING',
+  CONFIRMED = 'CONFIRMED',
+  STORNO = 'STORNO',
+  ROUTED = 'ROUTED',
+  SOLD = 'SOLD',
+  RETURNED = 'RETURNED',
+}
+
+export enum ScoreBand {
+  A = 'A', // >= 80
+  B = 'B', // 60 - 79
+  C = 'C', // 40 - 59
+  D = 'D', // < 40
+}
+
+export enum ExclusivityType {
+  EXCLUSIVE = 'EXCLUSIVE',
+  SHARED_2X = 'SHARED_2X',
+  SHARED_3X = 'SHARED_3X',
+  NON_EXCLUSIVE = 'NON_EXCLUSIVE',
+}
+
+export enum DialerMode {
+  PREVIEW = 'PREVIEW',
+  PROGRESSIVE = 'PROGRESSIVE',
+  POWER = 'POWER',
+  PREDICTIVE = 'PREDICTIVE',
+}
+
+export enum AgentState {
+  OFFLINE = 'OFFLINE',
+  READY = 'READY',
+  DIALING = 'DIALING',
+  RINGING = 'RINGING',
+  ON_CALL = 'ON_CALL',
+  ACW = 'ACW',
+  PAUSE = 'PAUSE',
+  WAITING = 'WAITING',
+  MANUAL_DIAL = 'MANUAL_DIAL',
+  JOINING_LINE = 'JOINING_LINE',
+}
+
+export enum LedgerTxType {
+  CREDIT_TOPUP = 'CREDIT_TOPUP',
+  LEAD_PURCHASE = 'LEAD_PURCHASE',
+  CALL_MINUTE_FEE = 'CALL_MINUTE_FEE',
+  AI_SCORING_FEE = 'AI_SCORING_FEE',
+  RETURN_REFUND = 'RETURN_REFUND',
+  MANUAL_CORRECTION = 'MANUAL_CORRECTION',
+}
+
+export enum WrapupCategory {
+  POSITIVE = 'POSITIVE',
+  RETRY = 'RETRY',
+  NEGATIVE = 'NEGATIVE',
+  DNC = 'DNC',
+}

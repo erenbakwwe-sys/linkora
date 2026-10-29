@@ -1,0 +1,25 @@
+{
+  "name": "linkora",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @linkora/db run generate",
+    "db:migrate": "pnpm --filter @linkora/db run migrate",
+    "db:seed": "pnpm --filter @linkora/db run seed"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/pg": "^8.23.1",
+    "jest": "^30.5.2",
+    "prettier": "^3.5.2",
+    "ts-jest": "^29.4.15",
+    "turbo": "^2.4.4",
+    "typescript": "^5.7.3"
+  }
+}

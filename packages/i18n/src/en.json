@@ -1,0 +1,112 @@
+{
+  "common": {
+    "welcome": "Welcome, {user}",
+    "switch_mode": "Switch Mode",
+    "company": "Company: {company}",
+    "all_companies": "All Companies (Own + Sub-companies)",
+    "live": "Live",
+    "search_menu": "Search menu…",
+    "freeze": "Freeze",
+    "unfreeze": "Resume",
+    "online": "online",
+    "waiting": "waiting",
+    "guide": "Guide",
+    "add_user": "Add User",
+    "low_balance_warning": "Low balance: {amount} € — top up before calls are cut off.",
+    "top_up": "Top Up →",
+    "logout": "Log Out",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "groups": {
+      "ARBEIT": "WORK",
+      "LEADS_KUNDEN": "LEADS & CUSTOMERS",
+      "PROJEKTE_FRAGEN": "PROJECTS & QUESTIONS",
+      "CALL_CENTER_DIALER": "CALL CENTER / DIALER",
+      "FINANZEN": "FINANCES",
+      "BERICHTE": "REPORTS",
+      "BENUTZER": "USERS",
+      "ALLGEMEIN": "GENERAL",
+      "LEAD_MARKTPLATZ": "LEAD MARKETPLACE"
+    },
+    "items": {
+      "call_screen": "Call Screen",
+      "callbacks": "Callbacks",
+      "rota": "Rota Schedule",
+      "excel": "Excel",
+      "wallboard": "Team Wallboard",
+      "hr_time": "HR Time",
+      "tr_assist": "TR AI-Assist",
+      "lead_customers": "Lead Customers",
+      "qc_queue": "QC Review",
+      "project_management": "Project Management",
+      "database": "Database",
+      "campaigns": "Campaigns",
+      "auto_dial_settings": "Auto-Call Settings",
+      "call_recordings": "Call Recordings",
+      "cash_income": "Cash / Income",
+      "balance_costs": "Balance / Costs",
+      "call_overview": "Call Overview",
+      "user_stats": "User Statistics",
+      "analytics_conversion": "Analytics & Conversion",
+      "talk_time_report": "Talk Time Report",
+      "user_management": "User Management",
+      "new_user": "New User",
+      "new_team": "New Team",
+      "company_management": "Company Management",
+      "company_logo": "Company Logo",
+      "chat": "Chat",
+      "announcements": "Announcements",
+      "leave": "Leave",
+      "bonuses": "Bonuses",
+      "profile": "Profile",
+      "lead_upload": "Lead Upload",
+      "ai_matching": "AI Matching",
+      "quality_pool": "Quality Pool (Resale)",
+      "buyers": "Buyers",
+      "price_lists": "Price Lists",
+      "returns_credits": "Returns & Credits",
+      "api_webhooks": "API & Webhooks"
+    }
+  },
+  "dashboard": {
+    "kpi": {
+      "leads_this_month": "Leads this month",
+      "in_qc": "In QC Review",
+      "confirmed_month": "Confirmed (Month)",
+      "storno_month": "Cancelled (Month)",
+      "open_due": "Open (due)",
+      "next_month": "Next month"
+    },
+    "live_panel": {
+      "ready_to_call": "+{count} to call",
+      "customers_being_called": "Customers currently being called",
+      "agents_online": "Agents online",
+      "agents_joining_line": "Agents connecting to line",
+      "dialing_manually": "Dialing manually: {count}"
+    },
+    "active_agents": {
+      "title": "Active Agents",
+      "view_list": "List",
+      "counter": "{online} online · {waiting} waiting",
+      "status_legend": {
+        "on_call": "On Call",
+        "wrap_up": "Wrap-Up",
+        "dialing": "Dialing",
+        "joining": "Connecting",
+        "ready": "Ready, waiting for call",
+        "waiting": "Waiting",
+        "pause": "Pause"
+      },
+      "durations": {
+        "label": "Color Shade = Duration:",
+        "light": "light: 0–5 Min",
+        "medium": "medium: 5–10 Min",
+        "dark": "dark: 10+ Min"
+      }
+    }
+  }
+}

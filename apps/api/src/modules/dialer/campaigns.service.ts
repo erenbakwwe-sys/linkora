@@ -157,4 +157,139 @@ export class CampaignsService {
 
     return this.getCampaign(tenantId, id);
   }
+
+  // ========================================================
+  // KAMPAGNEN MANAGEMENT VIEW (Matching UI Reference)
+  // ========================================================
+  private managementCount = 4;
+  private availableTeams = ['Testcalendra', 'MD-Team', 'Izmir Core', 'Solar Direkt'];
+
+  private managementCampaigns = [
+    {
+      id: 'camp-1',
+      number: 1,
+      name: 'Kampanya 1',
+      companyName: 'Lead-Kontackt',
+      status: 'Offen' as const,
+      isActive: true,
+      tempo: 5,
+      teams: [] as string[],
+      dataPackagesCount: 0,
+      contactsCount: 0,
+      newContactsCount: 0,
+      dataPackages: [] as { id: string; name: string; count: number; createdAt: string }[],
+    },
+    {
+      id: 'camp-2',
+      number: 2,
+      name: 'Kampanya 2',
+      companyName: 'Lead-Kontackt',
+      status: 'Offen' as const,
+      isActive: true,
+      tempo: 5,
+      teams: [] as string[],
+      dataPackagesCount: 0,
+      contactsCount: 0,
+      newContactsCount: 0,
+      dataPackages: [] as { id: string; name: string; count: number; createdAt: string }[],
+    },
+    {
+      id: 'camp-3',
+      number: 3,
+      name: 'Kampanya 3',
+      companyName: 'Lead-Kontackt',
+      status: 'Offen' as const,
+      isActive: true,
+      tempo: 5,
+      teams: [] as string[],
+      dataPackagesCount: 0,
+      contactsCount: 0,
+      newContactsCount: 0,
+      dataPackages: [] as { id: string; name: string; count: number; createdAt: string }[],
+    },
+    {
+      id: 'camp-4',
+      number: 4,
+      name: 'Kampanya 4',
+      companyName: 'Lead-Kontackt',
+      status: 'Offen' as const,
+      isActive: true,
+      tempo: 5,
+      teams: [] as string[],
+      dataPackagesCount: 0,
+      contactsCount: 0,
+      newContactsCount: 0,
+      dataPackages: [] as { id: string; name: string; count: number; createdAt: string }[],
+    },
+  ];
+
+  async getManagementData(tenantId: string) {
+    // Ensure array has at least managementCount items
+    while (this.managementCampaigns.length < this.managementCount) {
+      const num = this.managementCampaigns.length + 1;
+      this.managementCampaigns.push({
+        id: `camp-${num}`,
+        number: num,
+        name: `Kampanya ${num}`,
+        companyName: 'Lead-Kontackt',
+        status: 'Offen',
+        isActive: true,
+        tempo: 5,
+        teams: [],
+        dataPackagesCount: 0,
+        contactsCount: 0,
+        newContactsCount: 0,
+        dataPackages: [],
+      });
+    }
+
+    return {
+      activeCompany: 'Calendra',
+      campaignCount: this.managementCount,
+      campaigns: this.managementCampaigns.slice(0, this.managementCount),
+      availableTeams: this.availableTeams,
+    };
+  }
+
+  async setCampaignCount(count: number) {
+    const validCount = Math.max(1, Math.min(20, count || 4));
+    this.managementCount = validCount;
+    return this.getManagementData('default');
+  }
+
+  async saveManagementCampaign(id: string, body: any) {
+    const camp = this.managementCampaigns.find((c) => c.id === id);
+    if (!camp) {
+      throw new NotFoundException(`Kampagne ${id} nicht gefunden`);
+    }
+
+    if (body.name !== undefined) camp.name = body.name.trim();
+    if (body.isActive !== undefined) camp.isActive = Boolean(body.isActive);
+    if (body.tempo !== undefined) camp.tempo = Number(body.tempo) || 5;
+    if (Array.isArray(body.teams)) camp.teams = body.teams;
+
+    return camp;
+  }
+
+  async addDataPackage(id: string, name: string) {
+    const camp = this.managementCampaigns.find((c) => c.id === id);
+    if (!camp) {
+      throw new NotFoundException(`Kampagne ${id} nicht gefunden`);
+    }
+
+    const pkgName = name?.trim() || `Paket-${camp.dataPackages.length + 1}`;
+    const newPkg = {
+      id: `pkg-${Date.now()}`,
+      name: pkgName,
+      count: 50,
+      createdAt: new Date().toLocaleDateString('de-DE'),
+    };
+
+    camp.dataPackages.push(newPkg);
+    camp.dataPackagesCount += 1;
+    camp.contactsCount += newPkg.count;
+    camp.newContactsCount += newPkg.count;
+
+    return camp;
+  }
 }

@@ -112,6 +112,19 @@ export class DialerController {
 export class CampaignsController {
   constructor(private readonly campaignsService: CampaignsService) {}
 
+  @Get('management-data')
+  @ApiOperation({ summary: 'Get management campaigns layout and team data matching UI reference' })
+  async getManagementData(@CurrentTenant() tenantId?: string) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.campaignsService.getManagementData(tId);
+  }
+
+  @Post('set-count')
+  @ApiOperation({ summary: 'Set total number of visible campaigns' })
+  async setCampaignCount(@Body('count') count: number) {
+    return this.campaignsService.setCampaignCount(count);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List all campaigns with pacing calculation' })
   async listCampaigns(@CurrentTenant() tenantId?: string) {
@@ -124,6 +137,24 @@ export class CampaignsController {
   async getCampaign(@Param('id') id: string, @CurrentTenant() tenantId?: string) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
     return this.campaignsService.getCampaign(tId, id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update management campaign details (name, active, tempo, teams)' })
+  async saveManagementCampaign(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.campaignsService.saveManagementCampaign(id, body);
+  }
+
+  @Post(':id/data-package')
+  @ApiOperation({ summary: 'Add a new data package to campaign' })
+  async addDataPackage(
+    @Param('id') id: string,
+    @Body('name') name: string,
+  ) {
+    return this.campaignsService.addDataPackage(id, name);
   }
 
   @Patch(':id/tempo')

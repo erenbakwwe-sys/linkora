@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@linkora/shared', '@linkora/i18n'],
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   async rewrites() {
     const backendUrl =
       process.env.API_URL ||

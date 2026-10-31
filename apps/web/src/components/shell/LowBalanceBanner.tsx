@@ -6,10 +6,11 @@ import { useI18n } from '@/context/I18nContext';
 import { AlertTriangle, X } from 'lucide-react';
 
 export const LowBalanceBanner: React.FC = () => {
-  const { tenant, isBannerDismissed, dismissBanner } = useAuth();
+  const { user, tenant, isBannerDismissed, dismissBanner } = useAuth();
   const { t } = useI18n();
 
-  if (isBannerDismissed || !tenant?.lowBalanceWarning) {
+  const isAgent = user?.mode === 'AGENT' || user?.role === 'Agent' || user?.role === 'AGENT';
+  if (isAgent || isBannerDismissed || !tenant?.lowBalanceWarning) {
     return null;
   }
 

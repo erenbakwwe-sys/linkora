@@ -106,6 +106,31 @@ export const AgentDashboard: React.FC = () => {
   const [last30DaysSales, setLast30DaysSales] = useState(0);
   const [salesRecords, setSalesRecords] = useState<SaleRecord[]>([]);
 
+  // Load custom leads on mount for live metrics & sales
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('linkora_custom_leads');
+      if (raw) {
+        const savedLeads = JSON.parse(raw);
+        if (Array.isArray(savedLeads) && savedLeads.length > 0) {
+          setTotalSales(savedLeads.length);
+          setLast30DaysSales(savedLeads.length);
+          const mappedRecords: SaleRecord[] = savedLeads.slice(0, 10).map((l: any) => ({
+            id: l.id,
+            customerName: `${l.first_name || ''} ${l.last_name || ''}`.trim() || 'Kunde',
+            project: l.project_name || 'Photovoltaik',
+            amount: '450.00 €',
+            time: new Date(l.created_at || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+            status: l.status === 'NEW' ? 'Neu erfasst' : l.status || 'Neu erfasst',
+          }));
+          setSalesRecords(mappedRecords);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Guide Modal
   const [showGuideModal, setShowGuideModal] = useState(false);
 
@@ -300,7 +325,7 @@ export const AgentDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 animate-in fade-in duration-200 select-none pb-12">
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 animate-in fade-in duration-200 select-none pb-28 sm:pb-12">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-16 right-5 z-50 bg-[#090e1a] text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 text-xs flex items-center gap-2.5 animate-in slide-in-from-top-3 duration-200">
@@ -310,7 +335,7 @@ export const AgentDashboard: React.FC = () => {
       )}
 
       {/* 1. Header Welcome Banner */}
-      <div className="relative rounded-2xl bg-[#0b1325] text-white p-5 sm:p-6 shadow-xl border border-slate-800/80 overflow-hidden">
+      <div className="relative rounded-2xl bg-[#0b1325] text-white p-4.5 sm:p-6 shadow-xl border border-slate-800/80 overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -319,8 +344,8 @@ export const AgentDashboard: React.FC = () => {
             <p className="text-xs text-slate-400 mt-1 font-medium">Agenten-Dashboard</p>
           </div>
 
-          {/* Action Button Row */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Action Button Row - Horizontal swipe on mobile, wrap on desktop */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1 touch-pan-x">
             <Link
               href="/callbacks"
               className="bg-[#131f37] hover:bg-[#1a2b50] border border-slate-700/70 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-xs"
@@ -408,17 +433,17 @@ export const AgentDashboard: React.FC = () => {
       </div>
 
       {/* 2. Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
         {/* Left Column (Manueller Anruf, Ranglisten, Sohbet) */}
         <div className="lg:col-span-5 space-y-4">
           {/* Card 1: Manueller Anruf */}
-          <div className="bg-white rounded-2xl p-4.5 sm:p-5 shadow-xs border border-slate-200/90 text-slate-800">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200/90 text-slate-800">
             {/* Tabs */}
-            <div className="flex items-center space-x-6 border-b border-slate-100 pb-2.5 mb-4">
+            <div className="flex items-center space-x-4 sm:space-x-6 border-b border-slate-100 pb-2.5 mb-4 overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveTab('MANUELL')}
-                className={`text-xs font-bold flex items-center gap-1.5 pb-1 border-b-2 transition cursor-pointer ${
+                className={`text-xs font-bold flex items-center gap-1.5 pb-1 border-b-2 transition cursor-pointer shrink-0 ${
                   activeTab === 'MANUELL'
                     ? 'border-slate-900 text-slate-900'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -430,7 +455,7 @@ export const AgentDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('SON48')}
-                className={`text-xs font-medium pb-1 border-b-2 transition cursor-pointer ${
+                className={`text-xs font-medium pb-1 border-b-2 transition cursor-pointer shrink-0 ${
                   activeTab === 'SON48'
                     ? 'border-slate-900 text-slate-900 font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -441,7 +466,7 @@ export const AgentDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('SCHWEBEND')}
-                className={`text-xs font-medium pb-1 border-b-2 transition cursor-pointer ${
+                className={`text-xs font-medium pb-1 border-b-2 transition cursor-pointer shrink-0 ${
                   activeTab === 'SCHWEBEND'
                     ? 'border-slate-900 text-slate-900 font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -459,7 +484,7 @@ export const AgentDashboard: React.FC = () => {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="+49... / 0..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition font-mono"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition font-mono shadow-inner"
               />
             </div>
 
@@ -470,7 +495,7 @@ export const AgentDashboard: React.FC = () => {
                   type="button"
                   onClick={handleManualCall}
                   disabled={isDialing}
-                  className="w-full bg-[#16a34a] hover:bg-[#15803d] active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-50"
+                  className="w-full bg-[#16a34a] hover:bg-[#15803d] active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-50 min-h-[46px]"
                 >
                   <PhoneCall className="w-4 h-4" />
                   <span>{isDialing ? 'Aranıyor...' : 'Manuell Anruf'}</span>
@@ -479,7 +504,7 @@ export const AgentDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleHangup}
-                  className="w-full bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2 text-sm cursor-pointer animate-pulse"
+                  className="w-full bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2 text-sm cursor-pointer animate-pulse min-h-[46px]"
                 >
                   <PhoneOff className="w-4 h-4" />
                   <span>Auflegen ({formatTimer(callDuration)})</span>
@@ -505,7 +530,7 @@ export const AgentDashboard: React.FC = () => {
                 <select
                   value={selectedCampaign}
                   onChange={(e) => setSelectedCampaign(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-base sm:text-xs text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
                 >
                   <option value="">— Kampagne wählen —</option>
                   <option value="Photovoltaik DE 2026">Photovoltaik DE 2026 (Offen)</option>
@@ -692,11 +717,11 @@ export const AgentDashboard: React.FC = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Nachricht schreiben..."
-                className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-base sm:text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <button
                 type="submit"
-                className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white p-2 rounded-xl transition cursor-pointer active:scale-95"
+                className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white p-2.5 sm:p-2 rounded-xl transition cursor-pointer active:scale-95 shrink-0"
                 title="Senden"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -708,7 +733,7 @@ export const AgentDashboard: React.FC = () => {
         {/* Right Column (Wie es funktioniert, Metriken, Verkäufe) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Card: Wie es funktioniert */}
-          <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-xs border border-slate-200/90 text-slate-700 leading-relaxed">
+          <div className="bg-white rounded-2xl p-4.5 sm:p-6 shadow-xs border border-slate-200/90 text-slate-700 leading-relaxed">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-3">
               <Info className="w-4 h-4 text-sky-600" />
               <span>Wie es funktioniert</span>
@@ -735,62 +760,62 @@ export const AgentDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* 3 Metric Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* 3 Metric Cards Row - Responsive: 3 columns on mobile & desktop */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
             {/* Card 1: Gesamtverkäufe */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                  <Users className="w-5 h-5" />
+            <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-1 sm:mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-slate-900">{totalSales}</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Gesamtverkäufe</div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{totalSales}</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">Gesamtverkäufe</div>
                 </div>
               </div>
               <Link
                 href="/leads"
-                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 mt-2 hover:underline inline-flex items-center gap-1"
+                className="text-[10px] sm:text-[11px] font-semibold text-blue-600 hover:text-blue-700 mt-1 sm:mt-2 hover:underline inline-flex items-center gap-0.5 sm:gap-1"
               >
-                Alle anzeigen &rarr;
+                <span className="hidden sm:inline">Alle anzeigen</span> &rarr;
               </Link>
             </div>
 
             {/* Card 2: Letzte 30 Tage */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                  <TrendingUp className="w-5 h-5" />
+            <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-1 sm:mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-slate-900">{last30DaysSales}</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Letzte 30 Tage</div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">{last30DaysSales}</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">Letzte 30 Tage</div>
                 </div>
               </div>
               <Link
                 href="/user-stats"
-                className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 mt-2 hover:underline inline-flex items-center gap-1"
+                className="text-[10px] sm:text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 mt-1 sm:mt-2 hover:underline inline-flex items-center gap-0.5 sm:gap-1"
               >
-                Detailliert &rarr;
+                <span className="hidden sm:inline">Detailliert</span> &rarr;
               </Link>
             </div>
 
             {/* Card 3: Routen-Board */}
-            <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                  <GitBranch className="w-5 h-5" />
+            <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200/90 flex flex-col justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-1 sm:mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <GitBranch className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-purple-600">Live</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Routen-Board</div>
+                  <div className="text-xl sm:text-2xl font-black text-purple-600 leading-tight">Live</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">Routen-Board</div>
                 </div>
               </div>
               <Link
                 href="/wallboard"
-                className="text-[11px] font-semibold text-purple-600 hover:text-purple-700 mt-2 hover:underline inline-flex items-center gap-1"
+                className="text-[10px] sm:text-[11px] font-semibold text-purple-600 hover:text-purple-700 mt-1 sm:mt-2 hover:underline inline-flex items-center gap-0.5 sm:gap-1"
               >
-                Zum Board &rarr;
+                <span className="hidden sm:inline">Zum Board</span> &rarr;
               </Link>
             </div>
           </div>
@@ -800,7 +825,7 @@ export const AgentDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => router.push('/kunde-hinzufuegen')}
-              className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition active:scale-95 text-xs"
+              className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-bold py-2.5 px-4 rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer transition active:scale-95 text-xs min-h-[44px]"
             >
               <UserPlus className="w-4 h-4" />
               <span>Kunde hinzufügen</span>
@@ -808,7 +833,7 @@ export const AgentDashboard: React.FC = () => {
           </div>
 
           {/* Card: Letzte Verkäufe */}
-          <div className="bg-white rounded-2xl p-5 shadow-xs border border-slate-200/90 text-slate-800">
+          <div className="bg-white rounded-2xl p-4.5 sm:p-5 shadow-xs border border-slate-200/90 text-slate-800">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="w-4 h-4 text-slate-500" />
               <h2 className="text-xs font-bold text-slate-900">Letzte Verkäufe</h2>
@@ -838,8 +863,8 @@ export const AgentDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Floating Bottom-Right Buttons */}
-      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
+      {/* 3. Floating Bottom-Right Buttons (Elevated above mobile bottom nav on small screens) */}
+      <div className="fixed bottom-20 sm:bottom-5 right-3.5 sm:right-5 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
         {/* Guide Button Pill */}
         <button
           type="button"

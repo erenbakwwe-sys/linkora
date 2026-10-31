@@ -8,8 +8,8 @@ import { Lock, Mail, Building, ArrowRight, ShieldCheck, Sparkles } from 'lucide-
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('admin@lead-kontackt.de');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [tenantSlug, setTenantSlug] = useState('lead-kontackt');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,21 +20,6 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password, tenantSlug);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Login fehlgeschlagen');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const quickLogin = async (quickEmail: string, quickSlug: string) => {
-    setEmail(quickEmail);
-    setTenantSlug(quickSlug);
-    setLoading(true);
-    setError(null);
-    try {
-      await login(quickEmail, 'Admin123!', quickSlug);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login fehlgeschlagen');
@@ -103,7 +88,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="z.B. Murat2 oder murat2@lead-kontackt.de"
-                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
+                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
             </div>
@@ -117,7 +102,8 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
+                  placeholder="••••••••"
+                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
             </div>
@@ -131,7 +117,7 @@ export default function LoginPage() {
                   value={tenantSlug}
                   onChange={(e) => setTenantSlug(e.target.value)}
                   placeholder="z.B. lead-kontackt"
-                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
+                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
             </div>
@@ -146,69 +132,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Logins with Sleek Executive Badges */}
-          <div className="mt-7 pt-5 border-t border-slate-800">
-            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-semibold mb-3">
+          {/* Security & Compliance Footer */}
+          <div className="mt-8 pt-5 border-t border-slate-800/80 text-center space-y-2 select-none">
+            <div className="flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>1-Klick Rollen-Schnellzugriff:</span>
+              <span>Verifizierte 256-Bit SSL-Verschlüsselung &middot; DSGVO-konform</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => quickLogin('murat2@lead-kontackt.de', 'lead-kontackt')}
-                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-amber-400/50 hover:border-amber-400 transition-all duration-200 shadow-xs cursor-pointer group"
-              >
-                <div className="font-bold text-amber-400 group-hover:text-amber-300 flex items-center justify-between">
-                  <span>Agent (Murat2)</span>
-                  <Sparkles className="w-3 h-3 opacity-100 text-amber-400" />
-                </div>
-                <div className="text-[10px] text-slate-300">Lead-Kontackt (MD-Team)</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('admin@lead-kontackt.de', 'lead-kontackt')}
-                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-slate-700/70 hover:border-amber-400/50 transition-all duration-200 shadow-xs cursor-pointer group"
-              >
-                <div className="font-bold text-amber-400 group-hover:text-amber-300 flex items-center justify-between">
-                  <span>CompanyAdmin</span>
-                  <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <div className="text-[10px] text-slate-400">Lead-Kontackt (HQ)</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('eren@cc-izmir.com', 'cc-izmir')}
-                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-slate-700/70 hover:border-sky-400/50 transition-all duration-200 shadow-xs cursor-pointer group"
-              >
-                <div className="font-bold text-sky-400 group-hover:text-sky-300 flex items-center justify-between">
-                  <span>Agent (Eren)</span>
-                  <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <div className="text-[10px] text-slate-400">CC-Izmir (Sub)</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('umut@cc-izmir.com', 'cc-izmir')}
-                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-slate-700/70 hover:border-emerald-400/50 transition-all duration-200 shadow-xs cursor-pointer group"
-              >
-                <div className="font-bold text-emerald-400 group-hover:text-emerald-300 flex items-center justify-between">
-                  <span>Agent (Umut)</span>
-                  <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <div className="text-[10px] text-slate-400">CC-Izmir (Sub)</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('admin@solardirekt.de', 'solar-direkt')}
-                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-slate-700/70 hover:border-purple-400/50 transition-all duration-200 shadow-xs cursor-pointer group"
-              >
-                <div className="font-bold text-purple-400 group-hover:text-purple-300 flex items-center justify-between">
-                  <span>Solar Direkt</span>
-                  <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <div className="text-[10px] text-slate-400">Partner-Mandant</div>
-              </button>
-            </div>
+            <p className="text-[11px] text-slate-500">
+              Linkora Platform &middot; Mandant: Lead-Kontackt &middot; Serverstandort Deutschland
+            </p>
           </div>
         </div>
       </div>

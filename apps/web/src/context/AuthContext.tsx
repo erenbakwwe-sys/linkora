@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
-  // Initialize demo / persistent user
+  // Initialize user from saved session
   useEffect(() => {
     const savedToken = localStorage.getItem('linkora_token');
     const savedUser = localStorage.getItem('linkora_user');
@@ -80,37 +80,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTenant(JSON.parse(savedTenant));
       } catch {
         // Corrupted localStorage fallback
+        setUser(null);
+        setTenant(null);
+        setToken(null);
       }
     } else {
-      // Default initial mock session: "Erensamsun" on "Lead-Kontackt"
-      const defaultUser: User = {
-        id: '99999999-0000-0000-0000-000000000006',
-        email: 'eren@cc-izmir.com',
-        firstName: 'Erensamsun',
-        lastName: 'Aydin',
-        username: 'Erensamsun',
-        role: 'COMPANY_ADMIN',
-        mode: 'MANAGER',
-        language: 'de',
-        tenantId: '11111111-1111-1111-1111-111111111111',
-        callerIdNumber: '+49 40 325510',
-        team: '—',
-      };
-      const defaultTenant: Tenant = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Lead-Kontackt',
-        slug: 'lead-kontackt',
-        branding: {
-          brand_name: 'Lead-Kontackt',
-          primary_color: '#0b1220',
-          logo_url: null,
-        },
-        walletBalance: 10.0,
-        lowBalanceWarning: true,
-      };
-      setUser(defaultUser);
-      setTenant(defaultTenant);
-      setToken('mock-jwt-token-phase-0');
+      setUser(null);
+      setTenant(null);
+      setToken(null);
     }
 
     setAccessibleTenants([

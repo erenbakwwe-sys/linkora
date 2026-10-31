@@ -593,7 +593,7 @@ export default function KundeHinzufuegenPage() {
 
   return (
     <AppShell isAgentView={true}>
-      <div className="max-w-7xl mx-auto space-y-5 animate-in fade-in duration-200 select-none pb-12">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-5 animate-in fade-in duration-200 select-none pb-28 sm:pb-12">
         {/* Toast Notification */}
         {toastMessage && (
           <div className="fixed top-16 right-5 z-50 bg-[#090e1a] text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 text-xs flex items-center gap-2.5 animate-in slide-in-from-top-3 duration-200">
@@ -662,7 +662,7 @@ export default function KundeHinzufuegenPage() {
                         type="datetime-local"
                         value={wiedervorlageDate}
                         onChange={(e) => setWiedervorlageDate(e.target.value)}
-                        className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 w-full sm:w-72 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                        className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800 w-full sm:w-72 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
                       />
                       <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
                         Wann rufen Sie diesen Kunden erneut an? Wenn der Tag kommt Rückrufe'da
@@ -701,7 +701,7 @@ export default function KundeHinzufuegenPage() {
                         <select
                           value={anrede}
                           onChange={(e) => setAnrede(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                         >
                           <option value="">Bitte wählen…</option>
                           <option value="Herr">Herr</option>
@@ -723,7 +723,7 @@ export default function KundeHinzufuegenPage() {
                             value={vorname}
                             onChange={(e) => setVorname(e.target.value)}
                             placeholder="z.B. Max"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
                         <div>
@@ -736,7 +736,7 @@ export default function KundeHinzufuegenPage() {
                             value={nachname}
                             onChange={(e) => setNachname(e.target.value)}
                             placeholder="z.B. Mustermann"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
                       </div>
@@ -752,7 +752,7 @@ export default function KundeHinzufuegenPage() {
                           value={adresse}
                           onChange={(e) => setAdresse(e.target.value)}
                           placeholder="z.B. Hauptstraße 12"
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                         />
                       </div>
 
@@ -768,7 +768,7 @@ export default function KundeHinzufuegenPage() {
                             value={plz}
                             onChange={(e) => handlePlzChange(e.target.value)}
                             placeholder="z.B. 10115"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900 font-mono"
                           />
                         </div>
                         <div>
@@ -781,7 +781,7 @@ export default function KundeHinzufuegenPage() {
                             value={ort}
                             onChange={(e) => setOrt(e.target.value)}
                             placeholder="z.B. Berlin"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
                       </div>
@@ -798,7 +798,7 @@ export default function KundeHinzufuegenPage() {
                             value={telefonnummer}
                             onChange={(e) => setTelefonnummer(e.target.value)}
                             placeholder="z.B. 0176 1234567"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900 font-mono"
                           />
                         </div>
                         <div>
@@ -811,7 +811,7 @@ export default function KundeHinzufuegenPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="kunde@example.de"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
                       </div>
@@ -849,7 +849,7 @@ export default function KundeHinzufuegenPage() {
                           value={notiz}
                           onChange={(e) => setNotiz(e.target.value)}
                           placeholder="Zusätzliche Bemerkungen des Kunden oder Vereinbarungen..."
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                         ></textarea>
                       </div>
                     </div>
@@ -874,7 +874,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvInstallLocation}
                             onChange={(e) => setPvInstallLocation(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Einfamilienhaus (EFH)">Einfamilienhaus (EFH)</option>
@@ -893,7 +893,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvRoofAge}
                             onChange={(e) => setPvRoofAge(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Unter 10 Jahre">Unter 10 Jahre</option>
@@ -913,7 +913,7 @@ export default function KundeHinzufuegenPage() {
                             value={pvRoofArea}
                             onChange={(e) => setPvRoofArea(e.target.value)}
                             placeholder="z.B. 75 m²"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
 
@@ -925,7 +925,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvRoofShape}
                             onChange={(e) => setPvRoofShape(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Satteldach">Satteldach</option>
@@ -944,7 +944,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvRoofCover}
                             onChange={(e) => setPvRoofCover(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ziegel / Dachpfannen">Ziegel / Dachpfannen</option>
@@ -964,7 +964,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvIsOwner}
                             onChange={(e) => setPvIsOwner(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, Alleineigentümer">Ja, Alleineigentümer</option>
@@ -981,7 +981,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvInstallTime}
                             onChange={(e) => setPvInstallTime(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Schnellstmöglich (in 1-3 Monaten)">Schnellstmöglich (in 1-3 Monaten)</option>
@@ -999,7 +999,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvFinancing}
                             onChange={(e) => setPvFinancing(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Barkauf / Eigenkapital">Barkauf / Eigenkapital</option>
@@ -1017,7 +1017,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvRoofOrientation}
                             onChange={(e) => setPvRoofOrientation(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Südausrichtung (Optimal)">Südausrichtung (Optimal)</option>
@@ -1037,7 +1037,7 @@ export default function KundeHinzufuegenPage() {
                             value={pvPowerConsumption}
                             onChange={(e) => setPvPowerConsumption(e.target.value)}
                             placeholder="z.B. 4.500 kWh"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
 
@@ -1049,7 +1049,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvBatteryStorage}
                             onChange={(e) => setPvBatteryStorage(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, Speicher unbedingt gewünscht">Ja, Speicher unbedingt gewünscht</option>
@@ -1066,7 +1066,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={pvAvailability}
                             onChange={(e) => setPvAvailability(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Vormittags (09:00 - 12:00)">Vormittags (09:00 - 12:00)</option>
@@ -1143,7 +1143,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlLiftType}
                             onChange={(e) => setTlLiftType(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Klassischer Treppenlift (Sitzlift)">Klassischer Treppenlift (Sitzlift)</option>
@@ -1161,7 +1161,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlBuildingType}
                             onChange={(e) => setTlBuildingType(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Einfamilienhaus (EFH)">Einfamilienhaus (EFH)</option>
@@ -1179,7 +1179,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlUserWeight}
                             onChange={(e) => setTlUserWeight(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 120 kg (Standard)">Bis 120 kg (Standard)</option>
@@ -1196,7 +1196,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlTimeFrame}
                             onChange={(e) => setTlTimeFrame(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Dringend / Schnellstmöglich (Akutfall)">Dringend / Schnellstmöglich (Akutfall)</option>
@@ -1214,7 +1214,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlIsOwner}
                             onChange={(e) => setTlIsOwner(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, Eigentümer des Hauses">Ja, Eigentümer des Hauses</option>
@@ -1231,7 +1231,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlFloors}
                             onChange={(e) => setTlFloors(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="1 Etage">1 Etage</option>
@@ -1249,7 +1249,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlCareLevel}
                             onChange={(e) => setTlCareLevel(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, Pflegegrad 1">Ja, Pflegegrad 1</option>
@@ -1269,7 +1269,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlStairCourse}
                             onChange={(e) => setTlStairCourse(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Gerade Treppe">Gerade Treppe</option>
@@ -1287,7 +1287,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlMobility}
                             onChange={(e) => setTlMobility(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Kann selbstständig stehen und umsteigen">Kann selbstständig stehen und umsteigen</option>
@@ -1307,7 +1307,7 @@ export default function KundeHinzufuegenPage() {
                               value={tlStairWidth}
                               onChange={(e) => setTlStairWidth(e.target.value)}
                               placeholder="z.B. 85"
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                             />
                           </div>
                           <div>
@@ -1319,7 +1319,7 @@ export default function KundeHinzufuegenPage() {
                               value={tlStepCount}
                               onChange={(e) => setTlStepCount(e.target.value)}
                               placeholder="z.B. 14"
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                             />
                           </div>
                           <div>
@@ -1331,7 +1331,7 @@ export default function KundeHinzufuegenPage() {
                               value={tlHeightDiff}
                               onChange={(e) => setTlHeightDiff(e.target.value)}
                               placeholder="z.B. 260"
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                             />
                           </div>
                         </div>
@@ -1344,7 +1344,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlOutdoor}
                             onChange={(e) => setTlOutdoor(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Nein, im Innenbereich">Nein, im Innenbereich</option>
@@ -1360,7 +1360,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={tlAvailability}
                             onChange={(e) => setTlAvailability(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Vormittags (09:00 - 12:00)">Vormittags (09:00 - 12:00)</option>
@@ -1435,7 +1435,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={wpCurrentSystem}
                             onChange={(e) => setWpCurrentSystem(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Gasheizung">Gasheizung</option>
@@ -1451,7 +1451,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={wpHeatingAge}
                             onChange={(e) => setWpHeatingAge(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Unter 10 Jahre">Unter 10 Jahre</option>
@@ -1468,7 +1468,7 @@ export default function KundeHinzufuegenPage() {
                             value={wpLivingSpace}
                             onChange={(e) => setWpLivingSpace(e.target.value)}
                             placeholder="z.B. 140 m²"
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
                           />
                         </div>
                         <div>
@@ -1478,7 +1478,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={wpInstallTime}
                             onChange={(e) => setWpInstallTime(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Schnellstmöglich">Schnellstmöglich</option>
@@ -1555,7 +1555,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badProjectType}
                             onChange={(e) => setBadProjectType(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Komplettbadsanierung">Komplettbadsanierung</option>
@@ -1575,7 +1575,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badSize}
                             onChange={(e) => setBadSize(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 4 m² (sehr klein)">Bis 4 m² (sehr klein)</option>
@@ -1594,7 +1594,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badBarrierFree}
                             onChange={(e) => setBadBarrierFree(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, vollständig barrierefrei (DIN 18040-2)">Ja, vollständig barrierefrei (DIN 18040-2)</option>
@@ -1612,7 +1612,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badFeatures}
                             onChange={(e) => setBadFeatures(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Standard / Solide Grundausstattung">Standard / Solide Grundausstattung</option>
@@ -1630,7 +1630,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badBudget}
                             onChange={(e) => setBadBudget(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 5.000 €">Bis 5.000 €</option>
@@ -1650,7 +1650,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badTimeFrame}
                             onChange={(e) => setBadTimeFrame(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Schnellstmöglich (Dringend)">Schnellstmöglich (Dringend)</option>
@@ -1669,7 +1669,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={badIsOwner}
                             onChange={(e) => setBadIsOwner(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, Eigentümer / Alleinentscheider">Ja, Eigentümer / Alleinentscheider</option>
@@ -1746,7 +1746,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emModelType}
                             onChange={(e) => setEmModelType(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Elektromobil (Seniorenmobil / 4-Rad Scooter)">Elektromobil (Seniorenmobil / 4-Rad Scooter)</option>
@@ -1765,7 +1765,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emUsageArea}
                             onChange={(e) => setEmUsageArea(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Nur im Außenbereich (Straße, Gehweg, Einkaufen)">Nur im Außenbereich (Straße, Gehweg, Einkaufen)</option>
@@ -1783,7 +1783,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emUserWeight}
                             onChange={(e) => setEmUserWeight(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 100 kg">Bis 100 kg</option>
@@ -1801,7 +1801,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emTargetPerson}
                             onChange={(e) => setEmTargetPerson(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Für mich selbst">Für mich selbst</option>
@@ -1819,7 +1819,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emHealthInsurance}
                             onChange={(e) => setEmHealthInsurance(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Ja, gesetzlich versichert (GKV)">Ja, gesetzlich versichert (GKV)</option>
@@ -1837,7 +1837,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emBudgetLimit}
                             onChange={(e) => setEmBudgetLimit(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 1.500 €">Bis 1.500 €</option>
@@ -1856,7 +1856,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emWheelchairSpeed}
                             onChange={(e) => setEmWheelchairSpeed(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="6 km/h (Standard für Bürgersteig & Innenbereich, führerscheinfrei)">6 km/h (Standard für Bürgersteig & Innenbereich, führerscheinfrei)</option>
@@ -1874,7 +1874,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emWheelchairRange}
                             onChange={(e) => setEmWheelchairRange(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 15 km (Stadt / Nahbereich)">Bis 15 km (Stadt / Nahbereich)</option>
@@ -1892,7 +1892,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emScooterSpeed}
                             onChange={(e) => setEmScooterSpeed(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="6 km/h (führerscheinfrei, Gehweg)">6 km/h (führerscheinfrei, Gehweg)</option>
@@ -1911,7 +1911,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emScooterRange}
                             onChange={(e) => setEmScooterRange(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Bis 20 km">Bis 20 km</option>
@@ -1929,7 +1929,7 @@ export default function KundeHinzufuegenPage() {
                           <select
                             value={emTimeFrame}
                             onChange={(e) => setEmTimeFrame(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
                             <option value="Schnellstmöglich (dringender Mobilitätsbedarf)">Schnellstmöglich (dringender Mobilitätsbedarf)</option>
@@ -1996,7 +1996,7 @@ export default function KundeHinzufuegenPage() {
                         type="datetime-local"
                         value={wiedervorlageDate}
                         onChange={(e) => setWiedervorlageDate(e.target.value)}
-                        className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 w-full sm:w-72 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                        className="bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800 w-full sm:w-72 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
                       />
                       <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
                         Wann rufen Sie diesen Kunden erneut an? Wenn der Tag kommt Rückrufe'da

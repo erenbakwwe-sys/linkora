@@ -178,7 +178,33 @@ export class LeadsService {
       },
     ];
 
-    let filtered = sampleLeads;
+    const memList = Array.from(memoryLeads.values()).map((mem) => ({
+      id: mem.id,
+      first_name: mem.first_name || mem.firstName || '',
+      last_name: mem.last_name || mem.lastName || '',
+      phone_raw: mem.phone_raw || mem.phoneRaw || mem.phoneE164 || '',
+      phone_e164: mem.phone_e164 || mem.phoneE164 || '',
+      line_type: mem.line_type || mem.lineType || 'FIXED_LINE',
+      email: mem.email || null,
+      postal_code: mem.postal_code || mem.postalCode || null,
+      city: mem.city || null,
+      street: mem.street || null,
+      house_number: mem.house_number || mem.houseNumber || null,
+      status: mem.status || 'NEW',
+      consent_verified: mem.consent_verified !== undefined ? mem.consent_verified : (mem.consentVerified !== undefined ? mem.consentVerified : true),
+      dnc_flag: mem.dnc_flag !== undefined ? mem.dnc_flag : (mem.dncFlag !== undefined ? mem.dncFlag : false),
+      created_at: mem.created_at || mem.createdAt || new Date().toISOString(),
+      project_id: mem.project_id || mem.projectId || 'cccccccc-0000-0000-0000-000000000001',
+      project_name: mem.project_name || mem.projectName || 'Photovoltaik',
+      project_slug: mem.project_slug || mem.projectSlug || 'photovoltaik',
+      project_icon: mem.project_icon || mem.projectIcon || 'Sun',
+      formattedAnswers: mem.formattedAnswers || [],
+      answers: mem.answers || {},
+      notiz: mem.notiz || mem.notes,
+      audioFileName: mem.audioFileName,
+    }));
+
+    let filtered = [...memList, ...sampleLeads];
     if (query.status && query.status !== 'ALL') {
       filtered = filtered.filter((l) => l.status === query.status);
     }
@@ -186,10 +212,11 @@ export class LeadsService {
       const s = query.search.toLowerCase();
       filtered = filtered.filter(
         (l) =>
-          l.first_name.toLowerCase().includes(s) ||
-          l.last_name.toLowerCase().includes(s) ||
-          l.phone_e164.includes(s) ||
-          (l.email && l.email.toLowerCase().includes(s))
+          (l.first_name || '').toLowerCase().includes(s) ||
+          (l.last_name || '').toLowerCase().includes(s) ||
+          (l.phone_e164 || '').includes(s) ||
+          (l.email && l.email.toLowerCase().includes(s)) ||
+          (l.city && l.city.toLowerCase().includes(s))
       );
     }
 
@@ -256,26 +283,107 @@ export class LeadsService {
         const mem = memoryLeads.get(leadId);
         lead = {
           id: mem.id,
-          first_name: mem.firstName,
-          last_name: mem.lastName,
-          phone_raw: mem.phoneRaw || mem.phoneE164,
-          phone_e164: mem.phoneE164,
+          first_name: mem.first_name || mem.firstName,
+          last_name: mem.last_name || mem.lastName,
+          phone_raw: mem.phone_raw || mem.phoneRaw || mem.phoneE164,
+          phone_e164: mem.phone_e164 || mem.phoneE164,
           email: mem.email,
-          postal_code: mem.postalCode,
+          postal_code: mem.postal_code || mem.postalCode,
           city: mem.city,
           street: mem.street,
-          house_number: mem.houseNumber,
-          status: mem.status,
-          consent_verified: mem.consentVerified,
-          dnc_flag: mem.dncFlag,
-          project_id: mem.projectId,
-          project_name: 'Photovoltaik',
-          project_slug: 'photovoltaik',
-          project_icon: 'Sun',
-          created_at: mem.createdAt ? new Date(mem.createdAt).toISOString() : new Date().toISOString(),
+          house_number: mem.house_number || mem.houseNumber,
+          status: mem.status || 'NEW',
+          consent_verified: mem.consent_verified !== undefined ? mem.consent_verified : true,
+          dnc_flag: mem.dnc_flag || false,
+          project_id: mem.project_id || mem.projectId || 'cccccccc-0000-0000-0000-000000000001',
+          project_name: mem.project_name || 'Photovoltaik',
+          project_slug: (mem.project_name || 'Photovoltaik').toLowerCase(),
+          project_icon: mem.project_icon || 'Sun',
+          created_at: mem.created_at || (mem.createdAt ? new Date(mem.createdAt).toISOString() : new Date().toISOString()),
         };
-        provenance = memoryProvenance.get(leadId) || [];
-        events = memoryEvents.get(leadId) || [];
+        provenance = memoryProvenance.get(leadId) || [
+          {
+            id: 'prov-' + leadId,
+            source: mem.source || 'Agent-Direkterfassung',
+            campaign_name: lead.project_name,
+            opt_in_timestamp: lead.created_at,
+            consent_text: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
+            consent_version: 'v2.1',
+            consent_channel: 'PHONE',
+          },
+        ];
+        const labelMap: Record<string, string> = {
+          pvInstallLocation: 'Wo möchten Sie die Photovoltaik installieren?',
+          pvRoofAge: 'Wie alt ist Ihr Dach?',
+          pvRoofArea: 'Wie groß ist Ihre nutzbare Dachfläche?',
+          pvRoofShape: 'Welche Dachform hat Ihr Haus?',
+          pvRoofCover: 'Womit ist ihr Dach gedeckt? (Dachdeckungstyp)',
+          pvIsOwner: 'Handelt es sich bei dem Interessenten um den Eigentümer/Entscheider?',
+          pvInstallTime: 'Wann soll die Photovoltaik installiert werden?',
+          pvFinancing: 'Welche Finanzierung kommt für Sie in Frage?',
+          pvRoofOrientation: 'Wie ist Ihr Dach ausgerichtet?',
+          pvPowerConsumption: 'Stromverbrauch in kWh/Jahr',
+          pvBatteryStorage: 'Stromspeicher gewünscht?',
+          pvAvailability: 'Erreichbarkeit?',
+          tlLiftType: 'Was für einen Lift suchen Sie?',
+          tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
+          tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
+          tlTimeFrame: 'Wann wird der Lift benötigt?',
+          tlIsOwner: 'Sind Sie Eigentümer/Entscheider',
+          tlFloors: 'Wie viele Etagen müssen überwunden werden?',
+          tlCareLevel: 'Liegt ein Pflegegrad vor?',
+          tlStairCourse: 'Wie verläuft die Treppe?',
+          tlMobility: 'Mobilität des Nutzers',
+          tlStairWidth: 'Treppenbreite (in cm)',
+          tlStepCount: 'Anzahl der Stufen',
+          tlHeightDiff: 'Höhenunterschied (in cm)',
+          tlOutdoor: 'Wird der Lift im Außenbereich benötigt?',
+          tlAvailability: 'Treppenlift · Erreichbarkeit',
+          wpCurrentSystem: 'Aktuelles Heizsystem?',
+          wpHeatingAge: 'Alter der Heizung?',
+          wpLivingSpace: 'Wohnfläche (in m²)?',
+          wpInstallTime: 'Wann soll die Wärmepumpe installiert werden?',
+          badProjectType: 'Welches Badprojekt möchten Sie angehen?',
+          badSize: 'Wie groß ist das Badezimmer?',
+          badBarrierFree: 'Soll das Bad barrierefrei sein?',
+          badFeatures: 'Welche Ausstattung wünschen Sie?',
+          badBudget: 'Was darf der Badumbau kosten?',
+          badTimeFrame: 'Wann wird der Badumbau benötigt?',
+          badIsOwner: 'Sind Sie Eigentümer/Entscheider?',
+          emModelType: 'Für welches Modell interessieren Sie sich?',
+          emUsageArea: 'Wo soll die überwiegende Nutzung stattfinden?',
+          emUserWeight: 'Für welches Gewicht muss das Modell geeignet sein?',
+          emTargetPerson: 'Für wen ist das Elektromobil / der Elektrorollstuhl gedacht?',
+          emHealthInsurance: 'Sind Sie gesetzlich krankenversichert?',
+          emBudgetLimit: 'Wo liegt die Budgetgrenze für das Modell?',
+          emWheelchairSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektrorollstuhl sein?',
+          emWheelchairRange: 'Welche Reichweite soll der Elektrorollstuhl haben?',
+          emScooterSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektromobil sein?',
+          emScooterRange: 'Welche Reichweite soll das Elektromobil haben?',
+          emTimeFrame: 'Wann wird das Elektromobil / der Elektrorollstuhl benötigt?',
+        };
+
+        if (Array.isArray(mem.formattedAnswers) && mem.formattedAnswers.length > 0) {
+          answers = mem.formattedAnswers;
+        } else if (Array.isArray(mem.answers) && mem.answers.length > 0) {
+          answers = mem.answers;
+        } else if (typeof mem.answers === 'object' && mem.answers !== null) {
+          answers = Object.entries(mem.answers).map(([k, v]) => ({
+            question_code: k,
+            question_label: labelMap[k] || k,
+            value_raw: String(v),
+          }));
+        } else {
+          answers = [];
+        }
+        events = memoryEvents.get(leadId) || [
+          {
+            id: 'ev-1',
+            event_type: 'LEAD_INGESTED',
+            created_at: lead.created_at,
+            payload: { channel: 'Agent-Erfassung' },
+          },
+        ];
       } else {
         const list = await this.listLeads(tenantId, {});
         lead = list.data.find((l: any) => l.id === leadId);
@@ -300,20 +408,24 @@ export class LeadsService {
         ];
       }
 
-      answers = [
-        { question_code: 'PROPERTY_OWNERSHIP', question_label: 'Sind Sie Eigentümer der Immobilie?', value_raw: 'Ja, Alleineigentümer' },
-        { question_code: 'ROOF_TYPE', question_label: 'Welche Dachform hat das Gebäude?', value_raw: 'Satteldach' },
-        { question_code: 'ANNUAL_CONSUMPTION', question_label: 'Jährlicher Stromverbrauch (kWh)?', value_raw: '5200' },
-      ];
+      if (answers.length === 0) {
+        answers = [
+          { question_code: 'PROPERTY_OWNERSHIP', question_label: 'Sind Sie Eigentümer der Immobilie?', value_raw: 'Ja, Alleineigentümer' },
+          { question_code: 'ROOF_TYPE', question_label: 'Welche Dachform hat das Gebäude?', value_raw: 'Satteldach' },
+          { question_code: 'ANNUAL_CONSUMPTION', question_label: 'Jährlicher Stromverbrauch (kWh)?', value_raw: '5200' },
+        ];
+      }
 
-      events = [
-        {
-          id: 'ev-1',
-          event_type: 'LEAD_CREATED',
-          created_at: lead.created_at,
-          payload: { source: 'Google Ads' },
-        },
-      ];
+      if (events.length === 0) {
+        events = [
+          {
+            id: 'ev-1',
+            event_type: 'LEAD_CREATED',
+            created_at: lead.created_at,
+            payload: { source: 'Google Ads' },
+          },
+        ];
+      }
     }
 
     const canDial = this.checkCanDial(lead);

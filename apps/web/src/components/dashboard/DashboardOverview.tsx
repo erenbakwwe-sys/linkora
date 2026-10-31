@@ -31,6 +31,29 @@ export const DashboardOverview: React.FC = () => {
   const router = useRouter();
   const [isFrozen, setIsFrozen] = useState(false);
   const [companyFilter, setCompanyFilter] = useState('all');
+  const [totalLeadsCount, setTotalLeadsCount] = useState(190);
+  const [qcPendingCount, setQcPendingCount] = useState(0);
+  const [confirmedCount, setConfirmedCount] = useState(38);
+  const [stornoCount, setStornoCount] = useState(103);
+
+  // Sync counts with custom saved leads
+  useEffect(() => {
+    try {
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+      const customLeads = customRaw ? JSON.parse(customRaw) : [];
+      const customTotal = customLeads.length;
+      const customQc = customLeads.filter((l: any) => l.status === 'NEW' || l.status === 'QC_PENDING').length;
+      const customConfirmed = customLeads.filter((l: any) => l.status === 'CONFIRMED' || l.status === 'SOLD').length;
+      const customStorno = customLeads.filter((l: any) => l.status === 'STORNO' || l.status === 'REJECTED').length;
+
+      setTotalLeadsCount(190 + customTotal);
+      setQcPendingCount(customQc);
+      setConfirmedCount(38 + customConfirmed);
+      setStornoCount(103 + customStorno);
+    } catch {
+      //
+    }
+  }, []);
 
   // Live agents state matching screenshot:
   // Umut (165 min 18 sec = 9918 sec), Erensamsun (39 sec)
@@ -100,7 +123,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">190</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{totalLeadsCount}</div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.leads_this_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-teal-50 text-teal-600 border border-teal-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -114,7 +137,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">0</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{qcPendingCount}</div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.in_qc')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -128,7 +151,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">38</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{confirmedCount}</div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.confirmed_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -142,7 +165,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">103</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{stornoCount}</div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.storno_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">

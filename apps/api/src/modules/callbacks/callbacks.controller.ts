@@ -5,7 +5,7 @@ import { CallbacksService } from './callbacks.service.js';
 import { callbackCreateSchema, CallbackCreateInput } from '@linkora/shared';
 
 @ApiTags('Rückrufe (Callbacks)')
-@Controller('callbacks')
+@Controller(['callbacks', 'v1/callbacks'])
 export class CallbacksController {
   constructor(private readonly callbacksService: CallbacksService) {}
 

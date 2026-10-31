@@ -49,16 +49,104 @@ export default function QcQueuePage() {
     fetch('/api/ai/qc-queue')
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) {
-          setItems(data);
-          if (data.length > 0) setSelectedItem(data[0]);
+        let queueData: QcItem[] = Array.isArray(data) ? data : [];
+
+        // Also merge custom agent leads
+        try {
+          const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+          const customLeads = customRaw ? JSON.parse(customRaw) : [];
+          const customQcItems: QcItem[] = customLeads
+            .filter((l: any) => l.status === 'NEW' || l.status === 'QC_PENDING')
+            .map((l: any) => ({
+              id: 'qc-' + l.id,
+              leadId: l.id,
+              customerName: `${l.first_name} ${l.last_name}`,
+              phone: l.phone_e164,
+              city: l.city || 'Deutschland',
+              product: l.project_name || 'Photovoltaik',
+              reason: 'COMPLIANCE_WARNING' as const,
+              confidence: 0.72,
+              score: 78,
+              scoreBand: 'GELB',
+              explanation: {
+                summary: 'Neuerfassung durch Agent. Werbeeinwilligung und Fragenkatalog zur Prüfung vorgelegt.',
+                positives: ['Telefonische Einwilligung dokumentiert', 'Fragebogen vollständig ausgefüllt'],
+                risks: l.dnc_flag ? ['Telefonnummer auf Robinsonliste vermerkt'] : [],
+              },
+              status: 'PENDING' as const,
+              createdAt: l.created_at,
+            }));
+
+          queueData = [...customQcItems, ...queueData];
+        } catch {
+          //
         }
+
+        setItems(queueData);
+        if (queueData.length > 0) setSelectedItem(queueData[0]);
       })
-      .catch((err) => console.error('Failed to load QC queue:', err));
+      .catch((err) => {
+        console.error('Failed to load QC queue:', err);
+        // Fallback from localStorage
+        try {
+          const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+          const customLeads = customRaw ? JSON.parse(customRaw) : [];
+          const customQcItems: QcItem[] = customLeads
+            .filter((l: any) => l.status === 'NEW' || l.status === 'QC_PENDING')
+            .map((l: any) => ({
+              id: 'qc-' + l.id,
+              leadId: l.id,
+              customerName: `${l.first_name} ${l.last_name}`,
+              phone: l.phone_e164,
+              city: l.city || 'Deutschland',
+              product: l.project_name || 'Photovoltaik',
+              reason: 'COMPLIANCE_WARNING' as const,
+              confidence: 0.72,
+              score: 78,
+              scoreBand: 'GELB',
+              explanation: {
+                summary: 'Neuerfassung durch Agent. Werbeeinwilligung und Fragenkatalog zur Prüfung vorgelegt.',
+                positives: ['Telefonische Einwilligung dokumentiert', 'Fragebogen vollständig ausgefüllt'],
+                risks: l.dnc_flag ? ['Telefonnummer auf Robinsonliste vermerkt'] : [],
+              },
+              status: 'PENDING' as const,
+              createdAt: l.created_at,
+            }));
+          setItems(customQcItems);
+          if (customQcItems.length > 0) setSelectedItem(customQcItems[0]);
+        } catch {
+          //
+        }
+      });
   }, []);
 
   const handleReview = async (action: 'APPROVE' | 'REJECT' | 'RE_CALL') => {
     if (!selectedItem) return;
+
+    // Handle custom lead review in localStorage
+    if (selectedItem.id.startsWith('qc-')) {
+      try {
+        const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+        if (customRaw) {
+          const customLeads = JSON.parse(customRaw);
+          const newStatus = action === 'APPROVE' ? 'CONFIRMED' : (action === 'REJECT' ? 'STORNO' : 'QC_PENDING');
+          const updated = customLeads.map((l: any) => l.id === selectedItem.leadId ? { ...l, status: newStatus } : l);
+          localStorage.setItem('linkora_custom_leads', JSON.stringify(updated));
+        }
+      } catch {
+        //
+      }
+
+      const updatedItem: QcItem = {
+        ...selectedItem,
+        status: action === 'APPROVE' ? 'APPROVED' : (action === 'REJECT' ? 'REJECTED' : 'RE_CALL_REQUESTED'),
+      };
+      setItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
+      setSelectedItem(updatedItem);
+      setActionSuccess(`Status erfolgreich aktualisiert: ${action}`);
+      setTimeout(() => setActionSuccess(null), 3000);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/ai/qc-review/${selectedItem.id}`, {

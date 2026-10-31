@@ -92,14 +92,17 @@ export default function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">E-Mail</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                E-Mail oder Benutzername
+              </label>
               <div className="relative group">
                 <Mail className="w-4 h-4 text-slate-400 group-focus-within:text-sky-400 absolute left-3.5 top-3 transition-colors" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="z.B. Murat2 oder murat2@lead-kontackt.de"
                   className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
@@ -150,6 +153,17 @@ export default function LoginPage() {
               <span>1-Klick Rollen-Schnellzugriff:</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => quickLogin('murat2@lead-kontackt.de', 'lead-kontackt')}
+                className="bg-[#11192e] hover:bg-[#16213c] hover:-translate-y-0.5 p-2.5 rounded-xl text-left border border-amber-400/50 hover:border-amber-400 transition-all duration-200 shadow-xs cursor-pointer group"
+              >
+                <div className="font-bold text-amber-400 group-hover:text-amber-300 flex items-center justify-between">
+                  <span>Agent (Murat2)</span>
+                  <Sparkles className="w-3 h-3 opacity-100 text-amber-400" />
+                </div>
+                <div className="text-[10px] text-slate-300">Lead-Kontackt (MD-Team)</div>
+              </button>
               <button
                 type="button"
                 onClick={() => quickLogin('admin@lead-kontackt.de', 'lead-kontackt')}

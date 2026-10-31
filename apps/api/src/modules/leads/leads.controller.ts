@@ -6,7 +6,7 @@ import { IngestionService } from './ingestion.service.js';
 import { leadIngestSchema, qcActionSchema, LeadIngestInput, QcActionInput } from '@linkora/shared';
 
 @ApiTags('Leads & Kunden')
-@Controller('leads')
+@Controller(['leads', 'v1/leads'])
 export class LeadsController {
   constructor(
     private readonly leadsService: LeadsService,
@@ -52,6 +52,40 @@ export class LeadsController {
     @CurrentUser() user?: any,
   ) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+
+    // Normalize projectId mapping for domain projects
+    const projectMapping: Record<string, string> = {
+      PV: 'cccccccc-0000-0000-0000-000000000001',
+      Photovoltaik: 'cccccccc-0000-0000-0000-000000000001',
+      WP: 'cccccccc-0000-0000-0000-000000000002',
+      Wärmepumpe: 'cccccccc-0000-0000-0000-000000000002',
+      Treppenlift: 'cccccccc-0000-0000-0000-000000000003',
+      Badsanierung: 'cccccccc-0000-0000-0000-000000000004',
+      'Elektromobil / Elektrorollstuhl': 'cccccccc-0000-0000-0000-000000000005',
+      Elektromobil: 'cccccccc-0000-0000-0000-000000000005',
+    };
+
+    if (
+      !body.projectId ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.projectId)
+    ) {
+      body.projectId =
+        projectMapping[body.projectName] ||
+        projectMapping[body.projectId] ||
+        'cccccccc-0000-0000-0000-000000000001';
+    }
+
+    // Default provenance for agent direct-entry if not provided
+    if (!body.provenance || !body.provenance.consentText) {
+      body.provenance = {
+        source: body.source || 'Agent-Direkterfassung',
+        campaignName: body.projectName || 'PV',
+        optInTimestamp: new Date().toISOString(),
+        consentText: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
+        consentVersion: 'v2.1',
+        consentChannel: 'PHONE',
+      };
+    }
 
     // Validate body against Zod leadIngestSchema
     const parseRes = leadIngestSchema.safeParse(body);

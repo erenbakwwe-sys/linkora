@@ -213,14 +213,14 @@ export class IngestionService {
       consentVerified = true;
     }
 
-    // 5. Deduplication Check (Exact match on normalized E.164 phone within tenant)
-    const existingLead = await this.findExistingLead(tenantId, phoneE164);
+    // 5. Deduplication Check (Per project and phone within tenant - each project is its own lead)
+    const existingLead = await this.findExistingLead(tenantId, phoneE164, input.projectId);
 
     if (existingLead) {
       // Merge Provenance into existing lead: One lead, multiple provenance records
       await this.saveProvenance(tenantId, existingLead.id, prov, options.channel || 'MERGED_SOURCE');
       await this.recordLeadEvent(tenantId, existingLead.id, 'LEAD_MERGED', {
-        reason: 'Duplicate phone match, added new provenance source',
+        reason: 'Duplicate phone and project match, added new provenance source',
         source: prov?.source || 'UNKNOWN',
       });
 
@@ -236,27 +236,65 @@ export class IngestionService {
 
     // 6. Create New Lead
     const leadId = randomUUID();
+    const projectInfo: Record<string, { name: string; slug: string; icon: string }> = {
+      'cccccccc-0000-0000-0000-000000000001': { name: 'Photovoltaik', slug: 'photovoltaik', icon: 'Sun' },
+      'cccccccc-0000-0000-0000-000000000002': { name: 'Wärmepumpe', slug: 'waermepumpe', icon: 'Flame' },
+      'cccccccc-0000-0000-0000-000000000003': { name: 'Treppenlift', slug: 'treppenlift', icon: 'MoveUp' },
+      'cccccccc-0000-0000-0000-000000000004': { name: 'Badsanierung', slug: 'badsanierung', icon: 'Bath' },
+      'cccccccc-0000-0000-0000-000000000005': { name: 'Elektromobil', slug: 'elektromobil', icon: 'Zap' },
+    };
+    const proj = projectInfo[input.projectId] || {
+      name: (rawData as any)?.projectName || 'Photovoltaik',
+      slug: ((rawData as any)?.projectName || 'Photovoltaik').toLowerCase(),
+      icon: 'Sun',
+    };
+
     const newLead = {
       id: leadId,
       tenantId,
+      tenant_id: tenantId,
       batchId: options.batchId || null,
+      batch_id: options.batchId || null,
       projectId: input.projectId,
+      project_id: input.projectId,
       firstName: input.firstName.trim(),
+      first_name: input.firstName.trim(),
       lastName: input.lastName.trim(),
+      last_name: input.lastName.trim(),
       phoneRaw: input.phone.trim(),
+      phone_raw: input.phone.trim(),
       phoneE164,
+      phone_e164: phoneE164,
       phoneCountry: phoneResult.countryCode || 'DE',
+      phone_country: phoneResult.countryCode || 'DE',
       lineType,
+      line_type: lineType,
       email: input.email?.trim() || null,
       postalCode: input.postalCode?.trim() || null,
+      postal_code: input.postalCode?.trim() || null,
       city: input.city?.trim() || null,
       street: input.street?.trim() || null,
       houseNumber: input.houseNumber?.trim() || null,
+      house_number: input.houseNumber?.trim() || null,
       status: 'NEW',
       consentVerified,
+      consent_verified: consentVerified,
       dncFlag: isDnc,
+      dnc_flag: isDnc,
+      project_name: proj.name,
+      projectName: proj.name,
+      project_slug: proj.slug,
+      projectSlug: proj.slug,
+      project_icon: proj.icon,
+      projectIcon: proj.icon,
+      formattedAnswers: (rawData as any)?.formattedAnswers || [],
+      answers: input.answers || {},
+      notiz: (rawData as any)?.notiz || (rawData as any)?.notes || null,
+      notes: (rawData as any)?.notes || (rawData as any)?.notiz || null,
+      audioFileName: (rawData as any)?.audioFileName || null,
       extraData: input.extraData || {},
       createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
     memoryLeads.set(leadId, newLead);
@@ -396,24 +434,28 @@ export class IngestionService {
   }
 
   /**
-   * Find existing lead for dedup.
+   * Find existing lead for dedup (checking tenant, phone, and optional projectId).
    */
-  async findExistingLead(tenantId: string, phoneE164: string): Promise<any | null> {
+  async findExistingLead(tenantId: string, phoneE164: string, projectId?: string): Promise<any | null> {
     // Check memory first
     for (const l of memoryLeads.values()) {
-      if (l.tenantId === tenantId && l.phoneE164 === phoneE164) {
+      const matchProject = !projectId || l.projectId === projectId || l.project_id === projectId;
+      if (l.tenantId === tenantId && (l.phoneE164 === phoneE164 || l.phone_e164 === phoneE164) && matchProject) {
         return l;
       }
     }
 
     try {
-      const res = await this.db.query(
-        `SELECT id, tenant_id, phone_e164, consent_verified, dnc_flag
+      let sql = `SELECT id, tenant_id, phone_e164, consent_verified, dnc_flag
          FROM leads
-         WHERE tenant_id = $1 AND phone_e164 = $2
-         LIMIT 1`,
-        [tenantId, phoneE164]
-      );
+         WHERE tenant_id = $1 AND phone_e164 = $2`;
+      const params: any[] = [tenantId, phoneE164];
+      if (projectId) {
+        sql += ` AND project_id = $3`;
+        params.push(projectId);
+      }
+      sql += ` LIMIT 1`;
+      const res = await this.db.query(sql, params);
       return res.rows[0] || null;
     } catch {
       return null;

@@ -14,11 +14,28 @@ export interface UserItem {
   callerIdNumber: string | null;
   lastLogin: string;
   createdAt: string;
+  passwordHash?: string;
+  passwordPlain?: string;
 }
 
 @Injectable()
 export class UsersService {
   private inMemoryUsers: UserItem[] = [
+    {
+      id: 'usr-157',
+      userNumber: '#157',
+      username: 'Murat2',
+      name: 'Murat2',
+      email: 'murat2@lead-kontackt.de',
+      role: 'Agent',
+      team: 'MD-Team',
+      isActive: true,
+      callerIdNumber: '+49 40 42925873',
+      lastLogin: 'vor 5 Min.',
+      createdAt: '31.10.2026',
+      passwordPlain: 'Agent123!',
+      passwordHash: '8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f',
+    },
     {
       id: 'usr-156',
       userNumber: '#156',
@@ -244,6 +261,9 @@ export class UsersService {
     password?: string;
   }): Promise<UserItem> {
     const num = '#' + Math.floor(100 + Math.random() * 899);
+    const plainPwd = dto.password?.trim() || 'Agent123!';
+    const hashed = this.hashPassword(plainPwd);
+
     const newUser: UserItem = {
       id: 'usr-' + Date.now(),
       userNumber: num,
@@ -251,15 +271,16 @@ export class UsersService {
       name: dto.username.trim(),
       email: dto.email.trim(),
       role: dto.role || 'Agent',
-      team: dto.team?.trim() || '—',
+      team: dto.team?.trim() || 'MD-Team',
       isActive: true,
-      callerIdNumber: dto.callerIdNumber || null,
+      callerIdNumber: dto.callerIdNumber || '+49 40 42925873',
       lastLogin: '—',
       createdAt: new Date().toLocaleDateString('de-DE'),
+      passwordPlain: plainPwd,
+      passwordHash: hashed,
     };
 
-    if (dto.password && dto.password.trim().length >= 8) {
-      const hashed = this.hashPassword(dto.password.trim());
+    if (plainPwd && plainPwd.length >= 8) {
       try {
         await this.db.query(
           `INSERT INTO users (email, password_hash, first_name, last_name, default_mode, is_active)
@@ -280,6 +301,17 @@ export class UsersService {
 
     this.inMemoryUsers.unshift(newUser);
     return newUser;
+  }
+
+  findUserByEmailOrUsername(identifier: string): UserItem | undefined {
+    if (!identifier) return undefined;
+    const term = identifier.trim().toLowerCase();
+    return this.inMemoryUsers.find(
+      (u) =>
+        u.email.toLowerCase() === term ||
+        u.username.toLowerCase() === term ||
+        u.name.toLowerCase() === term
+    );
   }
 
   async toggleStatus(id: string): Promise<UserItem> {

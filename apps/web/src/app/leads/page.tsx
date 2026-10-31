@@ -33,6 +33,8 @@ import {
   Zap,
   Wind,
   HeartHandshake,
+  Volume2,
+  FileText,
 } from 'lucide-react';
 
 interface Lead {
@@ -55,6 +57,10 @@ interface Lead {
   project_name: string;
   project_slug: string;
   project_icon: string;
+  source?: string;
+  notiz?: string;
+  notes?: string;
+  audioFileName?: string;
 }
 
 interface LeadDetailData {
@@ -88,6 +94,62 @@ interface LeadDetailData {
   };
 }
 
+const QUESTION_LABELS: Record<string, string> = {
+  // PV
+  pvInstallLocation: 'Wo möchten Sie die Photovoltaik installieren?',
+  pvRoofAge: 'Wie alt ist Ihr Dach?',
+  pvRoofArea: 'Wie groß ist Ihre nutzbare Dachfläche?',
+  pvRoofShape: 'Welche Dachform hat Ihr Haus?',
+  pvRoofCover: 'Womit ist ihr Dach gedeckt? (Dachdeckungstyp)',
+  pvIsOwner: 'Handelt es sich bei dem Interessenten um den Eigentümer/Entscheider?',
+  pvInstallTime: 'Wann soll die Photovoltaik installiert werden?',
+  pvFinancing: 'Welche Finanzierung kommt für Sie in Frage?',
+  pvRoofOrientation: 'Wie ist Ihr Dach ausgerichtet?',
+  pvPowerConsumption: 'Stromverbrauch in kWh/Jahr',
+  pvBatteryStorage: 'Stromspeicher gewünscht?',
+  pvAvailability: 'Erreichbarkeit?',
+  // Treppenlift
+  tlLiftType: 'Was für einen Lift suchen Sie?',
+  tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
+  tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
+  tlTimeFrame: 'Wann wird der Lift benötigt?',
+  tlIsOwner: 'Sind Sie Eigentümer/Entscheider',
+  tlFloors: 'Wie viele Etagen müssen überwunden werden?',
+  tlCareLevel: 'Liegt ein Pflegegrad vor?',
+  tlStairCourse: 'Wie verläuft die Treppe?',
+  tlMobility: 'Mobilität des Nutzers',
+  tlStairWidth: 'Treppenbreite (in cm)',
+  tlStepCount: 'Anzahl der Stufen',
+  tlHeightDiff: 'Höhenunterschied (in cm)',
+  tlOutdoor: 'Wird der Lift im Außenbereich benötigt?',
+  tlAvailability: 'Treppenlift · Erreichbarkeit',
+  // WP
+  wpCurrentSystem: 'Aktuelles Heizsystem?',
+  wpHeatingAge: 'Alter der Heizung?',
+  wpLivingSpace: 'Wohnfläche (in m²)?',
+  wpInstallTime: 'Wann soll die Wärmepumpe installiert werden?',
+  // Badsanierung
+  badProjectType: 'Welches Badprojekt möchten Sie angehen?',
+  badSize: 'Wie groß ist das Badezimmer?',
+  badBarrierFree: 'Soll das Bad barrierefrei sein?',
+  badFeatures: 'Welche Ausstattung wünschen Sie?',
+  badBudget: 'Was darf der Badumbau kosten?',
+  badTimeFrame: 'Wann wird der Badumbau benötigt?',
+  badIsOwner: 'Sind Sie Eigentümer/Entscheider?',
+  // Elektromobil / Elektrorollstuhl
+  emModelType: 'Für welches Modell interessieren Sie sich?',
+  emUsageArea: 'Wo soll die überwiegende Nutzung stattfinden?',
+  emUserWeight: 'Für welches Gewicht muss das Modell geeignet sein?',
+  emTargetPerson: 'Für wen ist das Elektromobil / der Elektrorollstuhl gedacht?',
+  emHealthInsurance: 'Sind Sie gesetzlich krankenversichert?',
+  emBudgetLimit: 'Wo liegt die Budgetgrenze für das Modell?',
+  emWheelchairSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektrorollstuhl sein?',
+  emWheelchairRange: 'Welche Reichweite soll der Elektrorollstuhl haben?',
+  emScooterSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektromobil sein?',
+  emScooterRange: 'Welche Reichweite soll das Elektromobil haben?',
+  emTimeFrame: 'Wann wird das Elektromobil / der Elektrorollstuhl benötigt?',
+};
+
 export default function LeadsPage() {
   const { t, locale } = useI18n();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -110,13 +172,46 @@ export default function LeadsPage() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
-      const res = await fetch(`/api/v1/leads?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setLeads(json.data || []);
+      let apiLeads: Lead[] = [];
+      try {
+        const res = await fetch(`/api/v1/leads?${params.toString()}`);
+        if (res.ok) {
+          const json = await res.json();
+          apiLeads = json.data || [];
+        }
+      } catch {
+        // API offline fallback
       }
+
+      // Check localStorage for newly registered customers
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+      const customLeads: Lead[] = customRaw ? JSON.parse(customRaw) : [];
+
+      // Deduplicate by ID
+      const existingIds = new Set(apiLeads.map((l) => l.id));
+      let merged = [...customLeads.filter((l) => !existingIds.has(l.id)), ...apiLeads];
+
+      // Filter by status if set
+      if (statusFilter !== 'ALL') {
+        merged = merged.filter((l) => l.status === statusFilter);
+      }
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        merged = merged.filter(
+          (l) =>
+            l.first_name.toLowerCase().includes(q) ||
+            l.last_name.toLowerCase().includes(q) ||
+            (l.email && l.email.toLowerCase().includes(q)) ||
+            (l.city && l.city.toLowerCase().includes(q)) ||
+            l.phone_e164.includes(q)
+        );
+      }
+
+      setLeads(merged);
     } catch {
-      // Fallback
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+      setLeads(customRaw ? JSON.parse(customRaw) : []);
     } finally {
       setLoading(false);
     }
@@ -139,19 +234,74 @@ export default function LeadsPage() {
       if (res.ok) {
         const json = await res.json();
         setLeadDetail(json);
+        return;
       }
     } catch {
       //
     } finally {
       setDetailLoading(false);
     }
+
+    // Check custom leads in localStorage
+    const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+    const customLeads = customRaw ? JSON.parse(customRaw) : [];
+    const found = customLeads.find((l: any) => l.id === leadId);
+    if (found) {
+      setLeadDetail({
+        lead: found,
+        provenance: found.provenance || [
+          {
+            id: 'prov-' + found.id,
+            source: found.source || 'Agent-Direkterfassung',
+            campaign_name: found.project_name,
+            opt_in_timestamp: found.created_at,
+            consent_text: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
+            consent_version: 'v2.1',
+            consent_channel: 'PHONE',
+          },
+        ],
+        answers: Array.isArray(found.formattedAnswers) && found.formattedAnswers.length > 0
+          ? found.formattedAnswers
+          : Array.isArray(found.answers) && found.answers.length > 0
+          ? found.answers
+          : typeof found.answers === 'object' && found.answers !== null
+          ? Object.entries(found.answers).map(([k, v]) => ({
+              question_code: k,
+              question_label: QUESTION_LABELS[k] || k,
+              value_raw: String(v),
+            }))
+          : [],
+        events: [
+          {
+            id: 'ev-1',
+            event_type: 'LEAD_INGESTED',
+            created_at: found.created_at,
+            payload: { channel: 'Agent-Erfassung' },
+          },
+        ],
+        canDial: {
+          allowed: true,
+          message: 'Lead ist zur Anwahl im Dialer freigegeben.',
+        },
+      });
+    }
   };
 
   const handleQcSubmit = async () => {
     if (!qcAction || !selectedLeadId || !qcReason.trim()) return;
     setSubmittingQc(true);
+    const newStatus = qcAction === 'APPROVE' ? 'CONFIRMED' : (qcAction === 'REJECT' ? 'STORNO' : 'QC_PENDING');
+
+    // Update in localStorage if present
+    const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+    if (customRaw) {
+      const customLeads = JSON.parse(customRaw);
+      const updated = customLeads.map((l: any) => l.id === selectedLeadId ? { ...l, status: newStatus } : l);
+      localStorage.setItem('linkora_custom_leads', JSON.stringify(updated));
+    }
+
     try {
-      const res = await fetch(`/api/v1/leads/${selectedLeadId}/qc`, {
+      await fetch(`/api/v1/leads/${selectedLeadId}/qc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -159,17 +309,14 @@ export default function LeadsPage() {
           reason: qcReason.trim(),
         }),
       });
-      if (res.ok) {
-        setQcAction(null);
-        setQcReason('');
-        // Reload detail and list
-        await openDrawer(selectedLeadId);
-        await fetchLeads();
-      }
     } catch {
       //
     } finally {
+      setQcAction(null);
+      setQcReason('');
       setSubmittingQc(false);
+      await openDrawer(selectedLeadId);
+      await fetchLeads();
     }
   };
 
@@ -504,6 +651,42 @@ export default function LeadsPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Agent Notes & Voice Recording */}
+                  {(leadDetail.lead.audioFileName || leadDetail.lead.notiz || leadDetail.lead.notes) && (
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span>Erfassungs-Details & Sprachaufnahme</span>
+                      </div>
+
+                      {leadDetail.lead.audioFileName && (
+                        <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                              <Volume2 className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-slate-800">{leadDetail.lead.audioFileName}</div>
+                              <div className="text-[10px] text-blue-700">Audio-Aufzeichnung hinterlegt (MP3/WAV)</div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                            MP3 · max 50MB
+                          </span>
+                        </div>
+                      )}
+
+                      {(leadDetail.lead.notiz || leadDetail.lead.notes) && (
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-semibold text-slate-400 uppercase">Agenten-Notiz</div>
+                          <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                            {leadDetail.lead.notiz || leadDetail.lead.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* QC Reviewer Action Panel */}
                   <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">

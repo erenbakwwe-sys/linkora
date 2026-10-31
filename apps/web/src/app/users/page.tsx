@@ -86,7 +86,11 @@ export default function UsersPage() {
       if (usersRes.ok) {
         const data = await usersRes.json();
         if (Array.isArray(data) && data.length > 0) {
-          setUsers(data);
+          const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
+          const custom = customRaw ? JSON.parse(customRaw) : [];
+          const existingIds = new Set(data.map((u: any) => u.id));
+          const toAdd = custom.filter((u: any) => !existingIds.has(u.id));
+          setUsers([...toAdd, ...data]);
         }
       }
 
@@ -183,30 +187,61 @@ export default function UsersPage() {
 
     try {
       setSaveLoading(true);
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: newUsername,
-          email: newEmail,
-          role: newRole,
-          team: newTeam,
-          callerIdNumber: newCallerId === '' ? null : newCallerId,
-          password: newPassword,
-        }),
-      });
-
-      if (res.ok) {
-        const created = await res.json();
-        setUsers((prev) => [created, ...prev]);
-        setShowNewUserModal(false);
-        setNewUsername('');
-        setNewEmail('');
-        setNewPassword('');
-        setSaveSuccessToast(`Benutzer "${created.username}" erfolgreich angelegt!`);
-        setTimeout(() => setSaveSuccessToast(null), 4000);
-        fetchUsers();
+      let created: any = null;
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: newUsername,
+            email: newEmail,
+            role: newRole,
+            team: newTeam,
+            callerIdNumber: newCallerId === '' ? null : newCallerId,
+            password: newPassword,
+          }),
+        });
+        if (res.ok) {
+          created = await res.json();
+        }
+      } catch {
+        // Local mode
       }
+
+      if (!created) {
+        created = {
+          id: 'usr-' + Date.now(),
+          userNumber: '#' + Math.floor(100 + Math.random() * 899),
+          username: newUsername.trim(),
+          name: newUsername.trim(),
+          email: newEmail.trim(),
+          role: newRole,
+          team: newTeam || 'MD-Team',
+          isActive: true,
+          callerIdNumber: newCallerId || '+49 40 42925873',
+          lastLogin: '—',
+          createdAt: new Date().toLocaleDateString('de-DE'),
+          password: newPassword || 'Agent123!',
+        };
+      }
+
+      // Store in linkora_custom_users
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
+      const custom = customRaw ? JSON.parse(customRaw) : [];
+      const userToStore = {
+        ...created,
+        password: newPassword || 'Agent123!',
+      };
+      localStorage.setItem('linkora_custom_users', JSON.stringify([userToStore, ...custom]));
+
+      setUsers((prev) => [created, ...prev]);
+      setShowNewUserModal(false);
+      setNewUsername('');
+      setNewEmail('');
+      setNewPassword('');
+      setSaveSuccessToast(`Benutzer "${created.username}" erfolgreich angelegt!`);
+      setTimeout(() => setSaveSuccessToast(null), 4000);
+      fetchUsers();
     } catch (err) {
       console.error('Failed to create user:', err);
     } finally {

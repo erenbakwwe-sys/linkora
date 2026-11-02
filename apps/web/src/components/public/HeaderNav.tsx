@@ -20,7 +20,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
   const navText = publicContent[activeLocale]?.nav || publicContent.de.nav;
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0b1220]/95 backdrop-blur-md border-b border-slate-800 text-white">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-900 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center space-x-3 group">
@@ -28,34 +28,34 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
             {brandName[0]}
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-xl tracking-tight text-white">{brandName}</span>
-            <span className="text-[10px] text-sky-400 font-semibold tracking-wider uppercase -mt-1">
+            <span className="font-extrabold text-xl tracking-tight text-slate-950">{brandName}</span>
+            <span className="text-[10px] text-sky-600 font-semibold tracking-wider uppercase -mt-1">
               {navText.leadBankTag}
             </span>
           </div>
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center space-x-7 text-sm font-medium text-slate-300">
-          <a href="#leistungen" className="hover:text-white transition-colors">
+        <nav className="hidden lg:flex items-center space-x-7 text-sm font-medium text-slate-600">
+          <a href="#leistungen" className="hover:text-slate-950 transition-colors">
             {navText.services}
           </a>
-          <a href="#leads-verkaufen" className="hover:text-white transition-colors">
+          <a href="#leads-verkaufen" className="hover:text-slate-950 transition-colors">
             {navText.sellLeads}
           </a>
-          <a href="#dialer" className="hover:text-white transition-colors">
+          <a href="#dialer" className="hover:text-slate-950 transition-colors">
             {navText.dialer}
           </a>
-          <a href="#preise" className="hover:text-white transition-colors">
+          <a href="#preise" className="hover:text-slate-950 transition-colors">
             {navText.pricing}
           </a>
-          <a href="#ablauf" className="hover:text-white transition-colors">
+          <a href="#ablauf" className="hover:text-slate-950 transition-colors">
             {navText.process}
           </a>
-          <a href="#karriere" className="hover:text-white transition-colors">
+          <a href="#karriere" className="hover:text-slate-950 transition-colors">
             {navText.career}
           </a>
-          <a href="#faq" className="hover:text-white transition-colors">
+          <a href="#faq" className="hover:text-slate-950 transition-colors">
             {navText.faq}
           </a>
         </nav>
@@ -63,27 +63,27 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
         {/* Right CTA Actions */}
         <div className="hidden md:flex items-center space-x-4">
           {/* Language Switcher with DE, TR, EN */}
-          <div className="flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700 text-xs font-semibold">
+          <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200 text-xs font-semibold">
             <button
               onClick={() => setLocale('de')}
-              className={`px-2 py-1 rounded transition ${
-                activeLocale === 'de' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg transition ${
+                activeLocale === 'de' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-600 hover:text-slate-950'
               }`}
             >
               DE
             </button>
             <button
               onClick={() => setLocale('tr')}
-              className={`px-2 py-1 rounded transition ${
-                activeLocale === 'tr' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg transition ${
+                activeLocale === 'tr' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-600 hover:text-slate-950'
               }`}
             >
               TR
             </button>
             <button
               onClick={() => setLocale('en')}
-              className={`px-2 py-1 rounded transition ${
-                activeLocale === 'en' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg transition ${
+                activeLocale === 'en' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-slate-600 hover:text-slate-950'
               }`}
             >
               EN
@@ -93,7 +93,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
           {/* Login Button (Always Visible) */}
           <Link
             href="/login"
-            className="text-sm font-semibold text-slate-300 hover:text-white px-3 py-2 transition-colors"
+            className="text-sm font-semibold text-slate-700 hover:text-slate-950 px-3 py-2 transition-colors"
           >
             {navText.login}
           </Link>
@@ -101,16 +101,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
           {/* Panel Demo Link (Always Visible) */}
           <Link
             href="/dashboard"
-            className="flex items-center space-x-1.5 text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/70 hover:bg-sky-900/80 border border-sky-700/80 px-3 py-2 rounded-lg transition shadow-xs"
+            className="flex items-center space-x-1.5 text-xs font-semibold text-sky-800 hover:text-sky-950 bg-sky-50 hover:bg-sky-100/90 border border-sky-200 px-3.5 py-2 rounded-xl transition shadow-xs"
           >
-            <LayoutDashboard className="w-3.5 h-3.5 text-sky-400" />
+            <LayoutDashboard className="w-3.5 h-3.5 text-sky-600" />
             <span>{isAuthenticated && user ? `${navText.livePanel} (${user.firstName})` : navText.livePanel}</span>
           </Link>
 
           {/* Primary CTA */}
           <a
             href="#kontakt"
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm px-4 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all cursor-pointer"
+            className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer"
           >
             <span>{navText.requestConsult}</span>
             <ArrowRight className="w-4 h-4" />
@@ -120,36 +120,36 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
         {/* Mobile Hamburger Toggle & Language Switcher */}
         <div className="flex items-center md:hidden space-x-2">
           {/* Mobile Language Switcher */}
-          <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-slate-700 text-[11px] font-bold mr-1">
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 text-[11px] font-bold mr-1">
             <button
               onClick={() => setLocale('de')}
-              className={`px-1.5 py-0.5 rounded ${activeLocale === 'de' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}
+              className={`px-1.5 py-0.5 rounded ${activeLocale === 'de' ? 'bg-amber-400 text-slate-950' : 'text-slate-600'}`}
             >
               DE
             </button>
             <button
               onClick={() => setLocale('tr')}
-              className={`px-1.5 py-0.5 rounded ${activeLocale === 'tr' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}
+              className={`px-1.5 py-0.5 rounded ${activeLocale === 'tr' ? 'bg-amber-400 text-slate-950' : 'text-slate-600'}`}
             >
               TR
             </button>
             <button
               onClick={() => setLocale('en')}
-              className={`px-1.5 py-0.5 rounded ${activeLocale === 'en' ? 'bg-amber-400 text-slate-950' : 'text-slate-400'}`}
+              className={`px-1.5 py-0.5 rounded ${activeLocale === 'en' ? 'bg-amber-400 text-slate-950' : 'text-slate-600'}`}
             >
               EN
             </button>
           </div>
           <Link
             href="/dashboard"
-            className="p-2 text-sky-400 hover:text-white"
+            className="p-2 text-sky-600 hover:text-sky-950"
             title="Panel"
           >
             <LayoutDashboard className="w-5 h-5" />
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-300 hover:text-white focus:outline-hidden"
+            className="p-2 text-slate-700 hover:text-slate-950 focus:outline-hidden"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -158,79 +158,79 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0e172a] border-b border-slate-800 px-6 py-6 space-y-4">
-          <nav className="flex flex-col space-y-3 text-base font-medium text-slate-200">
+        <div className="md:hidden bg-white border-b border-slate-200 px-6 py-6 space-y-4 shadow-xl">
+          <nav className="flex flex-col space-y-3 text-base font-medium text-slate-700">
             <a
               href="#leistungen"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.services}
             </a>
             <a
               href="#leads-verkaufen"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.sellLeads}
             </a>
             <a
               href="#dialer"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.dialer}
             </a>
             <a
               href="#preise"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.pricing}
             </a>
             <a
               href="#ablauf"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.process}
             </a>
             <a
               href="#karriere"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.career}
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-sky-400"
+              className="hover:text-amber-600"
             >
               {navText.faq}
             </a>
           </nav>
 
-          <div className="pt-4 border-t border-slate-800 flex flex-col space-y-3">
+          <div className="pt-4 border-t border-slate-200 flex flex-col space-y-3">
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2.5 rounded-xl border border-slate-700 text-slate-200 font-semibold text-sm hover:bg-slate-800 transition"
+              className="text-center py-2.5 rounded-xl border border-slate-300 text-slate-800 font-semibold text-sm hover:bg-slate-50 transition"
             >
               {navText.login}
             </Link>
             <Link
               href="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2.5 rounded-xl bg-sky-950/80 border border-sky-800 text-sky-300 font-semibold text-sm flex items-center justify-center space-x-2"
+              className="text-center py-2.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 font-semibold text-sm flex items-center justify-center space-x-2"
             >
-              <LayoutDashboard className="w-4 h-4" />
+              <LayoutDashboard className="w-4 h-4 text-sky-600" />
               <span>{navText.livePanel}</span>
             </Link>
             <a
               href="#kontakt"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-center py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm"
+              className="text-center py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-md"
             >
               {navText.requestConsult}
             </a>

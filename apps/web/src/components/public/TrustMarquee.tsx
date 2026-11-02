@@ -13,9 +13,9 @@ export const TrustMarquee: React.FC = () => {
   ];
 
   return (
-    <section className="py-12 bg-[#090e17] border-y border-slate-800/80 overflow-hidden">
+    <section className="py-12 bg-slate-50/80 border-y border-slate-200/90 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-8">
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-500 mb-8">
           Zertifizierte Sicherheit & Carrier-Grade Technologie für den D-A-CH Markt
         </p>
 
@@ -25,15 +25,15 @@ export const TrustMarquee: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:border-slate-600 transition group text-center"
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:shadow-md hover:border-slate-300 transition group text-center"
               >
-                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-sky-400 group-hover:text-amber-400 transition-colors mb-2 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-sky-600 group-hover:text-amber-600 group-hover:bg-amber-50 transition-colors mb-2 shadow-2xs">
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="font-bold text-sm text-slate-200 group-hover:text-white transition">
+                <span className="font-bold text-sm text-slate-800 group-hover:text-slate-950 transition">
                   {p.name}
                 </span>
-                <span className="text-[11px] text-slate-400 mt-0.5">{p.desc}</span>
+                <span className="text-[11px] text-slate-500 mt-0.5">{p.desc}</span>
               </div>
             );
           })}

@@ -93,33 +93,33 @@ export const ContactFormSection: React.FC = () => {
   };
 
   return (
-    <section id="kontakt" className="py-20 bg-[#090e17] text-white border-t border-slate-800">
+    <section id="kontakt" className="py-20 bg-slate-50/70 text-slate-900 border-b border-slate-200/80">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold uppercase tracking-widest text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-full shadow-2xs">
             {ct.badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 mb-3">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 mt-3 mb-3">
             {ct.title}
           </h2>
-          <p className="text-slate-400 text-sm max-w-xl mx-auto">
+          <p className="text-slate-600 text-sm max-w-xl mx-auto">
             {ct.subtitle}
           </p>
         </div>
 
-        <div className="bg-slate-800/40 rounded-3xl p-6 sm:p-10 border border-slate-700/60 shadow-2xl backdrop-blur-md">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-xl backdrop-blur-md">
           {statusMessage && (
             <div
               className={`p-4 rounded-xl mb-6 flex items-start space-x-3 text-sm ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-                  : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border border-rose-200 text-rose-800'
               }`}
             >
               {statusMessage.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
               ) : (
-                <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
+                <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
               )}
               <span>{statusMessage.text}</span>
             </div>
@@ -128,7 +128,7 @@ export const ContactFormSection: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Step 1: User Persona Selector */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2.5">
                 {activeLocale === 'tr' ? '1. Başvuru Türü:' : activeLocale === 'en' ? '1. I am a:' : '1. Ich bin:'}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -138,7 +138,7 @@ export const ContactFormSection: React.FC = () => {
                   className={`py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition cursor-pointer ${
                     userType === 'COMPANY'
                       ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-600'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <Building2 className="w-4 h-4" />
@@ -151,7 +151,7 @@ export const ContactFormSection: React.FC = () => {
                   className={`py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition cursor-pointer ${
                     userType === 'JOB_SEEKER'
                       ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-600'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <Briefcase className="w-4 h-4" />
@@ -164,7 +164,7 @@ export const ContactFormSection: React.FC = () => {
                   className={`py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition cursor-pointer ${
                     userType === 'PRIVATE_INDIVIDUAL'
                       ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-600'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <User className="w-4 h-4" />
@@ -177,13 +177,13 @@ export const ContactFormSection: React.FC = () => {
             {userType === 'COMPANY' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     Interesse / Anliegen
                   </label>
                   <select
                     value={inquiryType}
                     onChange={(e) => setInquiryType(e.target.value as any)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                   >
                     <option value="LEADS">Leads kaufen oder verkaufen</option>
                     <option value="DIALER">Cloud-Dialer & Software testen</option>
@@ -193,13 +193,13 @@ export const ContactFormSection: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                     Fokus-Branche (Projekt)
                   </label>
                   <select
                     value={selectedProduct}
                     onChange={(e) => setSelectedProduct(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                   >
                     <option value="Photovoltaik">Photovoltaik & Solaranlagen</option>
                     <option value="Wärmepumpe">Wärmepumpen & Heizung</option>
@@ -216,7 +216,7 @@ export const ContactFormSection: React.FC = () => {
             {/* Contact Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {ct.lblFirstName} *
                 </label>
                 <input
@@ -225,12 +225,12 @@ export const ContactFormSection: React.FC = () => {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Ahmet / Max"
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {ct.lblLastName} *
                 </label>
                 <input
@@ -239,14 +239,14 @@ export const ContactFormSection: React.FC = () => {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Yılmaz / Mustermann"
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
             </div>
 
             {userType === 'COMPANY' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {ct.lblCompany}
                 </label>
                 <input
@@ -254,14 +254,14 @@ export const ContactFormSection: React.FC = () => {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="GmbH / Ltd. Şti."
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {ct.lblPhone} *
                 </label>
                 <input
@@ -270,12 +270,12 @@ export const ContactFormSection: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+49 170 1234567 / +90 532 ..."
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   {ct.lblEmail} *
                 </label>
                 <input
@@ -284,36 +284,36 @@ export const ContactFormSection: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="info@sirketiniz.com"
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">{ct.lblPostal}</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">{ct.lblPostal}</label>
                 <input
                   type="text"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
                   placeholder="34000 / 10115"
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">{ct.lblCity}</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">{ct.lblCity}</label>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="İstanbul / Berlin"
-                  className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {ct.lblMessage}
               </label>
               <textarea
@@ -321,7 +321,7 @@ export const ContactFormSection: React.FC = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={activeLocale === 'tr' ? 'Size nasıl yardımcı olabiliriz? (Örn: günlük arama hacmi, temsilci sayısı)' : 'Wie können wir Ihnen weiterhelfen?'}
-                className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs"
               />
             </div>
 
@@ -340,13 +340,13 @@ export const ContactFormSection: React.FC = () => {
 
             {/* Mandatory Explicit Consent Checkbox with Versioning */}
             <div className="pt-2">
-              <label className="flex items-start space-x-3 text-xs text-slate-400 cursor-pointer select-none">
+              <label className="flex items-start space-x-3 text-xs text-slate-600 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   required
                   checked={consentGranted}
                   onChange={(e) => setConsentGranted(e.target.checked)}
-                  className="mt-0.5 rounded-sm bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
+                  className="mt-0.5 rounded-sm bg-white border-slate-300 text-amber-500 focus:ring-amber-500"
                 />
                 <span className="leading-relaxed">
                   {ct.consentText}

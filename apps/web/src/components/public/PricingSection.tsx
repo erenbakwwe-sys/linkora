@@ -58,17 +58,17 @@ export const PricingSection: React.FC = () => {
   ];
 
   return (
-    <section id="preise" className="py-20 bg-[#090e17] text-white border-t border-slate-800">
+    <section id="preise" className="py-20 bg-slate-50/70 text-slate-900 border-b border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold uppercase tracking-widest text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-full shadow-2xs">
             Faire & Transparente Preise
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 mt-3 mb-4">
             Keine monatliche Grundgebühr. Zahlen Sie nur, wenn Sie sprechen.
           </h2>
-          <p className="text-slate-400 text-base">
+          <p className="text-slate-600 text-base">
             Starten Sie mit 0,04 € / Gesprächsminute oder sparen Sie bis zu 10% mit unseren flexiblen
             Prepaid-Minutenpaketen. Nicht verbrauchte Minuten verfallen niemals.
           </p>
@@ -82,8 +82,8 @@ export const PricingSection: React.FC = () => {
               onClick={() => setSelectedPack(pkg.id as any)}
               className={`relative rounded-3xl p-8 transition duration-200 cursor-pointer flex flex-col justify-between ${
                 pkg.popular
-                  ? 'bg-slate-800/90 border-2 border-amber-500 shadow-2xl shadow-amber-500/10 scale-105 z-10'
-                  : 'bg-slate-800/40 border border-slate-700/60 hover:border-slate-600'
+                  ? 'bg-white border-2 border-amber-500 shadow-2xl shadow-amber-500/10 scale-105 z-10'
+                  : 'bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs'
               }`}
             >
               {pkg.popular && (
@@ -94,25 +94,25 @@ export const PricingSection: React.FC = () => {
 
               <div>
                 <div className="flex justify-between items-baseline mb-3">
-                  <h3 className="font-bold text-xl text-white">{pkg.name}</h3>
-                  <span className="text-xs font-mono text-sky-400">{pkg.minutes}</span>
+                  <h3 className="font-bold text-xl text-slate-900">{pkg.name}</h3>
+                  <span className="text-xs font-mono font-bold text-sky-700 bg-sky-50 border border-sky-200/70 px-2.5 py-0.5 rounded-lg">{pkg.minutes}</span>
                 </div>
-                <p className="text-xs text-slate-400 mb-6">{pkg.desc}</p>
+                <p className="text-xs text-slate-600 mb-6">{pkg.desc}</p>
 
-                <div className="mb-6 pb-6 border-b border-slate-700/60">
+                <div className="mb-6 pb-6 border-b border-slate-100">
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-4xl font-extrabold tracking-tight text-white">
+                    <span className="text-4xl font-extrabold tracking-tight text-slate-950">
                       {pkg.price}
                     </span>
-                    <span className="text-xs text-slate-400">exkl. MwSt.</span>
+                    <span className="text-xs text-slate-500">exkl. MwSt.</span>
                   </div>
-                  <div className="text-xs text-amber-400 font-semibold mt-1">{pkg.rate}</div>
+                  <div className="text-xs text-amber-600 font-semibold mt-1">{pkg.rate}</div>
                 </div>
 
                 <div className="space-y-3 mb-8">
                   {pkg.features.map((f, i) => (
-                    <div key={i} className="flex items-center space-x-2.5 text-xs text-slate-300">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <div key={i} className="flex items-center space-x-2.5 text-xs text-slate-700">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>{f}</span>
                     </div>
                   ))}
@@ -123,8 +123,8 @@ export const PricingSection: React.FC = () => {
                 href="#kontakt"
                 className={`w-full py-3 rounded-xl font-bold text-center text-sm transition block ${
                   pkg.popular
-                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20'
-                    : 'bg-slate-700/80 hover:bg-slate-700 text-white'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200'
                 }`}
               >
                 Paket auswählen & anfragen
@@ -134,16 +134,16 @@ export const PricingSection: React.FC = () => {
         </div>
 
         {/* Number Rotation Visual (Mandatory Feature in SPEC) */}
-        <div className="bg-slate-800/40 rounded-3xl p-6 sm:p-8 border border-slate-700/60 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 shrink-0">
               <RefreshCw className="w-6 h-6 animate-spin-slow" />
             </div>
             <div>
-              <h4 className="font-bold text-base text-white">
+              <h4 className="font-bold text-base text-slate-900">
                 Intelligente Rufnummern-Rotation (CLI Reputation)
               </h4>
-              <p className="text-xs text-slate-400 max-w-xl mt-0.5">
+              <p className="text-xs text-slate-600 max-w-xl mt-0.5">
                 Schützen Sie Ihre Wählquoten: Die Plattform rotiert deutsche (+49) Festnetz- und
                 Mobilfunknummern turnusmäßig (wöchentlich/14-tägig) und pausiert verbrannte Nummern
                 vollautomatisch.
@@ -151,13 +151,13 @@ export const PricingSection: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700 font-mono text-xs">
-            <div className="flex items-center space-x-1.5 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-200 font-mono text-xs">
+            <div className="flex items-center space-x-1.5 text-emerald-700 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span>Pool aktiv (18 Nummern)</span>
             </div>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">Spam-Score: 0.0% sauber</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-600">Spam-Score: 0.0% sauber</span>
           </div>
         </div>
       </div>

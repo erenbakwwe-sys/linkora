@@ -48,7 +48,7 @@ export const FaqAccordion: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="py-20 bg-[#0e172a] text-white">
+    <section id="faq" className="py-20 bg-white text-slate-900 border-b border-slate-200/80">
       {/* Schema.org JSON-LD Script for Rich Snippets */}
       <script
         type="application/ld+json"
@@ -57,13 +57,13 @@ export const FaqAccordion: React.FC = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="text-xs font-bold uppercase tracking-widest text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold uppercase tracking-widest text-sky-800 bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full shadow-2xs">
             Häufige Fragen
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 mb-3">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 mt-3 mb-3">
             Fragen & Antworten
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-600 text-sm">
             Alles Wichtige zu Technologie, Abrechnung, Compliance und Onboarding.
           </p>
         </div>
@@ -74,20 +74,20 @@ export const FaqAccordion: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="bg-slate-800/50 border border-slate-700/60 rounded-2xl overflow-hidden transition"
+                className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200/90 rounded-2xl overflow-hidden transition shadow-2xs"
               >
                 <button
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full py-4.5 px-6 text-left flex items-center justify-between font-bold text-slate-100 hover:text-white transition"
+                  className="w-full py-4.5 px-6 text-left flex items-center justify-between font-bold text-slate-900 hover:text-slate-950 transition"
                 >
                   <span className="text-base pr-4">{faq.q}</span>
-                  <div className="w-7 h-7 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 shrink-0 shadow-2xs">
                     {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-sm text-slate-300 border-t border-slate-700/30 leading-relaxed">
+                  <div className="px-6 pb-5 pt-1 text-sm text-slate-600 border-t border-slate-200/70 leading-relaxed">
                     {faq.a}
                   </div>
                 )}

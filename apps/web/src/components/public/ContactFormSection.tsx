@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useI18n } from '@/context/I18nContext';
+import { publicContent } from '@/lib/publicTranslations';
 import { Send, CheckCircle2, AlertCircle, Building2, User, Briefcase, ShieldCheck } from 'lucide-react';
 
 export const ContactFormSection: React.FC = () => {
+  const { locale } = useI18n();
+  const activeLocale = (locale === 'tr' || locale === 'en' ? locale : 'de') as 'de' | 'tr' | 'en';
+  const ct = publicContent[activeLocale]?.contact || publicContent.de.contact;
+
   const [userType, setUserType] = useState<'COMPANY' | 'JOB_SEEKER' | 'PRIVATE_INDIVIDUAL'>('COMPANY');
   const [inquiryType, setInquiryType] = useState<'LEADS' | 'COLLABORATION' | 'DIALER' | 'JOB' | 'OTHER'>('LEADS');
   const [selectedProduct, setSelectedProduct] = useState('Photovoltaik');
@@ -91,14 +97,13 @@ export const ContactFormSection: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
-            Kontakt & Live-Demo
+            {ct.badge}
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 mb-3">
-            Jetzt unverbindlich beraten lassen
+            {ct.title}
           </h2>
           <p className="text-slate-400 text-sm max-w-xl mx-auto">
-            Testen Sie unsere Plattform kostenfrei oder fordern Sie ein maßgeschneidertes Angebot
-            für Ihre Kampagnen an. Wir melden uns innerhalb von 24 Stunden.
+            {ct.subtitle}
           </p>
         </div>
 
@@ -124,7 +129,7 @@ export const ContactFormSection: React.FC = () => {
             {/* Step 1: User Persona Selector */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">
-                1. Ich bin:
+                {activeLocale === 'tr' ? '1. Başvuru Türü:' : activeLocale === 'en' ? '1. I am a:' : '1. Ich bin:'}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
@@ -137,7 +142,7 @@ export const ContactFormSection: React.FC = () => {
                   }`}
                 >
                   <Building2 className="w-4 h-4" />
-                  <span>Unternehmen / Call-Center</span>
+                  <span>{ct.tabCompany}</span>
                 </button>
 
                 <button
@@ -150,7 +155,7 @@ export const ContactFormSection: React.FC = () => {
                   }`}
                 >
                   <Briefcase className="w-4 h-4" />
-                  <span>Arbeitssuchend</span>
+                  <span>{ct.tabJob}</span>
                 </button>
 
                 <button
@@ -163,7 +168,7 @@ export const ContactFormSection: React.FC = () => {
                   }`}
                 >
                   <User className="w-4 h-4" />
-                  <span>Privatperson</span>
+                  <span>{ct.tabPrivate}</span>
                 </button>
               </div>
             </div>
@@ -212,28 +217,28 @@ export const ContactFormSection: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Vorname *
+                  {ct.lblFirstName} *
                 </label>
                 <input
                   type="text"
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Max"
+                  placeholder="Ahmet / Max"
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Nachname *
+                  {ct.lblLastName} *
                 </label>
                 <input
                   type="text"
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Mustermann"
+                  placeholder="Yılmaz / Mustermann"
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
@@ -242,13 +247,13 @@ export const ContactFormSection: React.FC = () => {
             {userType === 'COMPANY' && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Unternehmensname
+                  {ct.lblCompany}
                 </label>
                 <input
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Muster Solar GmbH"
+                  placeholder="GmbH / Ltd. Şti."
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
@@ -257,28 +262,28 @@ export const ContactFormSection: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Telefonnummer *
+                  {ct.lblPhone} *
                 </label>
                 <input
                   type="tel"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+49 170 1234567"
+                  placeholder="+49 170 1234567 / +90 532 ..."
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  E-Mail Adresse *
+                  {ct.lblEmail} *
                 </label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="kontakt@unternehmen.de"
+                  placeholder="info@sirketiniz.com"
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
@@ -286,22 +291,22 @@ export const ContactFormSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">PLZ</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">{ct.lblPostal}</label>
                 <input
                   type="text"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
-                  placeholder="10115"
+                  placeholder="34000 / 10115"
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ort</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">{ct.lblCity}</label>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="Berlin"
+                  placeholder="İstanbul / Berlin"
                   className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
                 />
               </div>
@@ -309,13 +314,13 @@ export const ContactFormSection: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Nachricht / Anmerkungen (optional)
+                {ct.lblMessage}
               </label>
               <textarea
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Wie können wir Ihnen weiterhelfen? (z.B. geplantes Anrufvolumen, Wunsch-Starttermin)"
+                placeholder={activeLocale === 'tr' ? 'Size nasıl yardımcı olabiliriz? (Örn: günlük arama hacmi, temsilci sayısı)' : 'Wie können wir Ihnen weiterhelfen?'}
                 className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500"
               />
             </div>
@@ -344,13 +349,7 @@ export const ContactFormSection: React.FC = () => {
                   className="mt-0.5 rounded-sm bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900"
                 />
                 <span className="leading-relaxed">
-                  Ich willige ein, dass meine Daten zur Kontaktaufnahme und Beantwortung meiner
-                  Anfrage gemäß der{' '}
-                  <a href="/de/datenschutz" target="_blank" className="text-sky-400 underline">
-                    Datenschutzerklärung
-                  </a>{' '}
-                  elektronisch gespeichert und verarbeitet werden (Version v2026.1). Diese
-                  Einwilligung kann ich jederzeit formlos widerrufen.
+                  {ct.consentText}
                 </span>
               </label>
             </div>
@@ -363,10 +362,10 @@ export const ContactFormSection: React.FC = () => {
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-base transition-all shadow-xl shadow-amber-500/20 disabled:opacity-60 cursor-pointer flex items-center justify-center space-x-2"
               >
                 {loading ? (
-                  <span>Wird übermittelt...</span>
+                  <span>{ct.btnSubmitting}</span>
                 ) : (
                   <>
-                    <span>Anfrage unverbindlich absenden</span>
+                    <span>{ct.btnSubmit}</span>
                     <Send className="w-4 h-4" />
                   </>
                 )}

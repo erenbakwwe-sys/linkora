@@ -23,20 +23,26 @@ import {
   Headphones,
 } from 'lucide-react';
 
+import { useI18n } from '@/context/I18nContext';
+import { publicContent } from '@/lib/publicTranslations';
+
 export const ThreeFeatureCards: React.FC = () => {
+  const { locale } = useI18n();
+  const activeLocale = (locale === 'tr' || locale === 'en' ? locale : 'de') as 'de' | 'tr' | 'en';
+  const tf = publicContent[activeLocale]?.threeFeatures || publicContent.de.threeFeatures;
+
   return (
     <section id="leistungen" className="py-20 bg-[#0b1220] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-bold uppercase tracking-widest text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
-            Drei Säulen für Ihren Erfolg
+            {tf.badge}
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 mb-4">
-            Eine Plattform. Alle Werkzeuge für maximale Abschlüsse.
+            {tf.title}
           </h2>
           <p className="text-slate-400 text-base">
-            Schluss mit isolierten Silos. Verknüpfen Sie Ihre Lead-Generierung nahtlos mit
-            schlagkräftigen Telefonieteams und intelligenter Konvertierungs-KI.
+            {tf.subtitle}
           </p>
         </div>
 
@@ -47,24 +53,17 @@ export const ThreeFeatureCards: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 mb-6 group-hover:scale-105 transition-transform">
                 <Users className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">1. Teams & Multi-Tenancy</h3>
+              <h3 className="text-xl font-bold text-white mb-3">{tf.card1.title}</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Verwalten Sie unbegrenzt viele eigene Call-Center und Sub-Unternehmen mit individueller
-                Rechteverwaltung (RBAC), Echtzeit-Wallboards, Supervisor-Mithören und Zeiterfassung.
+                {tf.card1.desc}
               </p>
               <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Mandantenbaum (Mutter- & Sub-Firmen)</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>TV-Wallboard mit Live-Agentenstatus</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Supervisor Listen, Whisper & Barge-in</span>
-                </li>
+                {tf.card1.bullets.map((b, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -75,24 +74,17 @@ export const ThreeFeatureCards: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-105 transition-transform">
                 <Layers className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">2. Leads & Marktplatz</h3>
+              <h3 className="text-xl font-bold text-white mb-3">{tf.card2.title}</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Zentraler Lead-Pool mit automatischer E.164-Normalisierung, Deduplizierung,
-                KI-Gütebewertung (0–100) und automatisiertem Ping-Post Matching an deutsche Fachpartner.
+                {tf.card2.desc}
               </p>
               <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Anonymisiertes Ping & Post Waterfall</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Qualitätspool für Mehrfach-Vermarktung</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Lückenlose DSGVO-Einwilligungsprüfung</span>
-                </li>
+                {tf.card2.bullets.map((b, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -103,24 +95,17 @@ export const ThreeFeatureCards: React.FC = () => {
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-6 group-hover:scale-105 transition-transform">
                 <Cpu className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">3. Technologie & KI</h3>
+              <h3 className="text-xl font-bold text-white mb-3">{tf.card3.title}</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                WebRTC Softphone im Browser ohne Installation. Automatisierte Transkription, KI-gestützte
-                Gesprächszusammenfassungen und zweisprachiges Coaching für TR- und DE-Teams.
+                {tf.card3.desc}
               </p>
               <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Post-Call QC mit Konformitätsprüfung</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>PII-Maskierung & Hash-Audit-Chain</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Carrier-Redundanz & Rufnummern-Rotation</span>
-                </li>
+                {tf.card3.bullets.map((b, idx) => (
+                  <li key={idx} className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

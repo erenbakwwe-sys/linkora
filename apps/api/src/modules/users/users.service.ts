@@ -1,6 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { scryptSync } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export interface UserItem {
   id: string;
@@ -19,7 +21,7 @@ export interface UserItem {
 }
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   private inMemoryUsers: UserItem[] = [
     {
       id: 'usr-157',
@@ -147,6 +149,56 @@ export class UsersService {
 
   constructor(private db: DatabaseService) {}
 
+  onModuleInit() {
+    this.loadPersistedUsers();
+  }
+
+  private getStorageFilePath(): string {
+    try {
+      const dir = path.resolve(process.cwd(), 'data');
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      return path.join(dir, 'users.json');
+    } catch {
+      return path.resolve(process.cwd(), 'users.json');
+    }
+  }
+
+  private loadPersistedUsers() {
+    try {
+      const filePath = this.getStorageFilePath();
+      if (fs.existsSync(filePath)) {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(this.inMemoryUsers.map(u => u.id));
+          const existingEmails = new Set(this.inMemoryUsers.map(u => u.email.toLowerCase()));
+          for (const u of parsed) {
+            if (!existingIds.has(u.id) && !existingEmails.has(u.email.toLowerCase())) {
+              this.inMemoryUsers.unshift(u);
+              existingIds.add(u.id);
+              existingEmails.add(u.email.toLowerCase());
+            }
+          }
+        }
+      } else {
+        this.savePersistedUsers();
+      }
+    } catch {
+      // Continue gracefully
+    }
+  }
+
+  private savePersistedUsers() {
+    try {
+      const filePath = this.getStorageFilePath();
+      fs.writeFileSync(filePath, JSON.stringify(this.inMemoryUsers, null, 2), 'utf-8');
+    } catch {
+      // Ignore in read-only environments
+    }
+  }
+
   private hashPassword(password: string): string {
     const salt = 'linkora-secure-salt-2026';
     return scryptSync(password, salt, 32).toString('hex');
@@ -256,6 +308,7 @@ export class UsersService {
       }
     }
 
+    this.savePersistedUsers();
     return user;
   }
 
@@ -307,6 +360,7 @@ export class UsersService {
     }
 
     this.inMemoryUsers.unshift(newUser);
+    this.savePersistedUsers();
     return newUser;
   }
 
@@ -344,6 +398,7 @@ export class UsersService {
       // DB sync
     }
 
+    this.savePersistedUsers();
     return user;
   }
 }

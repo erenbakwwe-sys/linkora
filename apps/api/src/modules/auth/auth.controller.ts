@@ -7,8 +7,9 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string; tenantSlug?: string }) {
-    return this.authService.login(body.email, body.password, body.tenantSlug);
+  async login(@Body() body: { email?: string; username?: string; identifier?: string; password: string; tenantSlug?: string }) {
+    const id = body.email || body.username || body.identifier || '';
+    return this.authService.login(id, body.password, body.tenantSlug);
   }
 
   @Post('refresh')

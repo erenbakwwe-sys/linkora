@@ -66,18 +66,29 @@ export class MarketplaceController {
   async deliverLead(
     @Body()
     body: {
-      leadId: string;
+      leadId?: string;
+      lead?: any;
       buyerId?: string;
+      answers?: any[];
+      audioFileName?: string;
       customPayload?: Record<string, any>;
     },
     @CurrentTenant() tenantId?: string
   ) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    const effectiveLeadId = body.leadId || body.lead?.id || `lead-${Date.now()}`;
+    const payload = {
+      ...(body.customPayload || {}),
+      ...(body.lead || {}),
+      answers: body.answers || body.lead?.answers,
+      audioFileName: body.audioFileName || body.lead?.audioFileName,
+    };
+
     return this.marketplaceService.deliverLeadDirectly({
       tenantId: tId,
-      leadId: body.leadId,
+      leadId: effectiveLeadId,
       buyerId: body.buyerId,
-      customPayload: body.customPayload,
+      customPayload: payload,
     });
   }
 

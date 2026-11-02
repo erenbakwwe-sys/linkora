@@ -337,30 +337,31 @@ export class MarketplaceService {
       // Fallback
     }
 
+    const effectiveLeadId = String(params.leadId || params.customPayload?.id || `lead-${Date.now()}`);
     const payload = {
-      leadId: params.leadId,
-      externalRef: `LNK-${params.leadId.slice(0, 8)}`,
+      leadId: effectiveLeadId,
+      externalRef: `LNK-${effectiveLeadId.slice(0, 8)}`,
       timestamp: new Date().toISOString(),
       partner: buyer.name,
       customer: {
-        firstName: lead?.first_name || params.customPayload?.firstName || 'Max',
-        lastName: lead?.last_name || params.customPayload?.lastName || 'Mustermann',
+        firstName: lead?.first_name || params.customPayload?.first_name || params.customPayload?.firstName || 'Max',
+        lastName: lead?.last_name || params.customPayload?.last_name || params.customPayload?.lastName || 'Mustermann',
         salutation: lead?.salutation || params.customPayload?.salutation || 'Herr',
-        phone: lead?.phone_e164 || lead?.phone_raw || params.customPayload?.phone || '+491714567890',
+        phone: lead?.phone_e164 || lead?.phone_raw || params.customPayload?.phone_e164 || params.customPayload?.phone || '+491714567890',
         email: lead?.email || params.customPayload?.email || 'kunde@beispiel.de',
         address: {
           street: lead?.street || params.customPayload?.street || 'Musterstr.',
-          houseNumber: lead?.house_number || params.customPayload?.houseNumber || '1',
-          postalCode: lead?.postal_code || params.customPayload?.postalCode || '80331',
+          houseNumber: lead?.house_number || params.customPayload?.house_number || params.customPayload?.houseNumber || '1',
+          postalCode: lead?.postal_code || params.customPayload?.postal_code || params.customPayload?.postalCode || '80331',
           city: lead?.city || params.customPayload?.city || 'München',
           country: 'DE',
         },
       },
       project: {
-        type: lead?.project_name || params.customPayload?.project || 'Photovoltaik',
+        type: lead?.project_name || params.customPayload?.project_name || params.customPayload?.project || 'Photovoltaik',
         answers: lead?.answers || params.customPayload?.answers || {},
-        note: lead?.notes || params.customPayload?.notes || '',
-        audioRecordingUrl: lead?.audio_recording_url || params.customPayload?.audioRecordingUrl || null,
+        note: lead?.notes || params.customPayload?.notiz || params.customPayload?.notes || '',
+        audioRecordingUrl: lead?.audio_recording_url || params.customPayload?.audioRecordingUrl || params.customPayload?.audioFileName || null,
       },
       callbackUrl: `${process.env.APP_URL || 'https://linkora-erenbakwwe-4622s-projects.vercel.app'}/api/marketplace/callbacks/partner`,
     };

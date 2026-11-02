@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentTenant } from '../../common/guards/user.decorator.js';
 import { MarketplaceService } from './marketplace.service.js';
@@ -98,10 +98,36 @@ export class MarketplaceController {
     @Body() body: any,
     @Param('partnerSlug') partnerSlug?: string
   ) {
+    if (partnerSlug === 'gitasis') {
+      return this.marketplaceService.processGitasisWebhook(body);
+    }
     return this.marketplaceService.processPartnerCallback({
       ...body,
       partnerName: partnerSlug || body.partner || body.partnerName || 'Aroundhome GmbH',
     });
+  }
+
+  @Post('callbacks/gitasis')
+  @ApiOperation({ summary: 'Gitasis (gitasis.com) Inbound Webhook for Appointments, Won, and Rejected Leads' })
+  async gitasisCallback(
+    @Body() body: any,
+    @Query('token') queryToken?: string,
+    @Headers('X-API-KEY') headerToken?: string
+  ) {
+    return this.marketplaceService.processGitasisWebhook(body, queryToken, headerToken);
+  }
+
+  @Get('callbacks/gitasis')
+  @ApiOperation({ summary: 'Gitasis Webhook Health Check and URL Verification' })
+  async gitasisHealthCheck(@Query('token') token?: string) {
+    return {
+      status: 'active',
+      service: 'Linkora Gitasis Webhook Receiver',
+      method: 'POST',
+      acceptedFormats: ['application/json', 'application/x-www-form-urlencoded'],
+      tokenValid: token === (process.env.GITASIS_WEBHOOK_SECRET || 'gitasis_linkora_2026'),
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post('ping-post')

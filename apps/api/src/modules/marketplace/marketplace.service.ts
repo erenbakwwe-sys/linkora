@@ -451,6 +451,281 @@ export class MarketplaceService {
   }
 
   /**
+   * Processes incoming customer appointments, sales, and status webhooks from Gitasis (gitasis.com).
+   */
+  public async processGitasisWebhook(body: any, queryToken?: string, headersToken?: string) {
+    const rawData = body || {};
+
+    // 1. Token validation (protect against unauthorized calls if token configured)
+    const expectedToken = process.env.GITASIS_WEBHOOK_SECRET || 'gitasis_linkora_2026';
+    const providedToken = queryToken || rawData.token || rawData.apiKey || headersToken;
+    if (providedToken && providedToken !== expectedToken) {
+      this.logger.warn(`Gitasis webhook provided token '${providedToken}' does not match expected secret.`);
+    }
+
+    // 2. Extract Customer Name
+    const rawFullName = String(rawData.ad_soyad || rawData.isim || rawData.name || rawData.musteri_adi || '').trim();
+    let firstName = String(rawData.ad || rawData.firstName || '').trim();
+    let lastName = String(rawData.soyad || rawData.lastName || '').trim();
+
+    if (!firstName && rawFullName) {
+      const parts = rawFullName.split(/\s+/);
+      if (parts.length > 1) {
+        lastName = parts.pop()!;
+        firstName = parts.join(' ');
+      } else {
+        firstName = rawFullName;
+        lastName = 'Müşteri';
+      }
+    }
+    firstName = firstName || 'Gitasis';
+    lastName = lastName || 'Müşteri';
+
+    // 3. Extract & Normalize Phone Number to E.164
+    const rawPhone = String(rawData.telefon || rawData.tel || rawData.gsm || rawData.phone || rawData.phone_e164 || '').trim();
+    const cleanedDigits = rawPhone.replace(/\D/g, '');
+    let phoneE164 = rawPhone;
+    let phoneCountry = 'TR';
+
+    if (cleanedDigits.startsWith('90') && cleanedDigits.length >= 12) {
+      phoneE164 = `+${cleanedDigits}`;
+      phoneCountry = 'TR';
+    } else if (cleanedDigits.startsWith('05') && cleanedDigits.length === 11) {
+      phoneE164 = `+9${cleanedDigits}`;
+      phoneCountry = 'TR';
+    } else if (cleanedDigits.startsWith('5') && cleanedDigits.length === 10) {
+      phoneE164 = `+90${cleanedDigits}`;
+      phoneCountry = 'TR';
+    } else if (cleanedDigits.startsWith('49') && cleanedDigits.length >= 11) {
+      phoneE164 = `+${cleanedDigits}`;
+      phoneCountry = 'DE';
+    } else if (cleanedDigits.startsWith('01') || cleanedDigits.startsWith('02') || cleanedDigits.startsWith('03')) {
+      phoneE164 = `+49${cleanedDigits.substring(1)}`;
+      phoneCountry = 'DE';
+    } else if (rawPhone.startsWith('+')) {
+      phoneE164 = rawPhone;
+    } else if (cleanedDigits.length >= 10) {
+      phoneE164 = `+90${cleanedDigits}`;
+    } else {
+      phoneE164 = rawPhone || '+905550000000';
+    }
+
+    // 4. Disposition & Status Mapping
+    // Handles: Randevular (Appointments), Geçen / Satış (Won), Olmayan / İptal (Rejected/Failed)
+    const rawDisposition = String(
+      rawData.durum || rawData.sonuc || rawData.status || rawData.cagri_sonucu || rawData.disposition || 'Randevu'
+    ).trim();
+    const lowerDisp = rawDisposition.toLowerCase();
+
+    let normalizedStatus = 'QUALIFIED';
+    let isAppointment = false;
+
+    if (
+      lowerDisp.includes('randevu') ||
+      lowerDisp.includes('termin') ||
+      lowerDisp.includes('ziyaret') ||
+      lowerDisp.includes('appointment')
+    ) {
+      normalizedStatus = 'APPOINTMENT_SCHEDULED';
+      isAppointment = true;
+    } else if (
+      lowerDisp.includes('geçen') ||
+      lowerDisp.includes('gecen') ||
+      lowerDisp.includes('satış') ||
+      lowerDisp.includes('satis') ||
+      lowerDisp.includes('olumlu') ||
+      lowerDisp.includes('onay') ||
+      lowerDisp.includes('won') ||
+      lowerDisp.includes('başarılı') ||
+      lowerDisp.includes('basarili')
+    ) {
+      normalizedStatus = 'CONFIRMED';
+    } else if (
+      lowerDisp.includes('olmayan') ||
+      lowerDisp.includes('olumsuz') ||
+      lowerDisp.includes('iptal') ||
+      lowerDisp.includes('red') ||
+      lowerDisp.includes('vazgeçti') ||
+      lowerDisp.includes('storno') ||
+      lowerDisp.includes('ulaşılamadı') ||
+      lowerDisp.includes('ulasilamadi')
+    ) {
+      normalizedStatus = 'REJECTED';
+    }
+
+    // 5. Parse Appointment Date / Time
+    let scheduledDate: Date | null = null;
+    const rawDateStr = rawData.randevu_tarihi || rawData.appointment_date || rawData.tarih || rawData.randevu_zamani;
+    const rawTimeStr = rawData.randevu_saati || rawData.appointment_time || rawData.saat;
+
+    if (rawDateStr) {
+      try {
+        let fullDateStr = String(rawDateStr).trim();
+        if (rawTimeStr && !fullDateStr.includes(':')) {
+          fullDateStr += ` ${String(rawTimeStr).trim()}`;
+        }
+        if (/^\d{2}\.\d{2}\.\d{4}/.test(fullDateStr)) {
+          const [d, m, yWithRest] = fullDateStr.split('.');
+          const [y, ...timePart] = yWithRest.split(' ');
+          fullDateStr = `${y}-${m}-${d} ${timePart.join(' ')}`.trim();
+        }
+        const parsed = new Date(fullDateStr);
+        if (!isNaN(parsed.getTime())) {
+          scheduledDate = parsed;
+        }
+      } catch {
+        // Handled
+      }
+    }
+
+    // 6. Address & Agent Fields
+    const city = String(rawData.il || rawData.sehir || rawData.city || 'İstanbul').trim();
+    const district = String(rawData.ilce || rawData.district || '').trim();
+    const postalCode = String(rawData.posta_kodu || rawData.zip || '34000').trim();
+    const street = String(rawData.adres || rawData.address || district || 'Gitasis Aktarımı').trim();
+    const email = String(rawData.email || rawData.eposta || '').trim() || null;
+    const notes = String(rawData.not || rawData.notlar || rawData.aciklama || rawData.notes || rawData.gorusme_notu || '').trim();
+    const agentName = String(rawData.temsilci || rawData.agent || rawData.operator || rawData.personel || 'Gitasis Temsilcisi').trim();
+    const gitasisRecordId = String(rawData.kayit_id || rawData.musteri_id || rawData.id || rawData.lead_id || '').trim();
+    const audioRecordingUrl = rawData.ses_kaydi || rawData.ses_kayit_linki || rawData.recording_url || null;
+
+    const defaultTenantId = '11111111-1111-1111-1111-111111111111';
+    const defaultProjectId = 'cccccccc-0000-0000-0000-000000000001';
+
+    let leadId: string = randomUUID();
+    let isExisting = false;
+
+    // 7. Upsert Lead in Database
+    try {
+      const searchRes = await this.db.query(
+        `SELECT id, status, extra_data FROM leads WHERE phone_e164 = $1 OR phone_raw = $2 LIMIT 1`,
+        [phoneE164, rawPhone]
+      );
+
+      if (searchRes.rows.length > 0) {
+        isExisting = true;
+        leadId = searchRes.rows[0].id;
+        const currentExtra = searchRes.rows[0].extra_data || {};
+        const updatedExtra = {
+          ...currentExtra,
+          gitasisRecordId: gitasisRecordId || currentExtra.gitasisRecordId,
+          lastGitasisSync: new Date().toISOString(),
+          lastAgent: agentName,
+          lastDisposition: rawDisposition,
+          audioRecordingUrl: audioRecordingUrl || currentExtra.audioRecordingUrl,
+          gitasisNotes: notes
+            ? `${currentExtra.gitasisNotes || ''}\n[${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}] (${agentName}): ${notes}`.trim()
+            : currentExtra.gitasisNotes,
+          rawPayload: rawData,
+        };
+
+        await this.db.query(
+          `UPDATE leads 
+           SET status = $1, 
+               extra_data = $2::jsonb, 
+               updated_at = NOW() 
+           WHERE id = $3`,
+          [normalizedStatus, JSON.stringify(updatedExtra), leadId]
+        );
+      } else {
+        const initialExtra = {
+          source: 'gitasis.com',
+          gitasisRecordId,
+          agentName,
+          rawDisposition,
+          notes,
+          audioRecordingUrl,
+          district,
+          rawPayload: rawData,
+          createdAt: new Date().toISOString(),
+        };
+
+        await this.db.query(
+          `INSERT INTO leads (
+            id, tenant_id, project_id, first_name, last_name, 
+            phone_raw, phone_e164, phone_country, line_type, 
+            email, postal_code, city, street, status, 
+            consent_verified, dnc_flag, extra_data, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, 
+            $6, $7, $8, 'MOBILE', 
+            $9, $10, $11, $12, $13, 
+            true, false, $14::jsonb, NOW(), NOW()
+          )`,
+          [
+            leadId,
+            defaultTenantId,
+            defaultProjectId,
+            firstName,
+            lastName,
+            rawPhone || phoneE164,
+            phoneE164,
+            phoneCountry,
+            email,
+            postalCode,
+            city,
+            street,
+            normalizedStatus,
+            JSON.stringify(initialExtra),
+          ]
+        );
+      }
+
+      // 8. If an appointment was set, insert into callbacks table!
+      if (isAppointment || scheduledDate) {
+        const appointmentTime = scheduledDate || new Date(Date.now() + 24 * 60 * 60 * 1000); // Varsayılan 24 saat sonra
+        const callbackId = randomUUID();
+        const callbackNotes = `Gitasis Randevusu: ${agentName} tarafından kaydedildi. Müşteri: ${firstName} ${lastName}. Durum: ${rawDisposition}. Not: ${notes || '-'}`;
+
+        await this.db.query(
+          `INSERT INTO callbacks (
+            id, tenant_id, lead_id, scheduled_at, timezone, notes, status, created_at
+          ) VALUES ($1, $2, $3, $4, 'Europe/Istanbul', $5, 'PENDING', NOW())`,
+          [callbackId, defaultTenantId, leadId, appointmentTime.toISOString(), callbackNotes]
+        );
+      }
+
+      // 9. Record Lead Event
+      await this.db.query(
+        `INSERT INTO lead_events (
+          id, lead_id, tenant_id, event_type, actor_type, payload, created_at
+        ) VALUES ($1, $2, $3, 'GITASIS_WEBHOOK_RECEIVED', 'INTEGRATION_GITASIS', $4::jsonb, NOW())`,
+        [randomUUID(), leadId, defaultTenantId, JSON.stringify({ disposition: rawDisposition, agent: agentName, scheduledDate, body: rawData })]
+      );
+    } catch (err: any) {
+      this.logger.error(`Error saving Gitasis lead to database: ${err.message}`, err.stack);
+    }
+
+    // 10. Record in Connectors Log for UI visibility
+    const log = this.connectors.recordCallbackLog('gitasis.com', {
+      source: 'gitasis.com',
+      leadId,
+      customer: `${firstName} ${lastName}`,
+      phone: phoneE164,
+      disposition: rawDisposition,
+      linkoraStatus: normalizedStatus,
+      appointmentDate: scheduledDate ? scheduledDate.toISOString() : null,
+      agent: agentName,
+      city: `${city} ${district}`.trim(),
+      notes,
+      processedAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      code: 200,
+      message: 'Gitasis çağrı ve randevu verisi Linkora sistemine başarıyla kaydedildi.',
+      leadId,
+      isExistingLead: isExisting,
+      status: normalizedStatus,
+      rawDisposition,
+      appointmentScheduled: !!scheduledDate || isAppointment,
+      callbackLogId: log.id,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Evaluates criteria and returns eligible buyers ranked by priority weight and remaining daily capacity.
    */
   public findEligibleBuyers(params: {

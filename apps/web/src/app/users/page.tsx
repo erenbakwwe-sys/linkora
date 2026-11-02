@@ -79,22 +79,30 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const [usersRes, numbersRes] = await Promise.all([
-        fetch('/api/users'),
-        fetch('/api/users/free-numbers'),
+        fetch('/api/users').catch(() => null),
+        fetch('/api/users/free-numbers').catch(() => null),
       ]);
 
-      if (usersRes.ok) {
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
+      const custom: UserItem[] = customRaw ? JSON.parse(customRaw) : [];
+
+      if (usersRes && usersRes.ok) {
         const data = await usersRes.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-          const custom = customRaw ? JSON.parse(customRaw) : [];
-          const existingIds = new Set(data.map((u: any) => u.id));
-          const toAdd = custom.filter((u: any) => !existingIds.has(u.id));
-          setUsers([...toAdd, ...data]);
+        if (Array.isArray(data)) {
+          const customIds = new Set(custom.map((u: any) => u.id));
+          const customUsernames = new Set(custom.map((u: any) => (u.username || '').toLowerCase()));
+          const serverFiltered = data.filter(
+            (u: any) => !customIds.has(u.id) && !customUsernames.has((u.username || '').toLowerCase())
+          );
+          setUsers([...custom, ...serverFiltered]);
+        } else if (custom.length > 0) {
+          setUsers(custom);
         }
+      } else if (custom.length > 0) {
+        setUsers(custom);
       }
 
-      if (numbersRes.ok) {
+      if (numbersRes && numbersRes.ok) {
         const nums = await numbersRes.json();
         if (Array.isArray(nums)) {
           setFreeNumbers(nums);
@@ -102,6 +110,10 @@ export default function UsersPage() {
       }
     } catch (err) {
       console.error('Failed to load users:', err);
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
+      if (customRaw) {
+        setUsers(JSON.parse(customRaw));
+      }
     } finally {
       setLoading(false);
     }

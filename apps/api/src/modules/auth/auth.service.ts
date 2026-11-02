@@ -13,10 +13,13 @@ export interface AuthTokens {
     email: string;
     firstName: string;
     lastName: string;
+    username?: string;
     role: string;
     mode: 'MANAGER' | 'AGENT';
     language: string;
     tenantId: string;
+    callerIdNumber?: string | null;
+    team?: string;
   };
   tenant: {
     id: string;
@@ -48,16 +51,27 @@ export class AuthService {
   }
 
   async login(email: string, password: string, tenantSlug?: string): Promise<AuthTokens> {
+    const cleanTerm = (email || '').trim().toLowerCase();
+    const cleanPwd = (password || '').trim();
+    const cleanSlug = (tenantSlug || '').trim().toLowerCase();
+
+    if (!cleanTerm) {
+      throw new BadRequestException('E-Mail oder Benutzername ist erforderlich');
+    }
+    if (!cleanPwd) {
+      throw new BadRequestException('Passwort ist erforderlich');
+    }
+
     let user: any = null;
     let isFromDb = false;
 
     try {
       let tenantFilter = '';
-      const params: any[] = [email];
+      const params: any[] = [cleanTerm];
 
-      if (tenantSlug) {
+      if (cleanSlug) {
         tenantFilter = 'AND t.slug = $2';
-        params.push(tenantSlug);
+        params.push(cleanSlug);
       }
 
       const userRes = await this.db.query(
@@ -68,7 +82,8 @@ export class AuthService {
          LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.tenant_id = u.tenant_id
          LEFT JOIN roles r ON ur.role_id = r.id
          LEFT JOIN wallets w ON t.id = w.tenant_id
-         WHERE u.email = $1 ${tenantFilter} AND u.is_active = true
+         WHERE (LOWER(u.email) = $1 OR LOWER(u.first_name) = $1 OR LOWER(u.first_name || ' ' || u.last_name) = $1 OR LOWER(u.first_name || u.last_name) = $1)
+               ${tenantFilter} AND u.is_active = true
          LIMIT 1`,
         params
       );
@@ -82,27 +97,27 @@ export class AuthService {
     }
 
     if (isFromDb && user) {
-      if (!this.verifyPassword(password, user.password_hash)) {
-        throw new UnauthorizedException('Invalid email or password');
+      if (!this.verifyPassword(cleanPwd, user.password_hash)) {
+        throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
       }
       try {
         await this.db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
       } catch {}
     } else {
       // Check in UsersService (in-memory or admin created)
-      const memUser = this.usersService.findUserByEmailOrUsername(email);
+      const memUser = this.usersService.findUserByEmailOrUsername(cleanTerm);
       if (!memUser || !memUser.isActive) {
-        throw new UnauthorizedException('Invalid email or password');
+        throw new UnauthorizedException('Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden');
       }
 
       const isPwdMatch =
-        (memUser.passwordHash && this.verifyPassword(password, memUser.passwordHash)) ||
-        memUser.passwordPlain === password ||
-        password === 'Agent123!' ||
-        password === 'Admin123!';
+        (memUser.passwordHash && this.verifyPassword(cleanPwd, memUser.passwordHash)) ||
+        (memUser.passwordPlain && memUser.passwordPlain.trim() === cleanPwd) ||
+        cleanPwd === 'Agent123!' ||
+        cleanPwd === 'Admin123!';
 
       if (!isPwdMatch) {
-        throw new UnauthorizedException('Invalid email or password');
+        throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
       }
 
       const isManager = memUser.role === 'Firmen-Admin';
@@ -120,8 +135,8 @@ export class AuthService {
         tenant_id: '11111111-1111-1111-1111-111111111111',
         tenant_name: 'Lead-Kontackt',
         tenant_slug: 'lead-kontackt',
-        caller_id_number: memUser.callerIdNumber || '+49 40 42925873',
-        team: memUser.team,
+        caller_id_number: memUser.callerIdNumber || (isManager ? '+49 40 325510' : '+49 40 42925873'),
+        team: memUser.team || (isManager ? '—' : 'MD-Team'),
         wallet_balance: 10.0,
         low_balance_threshold_eur: 10.0,
       };
@@ -166,10 +181,13 @@ export class AuthService {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        username: user.username || `${user.first_name} ${user.last_name}`.trim(),
         role: user.role_slug || 'AGENT',
         mode: user.default_mode || 'AGENT',
         language: user.language || 'de',
         tenantId: user.tenant_id,
+        callerIdNumber: user.caller_id_number || (user.default_mode === 'MANAGER' ? '+49 40 325510' : '+49 40 42925873'),
+        team: user.team || (user.default_mode === 'MANAGER' ? '—' : 'MD-Team'),
       },
       tenant: {
         id: user.tenant_id,

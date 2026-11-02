@@ -3,26 +3,39 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, Building, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Lock, Mail, Building, ArrowRight, ShieldCheck, Sparkles, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [tenantSlug, setTenantSlug] = useState('lead-kontackt');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail) {
+      setError('Bitte geben Sie Ihre E-Mail-Adresse oder Ihren Benutzernamen ein.');
+      return;
+    }
+    if (!cleanPassword) {
+      setError('Bitte geben Sie Ihr Passwort ein.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await login(email, password, tenantSlug);
+      await login(cleanEmail, cleanPassword, tenantSlug.trim() || 'lead-kontackt');
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Login fehlgeschlagen');
+      setError(err.message || 'Login fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.');
     } finally {
       setLoading(false);
     }
@@ -70,8 +83,9 @@ export default function LoginPage() {
           )}
 
           {error && (
-            <div className="mb-5 bg-rose-950/80 border border-rose-500/40 text-rose-200 px-4 py-3 rounded-2xl text-xs shadow-xs animate-in fade-in duration-200">
-              {error}
+            <div className="mb-5 bg-rose-950/80 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-2xl text-xs flex items-center gap-2.5 shadow-md animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
@@ -85,6 +99,10 @@ export default function LoginPage() {
                 <input
                   type="text"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="z.B. Murat2 oder murat2@lead-kontackt.de"
@@ -98,13 +116,25 @@ export default function LoginPage() {
               <div className="relative group">
                 <Lock className="w-4 h-4 text-slate-400 group-focus-within:text-sky-400 absolute left-3.5 top-3 transition-colors" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
+                  className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-10 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 p-1 text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                  title={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

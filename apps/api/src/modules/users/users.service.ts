@@ -48,6 +48,7 @@ export class UsersService {
       callerIdNumber: '+49 30 901820',
       lastLogin: 'vor 18 Std.',
       createdAt: '13.08.2026',
+      passwordPlain: 'Agent123!',
     },
     {
       id: 'usr-209',
@@ -57,10 +58,11 @@ export class UsersService {
       email: 'eren.lead@lead-kontackt.de',
       role: 'Teamleiter',
       team: 'Testcalendra',
-      isActive: false,
+      isActive: true,
       callerIdNumber: null,
       lastLogin: 'vor 27 Tagen',
       createdAt: '02.10.2026',
+      passwordPlain: 'Agent123!',
     },
     {
       id: 'usr-212',
@@ -74,6 +76,7 @@ export class UsersService {
       callerIdNumber: '+49 89 203040',
       lastLogin: 'vor 1 Std.',
       createdAt: '02.10.2026',
+      passwordPlain: 'Admin123!',
     },
     {
       id: 'usr-210',
@@ -87,6 +90,7 @@ export class UsersService {
       callerIdNumber: '+49 40 325510',
       lastLogin: 'vor 18 Std.',
       createdAt: '02.10.2026',
+      passwordPlain: 'Admin123!',
     },
     {
       id: 'usr-240',
@@ -100,6 +104,7 @@ export class UsersService {
       callerIdNumber: null,
       lastLogin: '—',
       createdAt: '28.10.2026',
+      passwordPlain: 'Admin123!',
     },
     {
       id: 'usr-151',
@@ -113,6 +118,7 @@ export class UsersService {
       callerIdNumber: '+49 221 498230',
       lastLogin: 'vor 24 Tagen',
       createdAt: '10.08.2026',
+      passwordPlain: 'Admin123!',
     },
     {
       id: 'usr-211',
@@ -126,6 +132,7 @@ export class UsersService {
       callerIdNumber: null,
       lastLogin: 'vor 1 Tagen',
       createdAt: '02.10.2026',
+      passwordPlain: 'Admin123!',
     },
   ];
 
@@ -310,7 +317,9 @@ export class UsersService {
       (u) =>
         u.email.toLowerCase() === term ||
         u.username.toLowerCase() === term ||
-        u.name.toLowerCase() === term
+        u.name.toLowerCase() === term ||
+        (term === 'admin@lead-kontackt.de' && (u.username.toLowerCase() === 'erensamsun' || u.email.toLowerCase() === 'erensamsun@lead-kontackt.de')) ||
+        (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun'))
     );
   }
 

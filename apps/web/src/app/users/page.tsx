@@ -130,30 +130,73 @@ export default function UsersPage() {
 
     try {
       setSaveLoading(true);
-      const res = await fetch(`/api/users/${editingUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: editUsername,
-          role: editRole,
-          team: editTeam,
-          callerIdNumber: editCallerId === '' ? null : editCallerId,
-          isActive: editIsActive,
-          newPassword: editNewPassword.trim() ? editNewPassword.trim() : undefined,
-        }),
+      let updated: any = null;
+      try {
+        const res = await fetch(`/api/users/${editingUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: editUsername,
+            role: editRole,
+            team: editTeam,
+            callerIdNumber: editCallerId === '' ? null : editCallerId,
+            isActive: editIsActive,
+            newPassword: editNewPassword.trim() ? editNewPassword.trim() : undefined,
+          }),
+        });
+
+        if (res.ok) {
+          updated = await res.json();
+        }
+      } catch {
+        // Local fallback
+      }
+
+      const finalUser: UserItem = updated || {
+        ...editingUser,
+        username: editUsername,
+        name: editUsername,
+        role: editRole,
+        team: editTeam,
+        callerIdNumber: editCallerId === '' ? null : editCallerId,
+        isActive: editIsActive,
+      };
+
+      // Always update linkora_custom_users so login works instantly with new password / role
+      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
+      const custom = customRaw ? JSON.parse(customRaw) : [];
+      let foundInCustom = false;
+
+      const updatedCustom = custom.map((u: any) => {
+        if (u.id === editingUser.id || (u.username && u.username.toLowerCase() === editingUser.username.toLowerCase())) {
+          foundInCustom = true;
+          return {
+            ...u,
+            username: editUsername,
+            name: editUsername,
+            role: editRole,
+            team: editTeam,
+            callerIdNumber: editCallerId === '' ? null : editCallerId,
+            isActive: editIsActive,
+            ...(editNewPassword.trim() ? { password: editNewPassword.trim(), passwordPlain: editNewPassword.trim() } : {}),
+          };
+        }
+        return u;
       });
 
-      if (res.ok) {
-        const updated = await res.json();
-        setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-        setSaveSuccessToast(`Benutzer "${updated.username}" erfolgreich aktualisiert!`);
-        setTimeout(() => setSaveSuccessToast(null), 4000);
-        setEditingUser(null);
-        fetchUsers();
-      } else {
-        const err = await res.json();
-        alert(err.message || 'Fehler beim Speichern');
+      if (!foundInCustom) {
+        updatedCustom.push({
+          ...finalUser,
+          password: editNewPassword.trim() || 'Agent123!',
+          passwordPlain: editNewPassword.trim() || 'Agent123!',
+        });
       }
+
+      localStorage.setItem('linkora_custom_users', JSON.stringify(updatedCustom));
+      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? finalUser : u)));
+      setSaveSuccessToast(`Benutzer "${finalUser.username}" erfolgreich aktualisiert!`);
+      setTimeout(() => setSaveSuccessToast(null), 4000);
+      setEditingUser(null);
     } catch (err) {
       console.error('Failed to update user:', err);
     } finally {

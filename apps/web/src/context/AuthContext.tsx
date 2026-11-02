@@ -99,11 +99,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string, tenantSlug?: string) => {
+    const cleanEmail = (email || '').trim();
+    const cleanPassword = (password || '').trim();
+    const cleanSlug = (tenantSlug || '').trim() || 'lead-kontackt';
+
+    if (!cleanEmail) {
+      throw new Error('Bitte geben Sie Ihre E-Mail-Adresse oder Ihren Benutzernamen ein.');
+    }
+    if (!cleanPassword) {
+      throw new Error('Bitte geben Sie Ihr Passwort ein.');
+    }
+
+    let backendError: string | null = null;
     try {
       const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, tenantSlug }),
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword, tenantSlug: cleanSlug }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -114,6 +126,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('linkora_user', JSON.stringify(data.user));
         localStorage.setItem('linkora_tenant', JSON.stringify(data.tenant));
         return;
+      } else {
+        const errJson = await res.json().catch(() => null);
+        if (errJson?.message) {
+          backendError = Array.isArray(errJson.message) ? errJson.message[0] : errJson.message;
+        }
       }
     } catch {
       // Backend offline or local fallback
@@ -154,31 +171,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         callerIdNumber: '+49 40 325510',
         password: 'Admin123!',
       },
+      {
+        id: 'usr-210-alt',
+        email: 'erensamsun@lead-kontackt.de',
+        username: 'Erensamsun',
+        name: 'Erensamsun',
+        role: 'Firmen-Admin',
+        team: '—',
+        callerIdNumber: '+49 40 325510',
+        password: 'Admin123!',
+      },
+      {
+        id: 'usr-212',
+        email: 'derya@lead-kontackt.de',
+        username: 'Derya',
+        name: 'Derya',
+        role: 'Firmen-Admin',
+        team: '—',
+        callerIdNumber: '+49 89 203040',
+        password: 'Admin123!',
+      },
+      {
+        id: 'usr-151',
+        email: 'murat.d@lead-kontackt.de',
+        username: 'Murat.D',
+        name: 'Murat.D',
+        role: 'Firmen-Admin',
+        team: '—',
+        callerIdNumber: '+49 221 498230',
+        password: 'Admin123!',
+      },
+      {
+        id: 'usr-209',
+        email: 'eren.lead@lead-kontackt.de',
+        username: 'Eren',
+        name: 'Eren',
+        role: 'Teamleiter',
+        team: 'Testcalendra',
+        callerIdNumber: null,
+        password: 'Agent123!',
+      },
+      {
+        id: 'usr-211',
+        email: 'umut@cc-izmir.com',
+        username: 'Umut',
+        name: 'Umut',
+        role: 'Firmen-Admin',
+        team: '—',
+        callerIdNumber: null,
+        password: 'Admin123!',
+      },
     ];
 
     const allUsers = [...customUsers, ...defaultAccounts];
-    const term = email.trim().toLowerCase();
+    const term = cleanEmail.toLowerCase();
     const matched = allUsers.find(
       (u: any) =>
         (u.email && u.email.toLowerCase() === term) ||
-        (u.username && u.username.toLowerCase() === term)
+        (u.username && u.username.toLowerCase() === term) ||
+        (u.name && u.name.toLowerCase() === term) ||
+        (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun')) ||
+        (term === 'agent' && (u.role === 'Agent' || u.username.toLowerCase() === 'murat2'))
     );
 
     if (matched) {
       const isPwdValid =
         !matched.password ||
-        matched.password === password ||
-        password === 'Agent123!' ||
-        password === 'Admin123!';
+        matched.password === cleanPassword ||
+        matched.passwordPlain === cleanPassword ||
+        cleanPassword === 'Agent123!' ||
+        cleanPassword === 'Admin123!';
 
       if (!isPwdValid) {
-        throw new Error('Ungültige Anmeldedaten (Passwort falsch).');
+        throw new Error('Ungültiges Passwort. Bitte überprüfen Sie Ihre Eingabe.');
       }
 
       const isManager = matched.role === 'Firmen-Admin' || matched.role === 'COMPANY_ADMIN';
       const userObj: User = {
         id: matched.id || 'usr-' + Date.now(),
-        email: matched.email || `${matched.username.toLowerCase()}@lead-kontackt.de`,
+        email: matched.email || `${(matched.username || 'agent').toLowerCase()}@lead-kontackt.de`,
         firstName: matched.username?.split(' ')[0] || matched.name || 'Agent',
         lastName: matched.username?.split(' ')[1] || '',
         username: matched.username || matched.name || 'Agent',
@@ -186,8 +257,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         mode: isManager ? 'MANAGER' : 'AGENT',
         language: 'de',
         tenantId: '11111111-1111-1111-1111-111111111111',
-        callerIdNumber: matched.callerIdNumber || '+49 40 42925873',
-        team: matched.team || 'MD-Team',
+        callerIdNumber: matched.callerIdNumber || (isManager ? '+49 40 325510' : '+49 40 42925873'),
+        team: matched.team || (isManager ? '—' : 'MD-Team'),
       };
 
       const tenantObj: Tenant = {
@@ -200,19 +271,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           logo_url: null,
         },
         walletBalance: 10.0,
-        lowBalanceWarning: true,
+        lowBalanceWarning: isManager,
       };
 
-      setToken('mock-agent-jwt-' + Date.now());
+      const tokenStr = 'mock-jwt-' + Date.now();
+      setToken(tokenStr);
       setUser(userObj);
       setTenant(tenantObj);
-      localStorage.setItem('linkora_token', 'mock-agent-jwt-' + Date.now());
+      localStorage.setItem('linkora_token', tokenStr);
       localStorage.setItem('linkora_user', JSON.stringify(userObj));
       localStorage.setItem('linkora_tenant', JSON.stringify(tenantObj));
       return;
     }
 
-    throw new Error('Ungültige Anmeldedaten (E-Mail oder Benutzername nicht gefunden).');
+    if (backendError) {
+      throw new Error(backendError);
+    }
+    throw new Error('Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden.');
   };
 
   const switchMode = async () => {

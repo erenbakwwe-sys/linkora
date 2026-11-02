@@ -51,10 +51,16 @@ interface ChatMessage {
 
 export default function CallScreenPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const { locale, setLocale } = useI18n();
 
-  const userName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Erensamsun';
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [isLoading, user, router]);
+
+  const userName = user ? `${user.firstName || user.username} ${user.lastName || ''}`.trim() : 'Agent';
 
   // Left Dial Card State
   const [activeTab, setActiveTab] = useState<'MANUELL' | 'SON48' | 'SCHWEBEND'>('MANUELL');

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentTenant } from '../../common/guards/user.decorator.js';
 import { MarketplaceService } from './marketplace.service.js';
@@ -28,6 +28,69 @@ export class MarketplaceController {
   async getBuyer(@Param('id') id: string, @CurrentTenant() tenantId?: string) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
     return this.marketplaceService.getBuyer(tId, id);
+  }
+
+  @Post('buyers')
+  @ApiOperation({ summary: 'Create a new partner company / lead buyer (e.g. Aroundhome GmbH)' })
+  async createBuyer(
+    @Body()
+    body: {
+      name: string;
+      companyIdentifier?: string;
+      postEndpoint?: string;
+      pingEndpoint?: string;
+      signingSecret?: string;
+      dailyCap?: number;
+      monthlyCap?: number;
+      projects?: string[];
+    },
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.marketplaceService.createBuyer(tId, body);
+  }
+
+  @Put('buyers/:id')
+  @ApiOperation({ summary: 'Update a partner company / lead buyer settings' })
+  async updateBuyer(
+    @Param('id') id: string,
+    @Body() body: any,
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.marketplaceService.updateBuyer(tId, id, body);
+  }
+
+  @Post('deliver')
+  @ApiOperation({ summary: 'Deliver a lead directly to a partner/buyer (e.g. Aroundhome GmbH)' })
+  async deliverLead(
+    @Body()
+    body: {
+      leadId: string;
+      buyerId?: string;
+      customPayload?: Record<string, any>;
+    },
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.marketplaceService.deliverLeadDirectly({
+      tenantId: tId,
+      leadId: body.leadId,
+      buyerId: body.buyerId,
+      customPayload: body.customPayload,
+    });
+  }
+
+  @Post(['callbacks/partner', 'callbacks/:partnerSlug'])
+  @ApiOperation({ summary: 'Inbound Webhook Callback: Partner reports back lead status (SOLD, REJECTED, ACCEPTED, etc.)' })
+  async partnerCallback(
+    @Body() body: any,
+    @Param('partnerSlug') partnerSlug?: string
+  ) {
+    return this.marketplaceService.processPartnerCallback({
+      ...body,
+      partnerName: partnerSlug || body.partner || body.partnerName || 'Aroundhome GmbH',
+    });
   }
 
   @Post('ping-post')

@@ -35,6 +35,12 @@ import {
   HeartHandshake,
   Volume2,
   FileText,
+  Building2,
+  Send,
+  ArrowUpRight,
+  ArrowDownLeft,
+  DollarSign,
+  Copy,
 } from 'lucide-react';
 
 interface Lead {
@@ -61,6 +67,10 @@ interface Lead {
   notiz?: string;
   notes?: string;
   audioFileName?: string;
+  partnerStatus?: string;
+  partnerName?: string;
+  partnerDeliveryId?: string;
+  commissionEur?: number;
 }
 
 interface LeadDetailData {
@@ -165,6 +175,28 @@ export default function LeadsPage() {
   const [qcReason, setQcReason] = useState('');
   const [submittingQc, setSubmittingQc] = useState(false);
 
+  // Partner API State
+  const [deliveringPartner, setDeliveringPartner] = useState(false);
+  const [selectedBuyerId, setSelectedBuyerId] = useState('buyer-0005-aroundhome');
+  const [partnerToast, setPartnerToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [buyersList, setBuyersList] = useState<Array<{ id: string; name: string }>>([
+    { id: 'buyer-0005-aroundhome', name: 'Aroundhome GmbH (TF Bank Partner)' },
+    { id: 'buyer-0001-solar-direkt', name: 'Solar Direkt Deutschland GmbH' },
+    { id: 'buyer-0002-therma-clean', name: 'ThermaClean Wärmepumpen AG' },
+    { id: 'buyer-0003-lift-meister', name: 'LiftMeister Treppenlifte GmbH' },
+  ]);
+
+  useEffect(() => {
+    fetch('/api/marketplace/buyers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.buyers && Array.isArray(data.buyers)) {
+          setBuyersList(data.buyers.map((b: any) => ({ id: b.id, name: b.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -190,6 +222,29 @@ export default function LeadsPage() {
       // Deduplicate by ID
       const existingIds = new Set(apiLeads.map((l) => l.id));
       let merged = [...customLeads.filter((l) => !existingIds.has(l.id)), ...apiLeads];
+
+      // Merge delivery tracking from localStorage
+      const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
+      const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
+
+      merged = merged.map((l) => {
+        if (deliveries[l.id]) {
+          return {
+            ...l,
+            partnerName: deliveries[l.id].partnerName || 'Aroundhome GmbH',
+            partnerStatus: deliveries[l.id].partnerStatus,
+            partnerDeliveryId: deliveries[l.id].partnerDeliveryId,
+            commissionEur: deliveries[l.id].commissionEur,
+            status:
+              deliveries[l.id].partnerStatus === 'SOLD'
+                ? 'SOLD'
+                : deliveries[l.id].partnerStatus === 'REJECTED'
+                ? 'STORNO'
+                : l.status,
+          };
+        }
+        return l;
+      });
 
       // Filter by status if set
       if (statusFilter !== 'ALL') {
@@ -229,10 +284,29 @@ export default function LeadsPage() {
   const openDrawer = async (leadId: string) => {
     setSelectedLeadId(leadId);
     setDetailLoading(true);
+
+    const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
+    const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
+
     try {
       const res = await fetch(`/api/v1/leads/${leadId}`);
       if (res.ok) {
         const json = await res.json();
+        if (deliveries[leadId]) {
+          json.lead = {
+            ...json.lead,
+            partnerName: deliveries[leadId].partnerName,
+            partnerStatus: deliveries[leadId].partnerStatus,
+            partnerDeliveryId: deliveries[leadId].partnerDeliveryId,
+            commissionEur: deliveries[leadId].commissionEur,
+            status:
+              deliveries[leadId].partnerStatus === 'SOLD'
+                ? 'SOLD'
+                : deliveries[leadId].partnerStatus === 'REJECTED'
+                ? 'STORNO'
+                : json.lead.status,
+          };
+        }
         setLeadDetail(json);
         return;
       }
@@ -245,8 +319,24 @@ export default function LeadsPage() {
     // Check custom leads in localStorage
     const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
     const customLeads = customRaw ? JSON.parse(customRaw) : [];
-    const found = customLeads.find((l: any) => l.id === leadId);
+    let found = customLeads.find((l: any) => l.id === leadId);
     if (found) {
+      if (deliveries[leadId]) {
+        found = {
+          ...found,
+          partnerName: deliveries[leadId].partnerName,
+          partnerStatus: deliveries[leadId].partnerStatus,
+          partnerDeliveryId: deliveries[leadId].partnerDeliveryId,
+          commissionEur: deliveries[leadId].commissionEur,
+          status:
+            deliveries[leadId].partnerStatus === 'SOLD'
+              ? 'SOLD'
+              : deliveries[leadId].partnerStatus === 'REJECTED'
+              ? 'STORNO'
+              : found.status,
+        };
+      }
+
       setLeadDetail({
         lead: found,
         provenance: found.provenance || [
@@ -284,6 +374,154 @@ export default function LeadsPage() {
           message: 'Lead ist zur Anwahl im Dialer freigegeben.',
         },
       });
+    }
+  };
+
+  const handleQuickDeliver = async (lead: Lead, buyerId?: string) => {
+    const targetBuyerId = buyerId || selectedBuyerId;
+    setDeliveringPartner(true);
+    try {
+      const res = await fetch('/api/marketplace/deliver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyerId: targetBuyerId,
+          lead: {
+            id: lead.id,
+            first_name: lead.first_name,
+            last_name: lead.last_name,
+            phone_e164: lead.phone_e164,
+            email: lead.email,
+            postal_code: lead.postal_code,
+            city: lead.city,
+            street: lead.street,
+            house_number: lead.house_number,
+            project_name: lead.project_name,
+          },
+          answers: leadDetail?.answers || [],
+          audioFileName: lead.audioFileName,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const partnerName = data.recipient || 'Aroundhome GmbH';
+        const deliveryId = data.deliveryId || `dlv-de-${Date.now()}`;
+
+        // Save delivery record in localStorage
+        const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
+        const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
+        deliveries[lead.id] = {
+          partnerName,
+          partnerStatus: 'ÜBERMITTELT',
+          partnerDeliveryId: deliveryId,
+          deliveredAt: new Date().toISOString(),
+        };
+        localStorage.setItem('linkora_lead_deliveries', JSON.stringify(deliveries));
+
+        // Update custom leads list
+        const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+        if (customRaw) {
+          const customLeads = JSON.parse(customRaw);
+          const updated = customLeads.map((l: any) =>
+            l.id === lead.id
+              ? {
+                  ...l,
+                  partnerName,
+                  partnerStatus: 'ÜBERMITTELT',
+                  partnerDeliveryId: deliveryId,
+                }
+              : l
+          );
+          localStorage.setItem('linkora_custom_leads', JSON.stringify(updated));
+        }
+
+        setPartnerToast({
+          type: 'success',
+          message: `Lead '${lead.first_name} ${lead.last_name}' erfolgreich per REST-API an '${partnerName}' übermittelt!`,
+        });
+        setTimeout(() => setPartnerToast(null), 4000);
+
+        await fetchLeads();
+        if (selectedLeadId) await openDrawer(selectedLeadId);
+      } else {
+        throw new Error(data.message || 'Übermittlung fehlgeschlagen');
+      }
+    } catch (err: any) {
+      setPartnerToast({
+        type: 'error',
+        message: `Fehler bei der Partner-Übermittlung: ${err.message || 'Unbekannt'}`,
+      });
+      setTimeout(() => setPartnerToast(null), 4000);
+    } finally {
+      setDeliveringPartner(false);
+    }
+  };
+
+  const handlePartnerCallback = async (
+    leadId: string,
+    status: 'SOLD' | 'APPOINTMENT_SET' | 'REJECTED'
+  ) => {
+    const comm = status === 'SOLD' ? 180 : status === 'APPOINTMENT_SET' ? 45 : 0;
+    try {
+      const res = await fetch('/api/marketplace/callbacks/aroundhome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId,
+          partner: 'Aroundhome GmbH',
+          status,
+          commissionEur: comm,
+          notes: `Partner-Rückmeldung: ${status} vom Arbeitgeber gemeldet.`,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (res.ok) {
+        const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
+        const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
+        deliveries[leadId] = {
+          ...(deliveries[leadId] || { partnerName: 'Aroundhome GmbH' }),
+          partnerStatus: status,
+          commissionEur: comm,
+          callbackAt: new Date().toISOString(),
+        };
+        localStorage.setItem('linkora_lead_deliveries', JSON.stringify(deliveries));
+
+        const newLeadStatus = status === 'SOLD' ? 'SOLD' : status === 'REJECTED' ? 'STORNO' : 'CONFIRMED';
+        const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
+        if (customRaw) {
+          const customLeads = JSON.parse(customRaw);
+          const updated = customLeads.map((l: any) =>
+            l.id === leadId
+              ? {
+                  ...l,
+                  status: newLeadStatus,
+                  partnerStatus: status,
+                  commissionEur: comm,
+                }
+              : l
+          );
+          localStorage.setItem('linkora_custom_leads', JSON.stringify(updated));
+        }
+
+        setPartnerToast({
+          type: 'success',
+          message:
+            status === 'SOLD'
+              ? `Aroundhome-Abschluss verbucht! Provision: +${comm} € gutgeschrieben.`
+              : status === 'APPOINTMENT_SET'
+              ? `Aroundhome-Termin bestätigt! Provision: +${comm} € gutgeschrieben.`
+              : 'Aroundhome-Storno verarbeitet.',
+        });
+        setTimeout(() => setPartnerToast(null), 4000);
+
+        await fetchLeads();
+        if (selectedLeadId) await openDrawer(selectedLeadId);
+      }
+    } catch (err: any) {
+      setPartnerToast({ type: 'error', message: 'Fehler beim Verarbeiten des Callbacks' });
+      setTimeout(() => setPartnerToast(null), 4000);
     }
   };
 
@@ -404,6 +642,29 @@ export default function LeadsPage() {
           </form>
         </div>
 
+        {/* Partner Dispatch Toast */}
+        {partnerToast && (
+          <div
+            className={`p-3 rounded-xl border flex items-center justify-between text-xs font-semibold animate-in fade-in ${
+              partnerToast.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {partnerToast.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span>{partnerToast.message}</span>
+            </div>
+            <button onClick={() => setPartnerToast(null)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Leads Data Table */}
         <div className="bg-white rounded-xl shadow-xs border border-slate-200/80 overflow-hidden">
           <div className="overflow-x-auto">
@@ -416,6 +677,7 @@ export default function LeadsPage() {
                   <th className="py-3 px-4">Standort</th>
                   <th className="py-3 px-4">Einwilligung (UWG)</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Partner-Status</th>
                   <th className="py-3 px-4 text-right">Aktion</th>
                 </tr>
               </thead>
@@ -487,6 +749,41 @@ export default function LeadsPage() {
                         </span>
                       </td>
 
+                      {/* Partner Status Column */}
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        {lead.partnerStatus === 'SOLD' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Aroundhome: Abschluss ({lead.commissionEur || 180} €)
+                          </span>
+                        ) : lead.partnerStatus === 'APPOINTMENT_SET' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            <Clock className="w-3 h-3 text-blue-600" />
+                            Aroundhome: Termin (+45 €)
+                          </span>
+                        ) : lead.partnerStatus === 'ÜBERMITTELT' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                            <Send className="w-3 h-3 text-sky-600" />
+                            Aroundhome: Übermittelt
+                          </span>
+                        ) : lead.partnerStatus === 'REJECTED' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <XCircle className="w-3 h-3 text-rose-600" />
+                            Aroundhome: Storno
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleQuickDeliver(lead)}
+                            disabled={deliveringPartner}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 hover:bg-cyan-50 hover:text-cyan-800 text-slate-600 border border-slate-200 transition"
+                            title="Diesen Lead direkt per REST-API an Aroundhome GmbH übermitteln"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>An Aroundhome senden</span>
+                          </button>
+                        )}
+                      </td>
+
                       {/* Action */}
                       <td className="py-3 px-4 text-right">
                         <button className="text-slate-400 group-hover:text-sky-600 p-1 rounded hover:bg-white transition">
@@ -499,7 +796,7 @@ export default function LeadsPage() {
 
                 {leads.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
                       Keine Leads gefunden.
                     </td>
                   </tr>
@@ -687,6 +984,125 @@ export default function LeadsPage() {
                       )}
                     </div>
                   )}
+
+                  {/* B2B Partner API Integration Card (Aroundhome GmbH / Employer Outbound & Inbound) */}
+                  <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-xl p-4 space-y-3.5 border border-slate-700/60 shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-cyan-400" />
+                        <span className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                          B2B Partner-API &amp; Arbeitgeber
+                        </span>
+                      </div>
+                      {leadDetail.lead.partnerStatus ? (
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                            leadDetail.lead.partnerStatus === 'SOLD'
+                              ? 'bg-emerald-500 text-white'
+                              : leadDetail.lead.partnerStatus === 'APPOINTMENT_SET'
+                              ? 'bg-blue-500 text-white'
+                              : leadDetail.lead.partnerStatus === 'REJECTED'
+                              ? 'bg-rose-500 text-white'
+                              : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          }`}
+                        >
+                          {leadDetail.lead.partnerStatus === 'SOLD'
+                            ? `Abschluss (+${leadDetail.lead.commissionEur || 180} €)`
+                            : leadDetail.lead.partnerStatus === 'APPOINTMENT_SET'
+                            ? `Termin (+${leadDetail.lead.commissionEur || 45} €)`
+                            : leadDetail.lead.partnerStatus === 'REJECTED'
+                            ? 'Storno'
+                            : 'Übermittelt'}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                          Noch nicht übermittelt
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Delivery Status or Dispatch Selector */}
+                    {leadDetail.lead.partnerDeliveryId ? (
+                      <div className="bg-white/5 rounded-lg p-3 text-xs space-y-1.5 border border-white/10">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Empfänger / Partner:</span>
+                          <strong className="text-white">{leadDetail.lead.partnerName || 'Aroundhome GmbH'}</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Zustellungs-ID:</span>
+                          <span className="font-mono text-cyan-300 text-[11px]">{leadDetail.lead.partnerDeliveryId}</span>
+                        </div>
+                        {leadDetail.lead.commissionEur ? (
+                          <div className="flex justify-between text-emerald-400 font-semibold pt-1 border-t border-white/10">
+                            <span>Vergütete Provision:</span>
+                            <span>+{leadDetail.lead.commissionEur} €</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-slate-300 uppercase tracking-wider block">
+                          Ziel-Partner für REST-API Lead-Push:
+                        </label>
+                        <select
+                          value={selectedBuyerId}
+                          onChange={(e) => setSelectedBuyerId(e.target.value)}
+                          className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none"
+                        >
+                          {buyersList.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => handleQuickDeliver(leadDetail.lead, selectedBuyerId)}
+                          disabled={deliveringPartner}
+                          className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>
+                            {deliveringPartner
+                              ? 'Wird an Partner übermittelt...'
+                              : 'Lead jetzt per API an Partner senden'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Simulation Triggers for Inbound Status Callback */}
+                    <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                          Partner Status-Rückmeldung testen:
+                        </span>
+                        <span className="text-[10px] text-cyan-300 font-mono">POST /callbacks/partner</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <button
+                          onClick={() => handlePartnerCallback(leadDetail.lead.id, 'SOLD')}
+                          className="py-1.5 px-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          Abschluss (+180 €)
+                        </button>
+                        <button
+                          onClick={() => handlePartnerCallback(leadDetail.lead.id, 'APPOINTMENT_SET')}
+                          className="py-1.5 px-2 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/30 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1"
+                        >
+                          <Clock className="w-3 h-3" />
+                          Termin (+45 €)
+                        </button>
+                        <button
+                          onClick={() => handlePartnerCallback(leadDetail.lead.id, 'REJECTED')}
+                          className="py-1.5 px-2 bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/30 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1"
+                        >
+                          <X className="w-3 h-3" />
+                          Storno
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* QC Reviewer Action Panel */}
                   <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">

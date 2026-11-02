@@ -177,6 +177,41 @@ export class MarketplaceService {
           },
         ],
       },
+      {
+        buyer: {
+          id: 'buyer-0005-aroundhome',
+          tenantId: '11111111-1111-1111-1111-111111111111',
+          name: 'Aroundhome GmbH (TF Bank Partner)',
+          companyIdentifier: 'DE-AROUNDHOME-005',
+          pingEndpoint: 'https://api.aroundhome.de/v1/ping',
+          postEndpoint: 'https://api.aroundhome.de/v1/leads',
+          signingSecret: 'sec_aroundhome_api_token_2026',
+          pingEnabled: true,
+          dailyCap: 100,
+          monthlyCap: 2500,
+          deliveredToday: 28,
+          deliveredThisMonth: 614,
+          returnWindowDays: 14,
+          maxReturnRatePercent: 10.0,
+          totalDelivered: 614,
+          totalReturned: 22,
+          isActive: true,
+        },
+        criteria: [
+          {
+            id: 'crit-005',
+            buyerId: 'buyer-0005-aroundhome',
+            projectId: 'cccccccc-0000-0000-0000-000000000001',
+            projectName: 'Photovoltaik & Sanierung',
+            regions: ['*'], // Bundesweit Deutschland
+            minScore: 50.0,
+            maxScore: 100.0,
+            exclusivityRequired: 'EXCLUSIVE',
+            priorityWeight: 100,
+            isActive: true,
+          },
+        ],
+      },
     ];
 
     for (const item of seededBuyers) {
@@ -195,6 +230,223 @@ export class MarketplaceService {
       throw new NotFoundException(`Abnehmer ${buyerId} nicht gefunden.`);
     }
     return buyer;
+  }
+
+  public createBuyer(
+    tenantId: string,
+    dto: {
+      name: string;
+      companyIdentifier?: string;
+      postEndpoint?: string;
+      pingEndpoint?: string;
+      signingSecret?: string;
+      dailyCap?: number;
+      monthlyCap?: number;
+      projects?: string[];
+    }
+  ): Buyer {
+    const id = `buyer-${Date.now()}`;
+    const buyer: Buyer = {
+      id,
+      tenantId,
+      name: dto.name.trim(),
+      companyIdentifier: dto.companyIdentifier?.trim() || dto.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      postEndpoint: dto.postEndpoint?.trim() || 'https://api.aroundhome.de/v1/leads',
+      pingEndpoint: dto.pingEndpoint?.trim() || '',
+      signingSecret: dto.signingSecret?.trim() || `sec_${randomUUID().replace(/-/g, '')}`,
+      pingEnabled: Boolean(dto.pingEndpoint),
+      dailyCap: dto.dailyCap || 100,
+      monthlyCap: dto.monthlyCap || 2500,
+      deliveredToday: 0,
+      deliveredThisMonth: 0,
+      returnWindowDays: 14,
+      maxReturnRatePercent: 12.0,
+      totalDelivered: 0,
+      totalReturned: 0,
+      isActive: true,
+    };
+    this.inMemoryBuyers.set(id, buyer);
+
+    const projects = dto.projects && dto.projects.length > 0 ? dto.projects : ['*'];
+    const criteria: BuyerCriteria[] = projects.map((p, idx) => ({
+      id: `crit-${id}-${idx}`,
+      buyerId: id,
+      projectId: `proj-${idx}`,
+      projectName: p,
+      regions: ['*'],
+      minScore: 0,
+      maxScore: 100,
+      exclusivityRequired: 'EXCLUSIVE',
+      priorityWeight: 100,
+      isActive: true,
+    }));
+    this.inMemoryCriteria.set(id, criteria);
+
+    return buyer;
+  }
+
+  public updateBuyer(
+    tenantId: string,
+    id: string,
+    dto: Partial<Buyer>
+  ): Buyer {
+    const buyer = this.getBuyer(tenantId, id);
+    if (dto.name !== undefined) buyer.name = dto.name;
+    if (dto.postEndpoint !== undefined) buyer.postEndpoint = dto.postEndpoint;
+    if (dto.pingEndpoint !== undefined) {
+      buyer.pingEndpoint = dto.pingEndpoint;
+      buyer.pingEnabled = Boolean(dto.pingEndpoint);
+    }
+    if (dto.signingSecret !== undefined) buyer.signingSecret = dto.signingSecret;
+    if (dto.dailyCap !== undefined) buyer.dailyCap = dto.dailyCap;
+    if (dto.monthlyCap !== undefined) buyer.monthlyCap = dto.monthlyCap;
+    if (dto.isActive !== undefined) buyer.isActive = dto.isActive;
+
+    return buyer;
+  }
+
+  /**
+   * Directly dispatches a lead to a specified partner/buyer (e.g. Aroundhome GmbH).
+   */
+  public async deliverLeadDirectly(params: {
+    tenantId: string;
+    leadId: string;
+    buyerId?: string;
+    customPayload?: Record<string, any>;
+  }) {
+    let buyer = params.buyerId ? this.inMemoryBuyers.get(params.buyerId) : null;
+    if (!buyer) {
+      buyer = Array.from(this.inMemoryBuyers.values()).find(
+        (b) => b.tenantId === params.tenantId && (b.id.includes('aroundhome') || b.name.toLowerCase().includes('aroundhome'))
+      ) || Array.from(this.inMemoryBuyers.values())[0];
+    }
+    if (!buyer) {
+      throw new NotFoundException('Kein aktiver Partner/Abnehmer gefunden.');
+    }
+
+    let lead: any = null;
+    try {
+      const dbRes = await this.db.query(
+        `SELECT l.*, p.name as project_name FROM leads l LEFT JOIN projects p ON p.id = l.project_id WHERE l.id::text = $1`,
+        [params.leadId]
+      );
+      if (dbRes.rows && dbRes.rows.length > 0) {
+        lead = dbRes.rows[0];
+      }
+    } catch {
+      // Fallback
+    }
+
+    const payload = {
+      leadId: params.leadId,
+      externalRef: `LNK-${params.leadId.slice(0, 8)}`,
+      timestamp: new Date().toISOString(),
+      partner: buyer.name,
+      customer: {
+        firstName: lead?.first_name || params.customPayload?.firstName || 'Max',
+        lastName: lead?.last_name || params.customPayload?.lastName || 'Mustermann',
+        salutation: lead?.salutation || params.customPayload?.salutation || 'Herr',
+        phone: lead?.phone_e164 || lead?.phone_raw || params.customPayload?.phone || '+491714567890',
+        email: lead?.email || params.customPayload?.email || 'kunde@beispiel.de',
+        address: {
+          street: lead?.street || params.customPayload?.street || 'Musterstr.',
+          houseNumber: lead?.house_number || params.customPayload?.houseNumber || '1',
+          postalCode: lead?.postal_code || params.customPayload?.postalCode || '80331',
+          city: lead?.city || params.customPayload?.city || 'München',
+          country: 'DE',
+        },
+      },
+      project: {
+        type: lead?.project_name || params.customPayload?.project || 'Photovoltaik',
+        answers: lead?.answers || params.customPayload?.answers || {},
+        note: lead?.notes || params.customPayload?.notes || '',
+        audioRecordingUrl: lead?.audio_recording_url || params.customPayload?.audioRecordingUrl || null,
+      },
+      callbackUrl: `${process.env.APP_URL || 'https://linkora-erenbakwwe-4622s-projects.vercel.app'}/api/marketplace/callbacks/partner`,
+    };
+
+    const deliveryResult = await this.connectors.deliverToGermanBuyer(buyer, payload);
+
+    buyer.deliveredToday += 1;
+    buyer.deliveredThisMonth += 1;
+    buyer.totalDelivered += 1;
+
+    try {
+      await this.db.query(
+        `UPDATE leads SET status = 'IN_REVIEW', updated_at = NOW() WHERE id::text = $1`,
+        [params.leadId]
+      );
+    } catch {
+      // Handled
+    }
+
+    return {
+      success: deliveryResult.success,
+      deliveryId: deliveryResult.deliveryId,
+      buyerName: buyer.name,
+      postEndpoint: buyer.postEndpoint,
+      statusCode: deliveryResult.statusCode,
+      message: deliveryResult.message,
+      payloadSent: payload,
+    };
+  }
+
+  /**
+   * Processes incoming status webhook callback from a partner (e.g. Aroundhome GmbH).
+   */
+  public async processPartnerCallback(body: {
+    leadId?: string;
+    partnerLeadId?: string;
+    externalRef?: string;
+    status: 'ACCEPTED' | 'SOLD' | 'REJECTED' | 'APPOINTMENT_SET' | string;
+    reason?: string;
+    commissionEur?: number;
+    partnerName?: string;
+    metadata?: Record<string, any>;
+  }) {
+    const rawStatus = (body.status || 'ACCEPTED').toUpperCase().trim();
+    const partnerId = body.partnerName || 'aroundhome-de';
+
+    let normalizedStatus = 'IN_REVIEW';
+    if (rawStatus === 'SOLD' || rawStatus === 'ABSCHLUSS' || rawStatus === 'GEWONNEN') {
+      normalizedStatus = 'CONFIRMED';
+    } else if (rawStatus === 'REJECTED' || rawStatus === 'STORNO' || rawStatus === 'REKLAMATION') {
+      normalizedStatus = 'REJECTED';
+    } else if (rawStatus === 'ACCEPTED' || rawStatus === 'ANGENOMMEN') {
+      normalizedStatus = 'QUALIFIED';
+    } else if (rawStatus === 'APPOINTMENT_SET' || rawStatus === 'TERMIN') {
+      normalizedStatus = 'APPOINTMENT_SCHEDULED';
+    }
+
+    const leadIdentifier = body.leadId || body.partnerLeadId || body.externalRef || 'unknown';
+
+    if (body.leadId) {
+      try {
+        await this.db.query(
+          `UPDATE leads SET status = $1, updated_at = NOW() WHERE id::text = $2`,
+          [normalizedStatus, body.leadId]
+        );
+      } catch {
+        // Handled
+      }
+    }
+
+    const log = this.connectors.recordCallbackLog(partnerId, {
+      ...body,
+      normalizedStatus,
+      processedAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      leadId: leadIdentifier,
+      receivedStatus: rawStatus,
+      linkoraStatus: normalizedStatus,
+      reason: body.reason || 'Status erfolgreich via Partner-Webhook aktualisiert.',
+      commissionCreditedEur: normalizedStatus === 'CONFIRMED' ? (body.commissionEur || 150.0) : 0,
+      callbackLogId: log.id,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**

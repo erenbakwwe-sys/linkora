@@ -1,6 +1,7 @@
 import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
+import { INIT_SQL, FULL_SCHEMA_SQL } from './schema-sql.js';
 
 const { Pool } = pg;
 
@@ -21,14 +22,12 @@ export async function runMigrations(pool?: pg.Pool) {
   const client = await p.connect();
   try {
     console.log('Running migrations...');
-    if (fs.existsSync(sqlPath)) {
-      const initSql = fs.readFileSync(sqlPath, 'utf8');
-      await client.query(initSql);
-    }
-    if (fs.existsSync(schemaPath)) {
-      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-      await client.query(schemaSql);
-    }
+    const initSql = fs.existsSync(sqlPath) ? fs.readFileSync(sqlPath, 'utf8') : INIT_SQL;
+    await client.query(initSql);
+
+    const schemaSql = fs.existsSync(schemaPath) ? fs.readFileSync(schemaPath, 'utf8') : FULL_SCHEMA_SQL;
+    await client.query(schemaSql);
+
     console.log('Migrations completed successfully.');
   } finally {
     client.release();

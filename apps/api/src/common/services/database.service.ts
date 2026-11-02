@@ -1,6 +1,6 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import type pg from 'pg';
-import { setTenantSession, withTenantContext } from '@linkora/db';
+import { setTenantSession, withTenantContext, runMigrations, runSeed } from '@linkora/db';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pgModule = require('pg');
@@ -8,9 +8,10 @@ const PoolClass = pgModule.Pool || pgModule.default?.Pool;
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(DatabaseService.name);
   public pool!: pg.Pool;
 
-  onModuleInit() {
+  async onModuleInit() {
     const url = process.env.DATABASE_URL || 'postgresql://linkora_user:linkora_password@localhost:5432/linkora_db';
     const isCloudDb = !url.includes('localhost') && !url.includes('127.0.0.1');
     const needsSsl = isCloudDb && (process.env.NODE_ENV === 'production' || url.includes('sslmode=') || process.env.DATABASE_SSL === 'true');
@@ -22,6 +23,26 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
+
+    if (isCloudDb || process.env.DATABASE_URL) {
+      await this.ensureSchema();
+    }
+  }
+
+  private async ensureSchema() {
+    try {
+      const res = await this.pool.query("SELECT to_regclass('public.users') as tbl;");
+      if (!res.rows[0]?.tbl) {
+        this.logger.log('Database tables not found. Automatically running migrations and seeding initial data...');
+        await runMigrations(this.pool);
+        await runSeed(this.pool);
+        this.logger.log('Database migration and seeding completed successfully!');
+      } else {
+        this.logger.log('Database connected and schema verified.');
+      }
+    } catch (err: any) {
+      this.logger.warn(`Database schema check / migration: ${err?.message || err}`);
+    }
   }
 
   async onModuleDestroy() {

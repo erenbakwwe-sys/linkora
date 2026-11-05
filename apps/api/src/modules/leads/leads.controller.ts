@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { CurrentTenant, CurrentUser } from '../../common/guards/user.decorator.js';
 import { LeadsService } from './leads.service.js';
 import { IngestionService } from './ingestion.service.js';
+import { TelegramService } from '../../common/services/telegram.service.js';
 import { leadIngestSchema, qcActionSchema, LeadIngestInput, QcActionInput } from '@linkora/shared';
 
 @ApiTags('Leads & Kunden')
@@ -11,6 +12,7 @@ export class LeadsController {
   constructor(
     private readonly leadsService: LeadsService,
     private readonly ingestionService: IngestionService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   @Get()
@@ -196,11 +198,59 @@ export class LeadsController {
       rawPayload: body,
     });
 
+    // Dispatch instant Telegram notification (asynchronous, non-blocking)
+    this.telegramService
+      .sendInquiryNotification({
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phone: body.phone,
+        email: body.email,
+        companyName: body.companyName,
+        userType: body.userType,
+        inquiryType: body.inquiryType,
+        project: body.project,
+        postalCode: body.postalCode,
+        city: body.city,
+        message: body.message,
+        clientIp,
+        leadId: result.leadId,
+      })
+      .catch((err) => {
+        // Handled silently
+      });
+
     return {
       success: true,
       leadId: result.leadId,
       isQuarantined: result.isQuarantined,
       message: 'Ihre Anfrage wurde erfolgreich übermittelt. Ein Kundenberater meldet sich in Kürze bei Ihnen.',
+    };
+  }
+
+  @Get('telegram/status')
+  @ApiOperation({ summary: 'Check Telegram notification integration status and send a test message' })
+  async checkTelegramStatus(@Query('sendTest') sendTest?: string) {
+    const isConfigured = this.telegramService.isConfigured();
+    if (!isConfigured) {
+      return {
+        configured: false,
+        message: 'TELEGRAM_BOT_TOKEN veya TELEGRAM_CHAT_ID ortam değişkeni ayarlanmamış.',
+        help: 'Telegram bot token ve chat id bilgilerinizi .env veya Vercel panelinize ekleyin.',
+      };
+    }
+
+    let testResult = null;
+    if (sendTest === 'true' || sendTest === '1') {
+      testResult = await this.telegramService.sendMessage(
+        '🔔 <b>Linkora & Calendra Test Bildirimi!</b>\n\nTelegram bildirim sistemi başarıyla bağlandı. calendra-group.online üzerinden ücretsiz test / başvuru formu doldurulduğunda tüm bilgiler anında buraya gelecektir.'
+      );
+    }
+
+    return {
+      configured: true,
+      testSent: Boolean(testResult),
+      testResult,
+      message: 'Telegram entegrasyonu aktif.',
     };
   }
 

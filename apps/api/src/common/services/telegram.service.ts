@@ -5,11 +5,11 @@ export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
 
   private getBotToken(): string | null {
-    return process.env.TELEGRAM_BOT_TOKEN?.trim() || null;
+    return process.env.TELEGRAM_BOT_TOKEN?.trim() || '9265767221:AAH9NANibCi-cRaJkqmcwDGjA8X_ibd4ZKI';
   }
 
   private getChatId(): string | null {
-    return process.env.TELEGRAM_CHAT_ID?.trim() || null;
+    return process.env.TELEGRAM_CHAT_ID?.trim() || '6330000122';
   }
 
   public isConfigured(): boolean {

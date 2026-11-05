@@ -46,9 +46,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
           <a href="#dialer" className="hover:text-slate-950 transition-colors">
             {navText.dialer}
           </a>
-          <a href="#preise" className="hover:text-slate-950 transition-colors">
-            {navText.pricing}
-          </a>
           <a href="#ablauf" className="hover:text-slate-950 transition-colors">
             {navText.process}
           </a>
@@ -180,13 +177,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({ brandName = 'Linkora' }) =
               className="hover:text-amber-600"
             >
               {navText.dialer}
-            </a>
-            <a
-              href="#preise"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-amber-600"
-            >
-              {navText.pricing}
             </a>
             <a
               href="#ablauf"

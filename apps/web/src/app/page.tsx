@@ -12,7 +12,6 @@ import {
   IndustriesGrid,
 } from '@/components/public/PublicSections';
 import { DialerFeaturesGrid } from '@/components/public/DialerFeaturesGrid';
-import { PricingSection } from '@/components/public/PricingSection';
 import { FaqAccordion } from '@/components/public/FaqAccordion';
 import { ContactFormSection } from '@/components/public/ContactFormSection';
 import { PublicFooter } from '@/components/public/PublicFooter';
@@ -177,10 +176,7 @@ export default function PublicLandingPage() {
       {/* 8. Dialer Features Grid (Tempo 1-10, AMD, etc.) */}
       <DialerFeaturesGrid />
 
-      {/* 9. Transparent Pricing Section */}
-      <PricingSection />
-
-      {/* 10. Modular Solution Packs */}
+      {/* 9. Modular Solution Packs */}
       <section className="py-20 bg-white text-slate-900 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">

@@ -77,11 +77,6 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({ brandName = 'Linkora
             </h4>
             <ul className="space-y-2">
               <li>
-                <a href="#preise" className="hover:text-slate-950 transition">
-                  {activeLocale === 'tr' ? 'Fiyatlar & Dakika Paketleri' : 'Preise & Minutenpakete'}
-                </a>
-              </li>
-              <li>
                 <Link href="/de/leads-verkaufen-deutschland" className="hover:text-slate-950 transition">
                   {activeLocale === 'tr' ? 'Lead Satışı Yapın' : 'Leads verkaufen'}
                 </Link>

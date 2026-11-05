@@ -153,23 +153,41 @@ export default function CallScreenPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const normalizePhoneNumber = (raw: string) => {
+    const cleaned = raw.replace(/[\s\-\(\)\/\.]/g, '');
+    if (cleaned.startsWith('+')) return cleaned;
+    if (cleaned.startsWith('00')) return `+${cleaned.slice(2)}`;
+    if (cleaned.startsWith('0')) return `+49${cleaned.slice(1)}`;
+    return `+${cleaned}`;
+  };
+
   // Manual Dial Action
   const handleManualDial = () => {
-    const num = phoneNumber.trim() || formPhone.trim();
-    if (!num) {
-      alert('Bitte geben Sie eine Rufnummer ein!');
+    const raw = phoneNumber.trim() || formPhone.trim();
+    if (!raw) {
+      alert('Bitte geben Sie eine Rufnummer ein! (Örn: +49 171 1234567)');
       return;
     }
+
+    const cleanNum = normalizePhoneNumber(raw);
     setIsDialing(true);
-    setAudioStatus('Verbindung wird aufgebaut...');
+    setAudioStatus(`Çevriliyor: ${cleanNum}...`);
+
+    // Click-to-call: trigger desktop SIP softphone (MicroSIP / Zoiper)
+    try {
+      window.location.href = `sip:${cleanNum}`;
+    } catch {
+      window.location.href = `tel:${cleanNum}`;
+    }
+
     setTimeout(() => {
       setIsDialing(false);
       setIsOnCall(true);
       setCallDuration(0);
-      setAudioStatus('● Ses: Bağlı (WebRTC HD)');
+      setAudioStatus(`● Aktif Görüşme: ${cleanNum} (Caller ID: +49 8131 7799867)`);
       setCallsToday((prev) => prev + 1);
-      showToast(`Anruf verbunden mit ${num}`);
-    }, 1200);
+      showToast(`📞 Arama başlatıldı: ${cleanNum} (MicroSIP / SIP Trunk)`);
+    }, 1000);
   };
 
   // Hangup Action
@@ -483,23 +501,35 @@ export default function CallScreenPage() {
               />
 
               {!isOnCall ? (
-                <button
-                  onClick={handleManualDial}
-                  disabled={isDialing}
-                  className="w-full py-2.5 bg-[#15803d] hover:bg-[#166534] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
-                >
-                  {isDialing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Verbinde...</span>
-                    </>
-                  ) : (
-                    <>
-                      <PhoneCall className="w-4 h-4" />
-                      <span>Manuell Anruf</span>
-                    </>
-                  )}
-                </button>
+                <div className="space-y-1">
+                  <button
+                    onClick={handleManualDial}
+                    disabled={isDialing}
+                    className="w-full py-2.5 bg-[#15803d] hover:bg-[#166534] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+                  >
+                    {isDialing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verbinde...</span>
+                      </>
+                    ) : (
+                      <>
+                        <PhoneCall className="w-4 h-4" />
+                        <span>Manuell Anruf (Ara)</span>
+                      </>
+                    )}
+                  </button>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 px-1 pt-0.5">
+                    <span>Ses hattı: MicroSIP / SIP Trunk</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSipModal(true)}
+                      className="text-blue-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Nasıl Kurulur?
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button
                   onClick={handleHangup}

@@ -22,6 +22,50 @@ export class FinancesController {
     return this.financesService.getBalanceCosts(tId);
   }
 
+  @Get('bank-info')
+  @ApiOperation({ summary: 'Get bank details for wire transfer (Ziraat Bankası / Taha Eren Bal)' })
+  async getBankInfo() {
+    return this.financesService.getBankInfo();
+  }
+
+  @Get('topup-requests')
+  @ApiOperation({ summary: 'List all bank transfer topup requests' })
+  async getTopupRequests(@CurrentTenant() tenantId?: string) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.financesService.getTopupRequests(tId);
+  }
+
+  @Post('topup-requests')
+  @ApiOperation({ summary: 'Submit a new bank transfer payment notice (Havale Bildirimi)' })
+  async createTopupRequest(
+    @Body() body: { amountEur: number; senderName: string; notes?: string; referenceCode?: string },
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.financesService.createTopupRequest(tId, body);
+  }
+
+  @Post('topup-requests/:id/approve')
+  @ApiOperation({ summary: 'Admin approves topup request and credits the wallet balance' })
+  async approveTopupRequest(
+    @Param('id') id: string,
+    @Body('approvedBy') approvedBy?: string,
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.financesService.approveTopupRequest(tId, id, approvedBy || 'Taha Eren Bal');
+  }
+
+  @Post('topup-requests/:id/reject')
+  @ApiOperation({ summary: 'Admin rejects topup request' })
+  async rejectTopupRequest(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId?: string
+  ) {
+    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
+    return this.financesService.rejectTopupRequest(tId, id);
+  }
+
   @Post('topup')
   @ApiOperation({ summary: 'Top up wallet balance' })
   async topUpWallet(@Body('amount') amount: number, @CurrentTenant() tenantId?: string) {

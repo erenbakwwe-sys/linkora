@@ -9,6 +9,7 @@ import {
   TelephonyProvider,
   MockTelephonyProvider,
   TelnyxProvider,
+  GitasisProvider,
   CallSession,
   SupervisionMode,
 } from '@linkora/telephony';
@@ -41,8 +42,44 @@ export class DialerService {
     private readonly agentStateService: AgentStateService,
     private readonly liveGateway: LiveGateway,
   ) {
-    // Default to MockTelephonyProvider per Section 0 Rule 2
-    this.telephony = new MockTelephonyProvider();
+    const provider = process.env.TELEPHONY_PROVIDER || 'GITASIS';
+    if (provider === 'GITASIS') {
+      this.telephony = new GitasisProvider();
+    } else if (provider === 'TELNYX') {
+      this.telephony = new TelnyxProvider();
+    } else {
+      this.telephony = new MockTelephonyProvider();
+    }
+  }
+
+  getTrunkConfig() {
+    return {
+      provider: 'GITASIS_PJSIP',
+      accountName: 'Calendra SIP',
+      sipServer: process.env.GITASIS_SIP_HOST || '217.131.14.34',
+      sipPort: Number(process.env.GITASIS_SIP_PORT) || 5060,
+      username: process.env.GITASIS_SIP_USER || 'calendra',
+      password: process.env.GITASIS_SIP_PASS || 'c888eYKa3uLmJGdA',
+      realm: process.env.GITASIS_SIP_REALM || '217.131.14.34',
+      callerId: process.env.GITASIS_CALLER_ID || '4981317799867',
+      callerIdFormatted: '+49 8131 7799867',
+      transport: 'UDP',
+      srtp: false,
+      codecs: ['G.711 (Alaw)', 'G.711 (Ulaw)'],
+      outboundDialFormat: '+[ülke kodu][numara] (Örn: +49123456789)',
+      recommendedSoftphones: [
+        {
+          name: 'MicroSIP (Windows)',
+          url: 'https://www.microsip.org/',
+          instructions: 'Ayarlar -> Hesap Ekle -> SIP Sunucu: 217.131.14.34, Kullanıcı: calendra, Şifre: c888eYKa3uLmJGdA',
+        },
+        {
+          name: 'Zoiper (Windows / Mac / Mobil)',
+          url: 'https://www.zoiper.com/',
+          instructions: 'Settings -> Accounts -> Create -> SIP -> Domain: 217.131.14.34, Username: calendra, Password: c888eYKa3uLmJGdA',
+        },
+      ],
+    };
   }
 
   /**
@@ -52,7 +89,7 @@ export class DialerService {
     tenantId: string,
     leadId: string,
     agentId: string,
-    callerNumber: string = '+498912345678'
+    callerNumber: string = process.env.GITASIS_CALLER_ID || '+4981317799867'
   ): Promise<ActiveCallDto> {
     // 1. Compliance Hard Stop Check (Consent proof & DNC suppression)
     const eligibility = await this.leadsService.canDial(tenantId, leadId);

@@ -15,6 +15,12 @@ export class DialerController {
     private readonly agentStateService: AgentStateService,
   ) {}
 
+  @Get('trunk-info')
+  @ApiOperation({ summary: 'Get active SIP Trunk credentials and softphone configuration' })
+  getTrunkInfo() {
+    return this.dialerService.getTrunkConfig();
+  }
+
   @Post('call')
   @ApiOperation({ summary: 'Initiate outbound call to lead from agent workspace' })
   async dialLead(

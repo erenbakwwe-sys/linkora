@@ -1205,15 +1205,29 @@ export default function CallScreenPage() {
               </div>
 
               {/* Balance Activation Notice */}
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-bold text-amber-900 text-xs">
-                    Bakiye Durumu ve İlk Arama
+                  <p className="font-bold text-emerald-900 text-xs">
+                    Hat ve Bakiye Aktif (Kullanıma Hazır)
                   </p>
-                  <p className="text-amber-800 text-[11px] leading-relaxed">
-                    Telnyx hesabınıza <a href="https://portal.telnyx.com/#/app/billing" target="_blank" rel="noreferrer" className="underline font-bold">Billing</a> sekmesinden 10$ - 15$ test bakiyesi eklediğinizde, temsilcileriniz tarayıcıdan hiçbir program kurmadan Almanya numaralarını doğrudan arayabilir.
+                  <p className="text-emerald-800 text-[11px] leading-relaxed">
+                    Telnyx hesabınıza bakiye başarıyla yüklendi. Artık Almanya (<span className="font-mono font-bold">+49...</span>) numaralarını temsilcileriniz hiçbir program kurmadan doğrudan tarayıcı üzerinden arayabilir.
                   </p>
+                  <div className="pt-2 flex items-center gap-2 flex-wrap">
+                    <a
+                      href="https://webrtc.telnyx.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition"
+                    >
+                      <Headphones className="w-3.5 h-3.5" />
+                      <span>Telnyx Web Phone&apos;u Aç</span>
+                    </a>
+                    <span className="text-[10px] text-emerald-700 font-mono">
+                      Kullanıcı: usererenbal8505739498 | Şifre: SORNx8z!t6vd
+                    </span>
+                  </div>
                 </div>
               </div>
 

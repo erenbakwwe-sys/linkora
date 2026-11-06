@@ -626,24 +626,27 @@ export default function CallScreenPage() {
             </div>
 
             {/* Info Card at bottom of left column */}
-            <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3 text-[11px] text-slate-600 space-y-2">
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3 text-[11px] text-slate-600 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 font-medium block">Aktive Caller ID (Gitasis):</span>
-                  <span className="text-emerald-700 font-mono font-bold text-xs">
-                    +49 8131 7799867
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-emerald-900 font-bold block">Telnyx WebRTC Aktif</span>
+                  </div>
+                  <span className="text-emerald-700 font-mono font-bold text-xs block mt-0.5">
+                    Caller ID: +49 8131 7799867
                   </span>
                 </div>
                 <button
                   onClick={() => setShowSipModal(true)}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-blue-700 rounded-lg font-bold text-[10px] shadow-2xs transition flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 bg-white hover:bg-slate-50 border border-emerald-300 text-emerald-800 rounded-lg font-bold text-[10px] shadow-2xs transition flex items-center gap-1 cursor-pointer"
                 >
-                  <Headphones className="w-3 h-3 text-blue-600" />
-                  <span>SIP Ayarları</span>
+                  <Headphones className="w-3 h-3 text-emerald-600" />
+                  <span>Hat Detayları</span>
                 </button>
               </div>
               <p className="text-[10px] text-slate-500">
-                PJSIP UDP Trunk üzerinden doğrudan arama yapılabilir.
+                Almanya aramaları tarayıcı üzerinden doğrudan yapılır.
               </p>
             </div>
           </div>
@@ -1115,96 +1118,63 @@ export default function CallScreenPage() {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-xl w-full overflow-hidden text-slate-800">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">
                   <Headphones className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="font-black text-sm text-slate-900">
-                    Gitasis SIP Trunk &amp; Softphone Bağlantı Bilgileri
+                    Telnyx WebRTC &amp; Hat Bağlantı Durumu
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    MicroSIP, Zoiper veya PBX ayarları
+                    Tarayıcı üzerinden doğrudan arama altyapısı
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowSipModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-5 text-xs max-h-[80vh] overflow-y-auto">
-              {/* Whitelist Notice */}
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              {/* Active Status Banner */}
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-bold text-amber-900 text-xs">
-                    IP Whitelist Zorunluluğu
+                  <p className="font-bold text-emerald-900 text-xs">
+                    Telnyx Bağlantısı ve Numara Başarıyla Bağlandı!
                   </p>
-                  <p className="text-amber-800 text-[11px] leading-relaxed">
-                    Gitasis sunucusu (<span className="font-mono font-bold">217.131.14.34</span>) yalnızca onaylı IP adreslerinden gelen çağrıları kabul eder. Gitasis yetkilisine iletmeniz gereken mevcut genel IP adresiniz:
+                  <p className="text-emerald-800 text-[11px] leading-relaxed">
+                    Almanya numaranız (<span className="font-mono font-bold">+49 8131 7799867</span>) giden aramalarda arayan numara (Caller ID) olarak kilitlendi. Temsilciler arama yaptığında müşterilerin telefonunda bu numara görünecektir.
                   </p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="font-mono font-bold text-amber-950 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300">
-                      85.98.16.173
-                    </span>
-                    <button
-                      onClick={() => copyToClipboard('85.98.16.173', 'ip')}
-                      className="text-[11px] text-amber-900 underline font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedKey === 'ip' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedKey === 'ip' ? 'Kopyalandı' : 'IPyi Kopyala'}</span>
-                    </button>
-                  </div>
                 </div>
               </div>
 
               {/* Trunk Credentials Grid */}
               <div className="space-y-2">
-                <p className="font-bold text-slate-900 text-xs">SIP Hesap Bilgileri</p>
+                <p className="font-bold text-slate-900 text-xs">Hat ve Bağlantı Parametreleri</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="text-slate-400 block text-[10px]">SIP Sunucu / Domain</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-mono font-bold text-slate-900">217.131.14.34</span>
-                      <button
-                        onClick={() => copyToClipboard('217.131.14.34', 'server')}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        {copiedKey === 'server' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
+                    <span className="text-slate-400 block text-[10px]">Sağlayıcı (Provider)</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">Telnyx WebRTC Cloud</span>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="text-slate-400 block text-[10px]">Port / Protokol</span>
-                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">5060 / UDP</span>
+                    <span className="text-slate-400 block text-[10px]">Bağlantı Adı (Connection)</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">Calendra Web</span>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="text-slate-400 block text-[10px]">Kullanıcı Adı (Username)</span>
+                    <span className="text-slate-400 block text-[10px]">Connection ID</span>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-mono font-bold text-slate-900">calendra</span>
+                      <span className="font-mono font-bold text-slate-900 truncate mr-1">3087410408517010553</span>
                       <button
-                        onClick={() => copyToClipboard('calendra', 'user')}
+                        onClick={() => copyToClipboard('3087410408517010553', 'conn')}
                         className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
-                        {copiedKey === 'user' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="text-slate-400 block text-[10px]">Şifre (Password)</span>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="font-mono font-bold text-slate-900">c888eYKa3uLmJGdA</span>
-                      <button
-                        onClick={() => copyToClipboard('c888eYKa3uLmJGdA', 'pass')}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        {copiedKey === 'pass' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedKey === 'conn' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>
@@ -1214,7 +1184,7 @@ export default function CallScreenPage() {
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="font-mono font-bold text-emerald-600">+49 8131 7799867</span>
                       <button
-                        onClick={() => copyToClipboard('4981317799867', 'did')}
+                        onClick={() => copyToClipboard('+4981317799867', 'did')}
                         className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
                         {copiedKey === 'did' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1223,32 +1193,28 @@ export default function CallScreenPage() {
                   </div>
 
                   <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    <span className="text-slate-400 block text-[10px]">Giden Arama Formatı</span>
-                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">+49123456789</span>
+                    <span className="text-slate-400 block text-[10px]">Hedef Ülke İzni</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">Germany (+49) Whitelisted</span>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span className="text-slate-400 block text-[10px]">Ses İletimi (Transport)</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">WebRTC / TLS / SRTP</span>
                   </div>
                 </div>
               </div>
 
-              {/* MicroSIP Setup Guide */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-xs">MicroSIP ile Arama (Windows)</span>
-                  <a
-                    href="https://www.microsip.org/downloads"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] text-blue-600 hover:text-blue-800 underline font-semibold"
-                  >
-                    MicroSIP İndir (Ücretsiz)
-                  </a>
+              {/* Balance Activation Notice */}
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-900 text-xs">
+                    Bakiye Durumu ve İlk Arama
+                  </p>
+                  <p className="text-amber-800 text-[11px] leading-relaxed">
+                    Telnyx hesabınıza <a href="https://portal.telnyx.com/#/app/billing" target="_blank" rel="noreferrer" className="underline font-bold">Billing</a> sekmesinden 10$ - 15$ test bakiyesi eklediğinizde, temsilcileriniz tarayıcıdan hiçbir program kurmadan Almanya numaralarını doğrudan arayabilir.
+                  </p>
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-600">
-                  <li>MicroSIP&apos;i açıp sağ üst köşedeki ok simgesinden <strong>Hesap Ekle (Add Account)</strong> deyin.</li>
-                  <li><strong>Hesap Adı:</strong> Calendra | <strong>SIP Sunucu:</strong> 217.131.14.34</li>
-                  <li><strong>Kullanıcı Adı:</strong> calendra | <strong>Domain:</strong> 217.131.14.34</li>
-                  <li><strong>Şifre:</strong> c888eYKa3uLmJGdA | <strong>Görünen Ad:</strong> +4981317799867</li>
-                  <li>Kaydet butonuna basın. Durum <strong>Çevrimiçi (Online)</strong> olunca aramaya başlayabilirsiniz.</li>
-                </ol>
               </div>
 
               <div className="flex items-center justify-end pt-2">
@@ -1256,7 +1222,7 @@ export default function CallScreenPage() {
                   onClick={() => setShowSipModal(false)}
                   className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold cursor-pointer"
                 >
-                  Tamam, Anladım
+                  Tamam, Harika
                 </button>
               </div>
             </div>

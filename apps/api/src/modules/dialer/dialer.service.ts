@@ -53,6 +53,25 @@ export class DialerService {
   }
 
   getTrunkConfig() {
+    const isTelnyx = (process.env.TELEPHONY_PROVIDER || '').toUpperCase() === 'TELNYX';
+    if (isTelnyx) {
+      return {
+        provider: 'TELNYX',
+        accountName: 'Calendra Web (Telnyx WebRTC)',
+        connectionId: process.env.TELNYX_CONNECTION_ID || '3087410408517010553',
+        sipServer: 'sip.telnyx.com',
+        sipPort: 5060,
+        username: 'usererenbal8505739498',
+        callerId: process.env.GITASIS_CALLER_ID || '+4981317799867',
+        callerIdFormatted: '+49 8131 7799867',
+        transport: 'TLS / WSS / UDP',
+        webrtcGateway: 'wss://rtc.telnyx.com',
+        codecs: ['Opus', 'G.711 (Alaw)', 'G.722'],
+        outboundDialFormat: '+[ülke kodu][numara] (Örn: +491718923019)',
+        destinationWhitelist: ['Germany (+49)'],
+      };
+    }
+
     return {
       provider: 'GITASIS_PJSIP',
       accountName: 'Calendra SIP',

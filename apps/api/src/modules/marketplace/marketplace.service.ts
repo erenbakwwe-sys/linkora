@@ -181,11 +181,11 @@ export class MarketplaceService {
         buyer: {
           id: 'buyer-0005-aroundhome',
           tenantId: '11111111-1111-1111-1111-111111111111',
-          name: 'Aroundhome GmbH (TF Bank Partner)',
+          name: 'Aroundhome GmbH (via VIP Call Live-API)',
           companyIdentifier: 'DE-AROUNDHOME-005',
-          pingEndpoint: 'https://api.aroundhome.de/v1/ping',
-          postEndpoint: 'https://api.aroundhome.de/v1/leads',
-          signingSecret: 'sec_aroundhome_api_token_2026',
+          pingEndpoint: 'https://vipcalldailer.com/api/v1/ping',
+          postEndpoint: 'https://vipcalldailer.com/api/v1/leads',
+          signingSecret: process.env.VIPCALL_API_KEY || 'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
           pingEnabled: true,
           dailyCap: 100,
           monthlyCap: 2500,
@@ -458,6 +458,9 @@ export class MarketplaceService {
 
     // 1. Token validation (protect against unauthorized calls if token configured)
     const validTokens = [
+      process.env.LINKORA_LIVE_API_KEY,
+      process.env.VIPCALL_API_KEY,
+      'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
       process.env.LINKORA_TEST_API_KEY,
       process.env.GITASIS_WEBHOOK_SECRET,
       'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',

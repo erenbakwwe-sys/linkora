@@ -26,6 +26,9 @@ export class JwtAuthGuard implements CanActivate {
       request.query?.token;
 
     const validKeys = [
+      process.env.LINKORA_LIVE_API_KEY,
+      process.env.VIPCALL_API_KEY,
+      'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
       process.env.LINKORA_TEST_API_KEY,
       process.env.GITASIS_WEBHOOK_SECRET,
       'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',

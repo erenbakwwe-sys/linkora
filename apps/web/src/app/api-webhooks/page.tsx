@@ -270,46 +270,46 @@ export default function ApiWebhooksPage() {
           </div>
         </div>
 
-        {/* AKTIVER TEST-API-KEY & GITASIS WEBHOOK SCHNITTSTELLE */}
-        <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        {/* AKTIVER LIVE-API-KEY & VIP CALL WEBHOOK SCHNITTSTELLE */}
+        <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold border border-emerald-500/20">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Aktiver Test-API-Schlüssel verbunden</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>VIP Call / Aroundhome Live-API Aktiv</span>
               </div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span>Gitasis / Partner Test-API-Key</span>
-                <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700 font-mono">
-                  Bearer &amp; X-API-Key Auth
+                <span>Offizieller Live-API-Key (Calendra)</span>
+                <span className="text-[10px] bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40 font-mono">
+                  LIVE PRODUKTIV
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
-                Dieser API-Key ist global in Linkora aktiv. Autorisierte Anfragen an <code className="text-emerald-300">/api/webhooks/gitasis</code> und <code className="text-emerald-300">/api/leads</code> werden automatisch verarbeitet.
+              <p className="text-xs text-slate-300">
+                Dieser Live-Key übermittelt alle getätigten Verkäufe und Leads direkt an VIP Call Dialer und Aroundhome. Eingehende Rückmeldungen werden unter <code className="text-cyan-300">/api/webhooks/vipcall</code> empfangen.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
-              <div className="flex items-center bg-black/50 border border-slate-700/80 rounded-xl px-3 py-1.5 justify-between gap-3">
+              <div className="flex items-center bg-black/60 border border-emerald-500/30 rounded-xl px-3 py-1.5 justify-between gap-3">
                 <code className="text-xs font-mono text-emerald-400 select-all truncate max-w-[240px]">
-                  lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3
+                  lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b
                 </code>
                 <button
-                  onClick={() => handleCopyKey('lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3', 'key')}
+                  onClick={() => handleCopyKey('lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b', 'key')}
                   className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1 transition shrink-0"
                 >
                   {copiedKey === 'key' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'key' ? 'Kopiert' : 'Key Kopieren'}</span>
+                  <span>{copiedKey === 'key' ? 'Kopiert' : 'Live Key Kopieren'}</span>
                 </button>
               </div>
 
               <button
-                onClick={() => handleCopyKey(`https://calendra-group.online/api/webhooks/gitasis?token=lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3`, 'webhook')}
+                onClick={() => handleCopyKey(`https://calendra-group.online/api/webhooks/vipcall`, 'webhook')}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shrink-0"
               >
                 {copiedKey === 'webhook' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Webhook className="w-3.5 h-3.5 text-cyan-400" />}
-                <span>{copiedKey === 'webhook' ? 'Webhook URL Kopiert' : 'Webhook URL Kopieren'}</span>
+                <span>{copiedKey === 'webhook' ? 'Webhook Kopiert' : 'Webhook URL Kopieren'}</span>
               </button>
             </div>
           </div>

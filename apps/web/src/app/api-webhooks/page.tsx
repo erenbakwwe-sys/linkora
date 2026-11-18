@@ -45,6 +45,7 @@ export default function ApiWebhooksPage() {
   const [filterType, setFilterType] = useState<'ALL' | 'OUTBOUND' | 'INBOUND'>('ALL');
   const [selectedLog, setSelectedLog] = useState<WebhookLog | null>(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [origin, setOrigin] = useState('https://linkora-beta.vercel.app');
 
@@ -76,6 +77,12 @@ export default function ApiWebhooksPage() {
     navigator.clipboard.writeText(url);
     setCopiedUrl(true);
     setTimeout(() => setCopiedUrl(false), 2500);
+  };
+
+  const handleCopyKey = (key: string, id: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2500);
   };
 
   const handleReplay = async (id: string) => {
@@ -259,6 +266,51 @@ export default function ApiWebhooksPage() {
                   Storno
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AKTIVER TEST-API-KEY & GITASIS WEBHOOK SCHNITTSTELLE */}
+        <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold border border-emerald-500/20">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Aktiver Test-API-Schlüssel verbunden</span>
+              </div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Gitasis / Partner Test-API-Key</span>
+                <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700 font-mono">
+                  Bearer &amp; X-API-Key Auth
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Dieser API-Key ist global in Linkora aktiv. Autorisierte Anfragen an <code className="text-emerald-300">/api/webhooks/gitasis</code> und <code className="text-emerald-300">/api/leads</code> werden automatisch verarbeitet.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
+              <div className="flex items-center bg-black/50 border border-slate-700/80 rounded-xl px-3 py-1.5 justify-between gap-3">
+                <code className="text-xs font-mono text-emerald-400 select-all truncate max-w-[240px]">
+                  lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3
+                </code>
+                <button
+                  onClick={() => handleCopyKey('lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3', 'key')}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1 transition shrink-0"
+                >
+                  {copiedKey === 'key' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'key' ? 'Kopiert' : 'Key Kopieren'}</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleCopyKey(`https://calendra-group.online/api/webhooks/gitasis?token=lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3`, 'webhook')}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shrink-0"
+              >
+                {copiedKey === 'webhook' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Webhook className="w-3.5 h-3.5 text-cyan-400" />}
+                <span>{copiedKey === 'webhook' ? 'Webhook URL Kopiert' : 'Webhook URL Kopieren'}</span>
+              </button>
             </div>
           </div>
         </div>

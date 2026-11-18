@@ -457,10 +457,15 @@ export class MarketplaceService {
     const rawData = body || {};
 
     // 1. Token validation (protect against unauthorized calls if token configured)
-    const expectedToken = process.env.GITASIS_WEBHOOK_SECRET || 'gitasis_linkora_2026';
+    const validTokens = [
+      process.env.LINKORA_TEST_API_KEY,
+      process.env.GITASIS_WEBHOOK_SECRET,
+      'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',
+      'gitasis_linkora_2026',
+    ].filter(Boolean);
     const providedToken = queryToken || rawData.token || rawData.apiKey || headersToken;
-    if (providedToken && providedToken !== expectedToken) {
-      this.logger.warn(`Gitasis webhook provided token '${providedToken}' does not match expected secret.`);
+    if (providedToken && !validTokens.includes(providedToken)) {
+      this.logger.warn(`Gitasis webhook provided token '${providedToken}' does not match any valid secret.`);
     }
 
     // 2. Extract Customer Name

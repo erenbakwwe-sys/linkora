@@ -38,6 +38,18 @@
       }
     },
     {
+      "source": "/vipcall/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/vipcall",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
       "source": "/(.*)",
       "destination": {
         "service": "web"

@@ -7,7 +7,7 @@ let cachedServer: any = null;
 
 async function bootstrapServer() {
   if (!cachedServer) {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, { rawBody: true });
 
     app.enableCors({
       origin: '*',
@@ -43,7 +43,7 @@ export default async function handler(req: any, res: any) {
 if (!process.env.VERCEL) {
   (async () => {
     try {
-      const app = await NestFactory.create(AppModule);
+      const app = await NestFactory.create(AppModule, { rawBody: true });
       app.enableCors({ origin: '*', credentials: true });
       app.setGlobalPrefix('api');
       const port = process.env.PORT || process.env.API_PORT || 3001;

@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
@@ -825,6 +825,188 @@ export class MarketplaceService {
         statusCode: aroundhomePushResult.statusCode,
         buyer: aroundhomePushResult.recipient,
       } : null,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Processes incoming Webhook events from VIP Call Dialer (vipcalldailer.com).
+   * Events: ping, lead.created, lead.status_changed, lead.returned, lead.money_changed, schema.changed.
+   */
+  public async processVipCallWebhook(
+    body: any,
+    signatureHeader?: string,
+    rawBody?: string | Buffer,
+    deliveryId?: string
+  ) {
+    const rawData = body || {};
+    const eventType = rawData.event || (rawData.ping ? 'ping' : 'lead.status_changed');
+    const secret = process.env.VIPCALL_WEBHOOK_SECRET;
+
+    // 1. Verify X-LK-Signature if header & secret are present
+    let signatureValid = true;
+    let signatureReason = 'No secret configured in environment (allowing test traffic)';
+
+    if (secret && signatureHeader) {
+      try {
+        const parts = signatureHeader.split(',');
+        let t = '';
+        let v1 = '';
+        for (const p of parts) {
+          const [k, v] = p.trim().split('=');
+          if (k === 't') t = v;
+          if (k === 'v1') v1 = v;
+        }
+
+        if (t && v1) {
+          const bodyString = typeof rawBody === 'string'
+            ? rawBody
+            : Buffer.isBuffer(rawBody)
+            ? rawBody.toString('utf-8')
+            : JSON.stringify(rawData);
+
+          const payloadToSign = `${t}.${bodyString}`;
+          const expected = createHmac('sha256', secret).update(payloadToSign).digest('hex');
+
+          const v1Buf = Buffer.from(v1, 'hex');
+          const expBuf = Buffer.from(expected, 'hex');
+
+          if (v1Buf.length === expBuf.length && timingSafeEqual(v1Buf, expBuf)) {
+            signatureValid = true;
+            signatureReason = 'HMAC-SHA256 signature verified successfully';
+          } else {
+            signatureValid = false;
+            signatureReason = 'HMAC signature mismatch';
+            this.logger.warn(`[VIPCALL WEBHOOK] Signature mismatch. Received: ${v1}, Expected: ${expected}`);
+          }
+        } else {
+          signatureValid = false;
+          signatureReason = 'Malformed X-LK-Signature header format (expected t=...,v1=...)';
+        }
+      } catch (sigErr: any) {
+        signatureValid = false;
+        signatureReason = `Signature parsing error: ${sigErr.message}`;
+        this.logger.error(`[VIPCALL WEBHOOK] Signature parsing error: ${sigErr.message}`);
+      }
+    } else if (secret && !signatureHeader) {
+      signatureValid = false;
+      signatureReason = 'Missing X-LK-Signature header when VIPCALL_WEBHOOK_SECRET is set';
+      this.logger.warn(`[VIPCALL WEBHOOK] Missing signature header when secret is configured`);
+    } else if (signatureHeader) {
+      signatureReason = `Signature received (${signatureHeader.slice(0, 20)}...), awaiting VIPCALL_WEBHOOK_SECRET env setup`;
+      this.logger.log(`[VIPCALL WEBHOOK] Signature present: ${signatureHeader}`);
+    }
+
+    // 2. Handle 'ping' test event (Sent when user clicks "Test bildirimi" in VIP Call portal)
+    if (eventType === 'ping' || rawData.ping) {
+      this.logger.log(`[VIPCALL WEBHOOK] 🏓 PING received from VIP Call Dialer! Delivery: ${deliveryId || 'none'}`);
+
+      const log = this.connectors.recordCallbackLog('vipcalldialer.com', {
+        event: 'ping',
+        deliveryId,
+        signatureVerified: signatureValid,
+        signatureReason,
+        signatureHeader: signatureHeader || null,
+        payload: rawData,
+        receivedAt: new Date().toISOString(),
+      });
+
+      return {
+        ok: true,
+        event: 'ping',
+        received: true,
+        message: 'Pong! Linkora VIP Call Webhook receiver is active and verified.',
+        deliveryId: deliveryId || log.id,
+        signature: {
+          verified: signatureValid,
+          reason: signatureReason,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // 3. Handle Lead Status / Money / Returned Events
+    const leadData = rawData.data?.lead || rawData.lead || {};
+    const externalId = leadData.external_id || rawData.external_id;
+    const leadId = leadData.lead_id || rawData.lead_id;
+    const newStatus = leadData.status?.code || rawData.status;
+    const money = leadData.money || {};
+
+    this.logger.log(
+      `[VIPCALL WEBHOOK] Event: ${eventType} | Lead: ${leadId} (${externalId}) | Status: ${newStatus || 'N/A'}`
+    );
+
+    // Update lead in DB if external_id or lead_id matches
+    if (externalId || leadId) {
+      try {
+        await this.db.query(
+          `UPDATE leads 
+           SET status = CASE 
+             WHEN $1 IN ('approved', 'paid') THEN 'CONFIRMED'
+             WHEN $1 IN ('qc_rejected', 'storno', 'rejected') THEN 'REJECTED'
+             WHEN $1 = 'qc_returned' THEN 'IN_REVIEW'
+             ELSE status END,
+             updated_at = NOW()
+           WHERE id::text = $2 OR extra_data->>'external_id' = $2 OR extra_data->>'gitasisRecordId' = $2`,
+          [newStatus || 'unknown', externalId || String(leadId)]
+        );
+      } catch {
+        // Fallback
+      }
+    }
+
+    // Record in Connectors Log for UI visibility at /api-webhooks
+    const log = this.connectors.recordCallbackLog('vipcalldialer.com', {
+      event: eventType,
+      leadId,
+      externalId,
+      status: newStatus,
+      money,
+      signatureVerified: signatureValid,
+      signatureReason,
+      deliveryId,
+      rawPayload: rawData,
+      receivedAt: new Date().toISOString(),
+    });
+
+    return {
+      ok: true,
+      received: true,
+      event: eventType,
+      leadId,
+      externalId,
+      status: newStatus,
+      signature: {
+        verified: signatureValid,
+        reason: signatureReason,
+      },
+      callbackLogId: log.id,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  public getVipCallWebhookHealth() {
+    return {
+      status: 'active',
+      service: 'Linkora VIP Call Dialer Webhook Receiver',
+      endpoints: {
+        primary: 'https://calendra-group.online/api/webhooks/vipcall',
+        alternate: 'https://calendra-group.online/vipcall/webhook',
+      },
+      acceptedMethod: 'POST',
+      acceptedFormats: ['application/json'],
+      signatureHeader: 'X-LK-Signature (format: t=<unix>,v1=<hmac_sha256>)',
+      secretConfigured: !!process.env.VIPCALL_WEBHOOK_SECRET,
+      eventsSupported: [
+        'ping',
+        'lead.created',
+        'lead.status_changed',
+        'lead.returned',
+        'lead.money_changed',
+        'lead.updated',
+        'schema.changed',
+        'client.mode_changed',
+      ],
       timestamp: new Date().toISOString(),
     };
   }

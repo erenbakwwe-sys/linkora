@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Headers, Req, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MarketplaceService } from './marketplace.service.js';
 
@@ -37,5 +37,49 @@ export class WebhooksController {
       documentation: 'Send POST requests with customer data and call disposition (Randevu, Satış, Olumsuz, etc.)',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  @Post(['vipcall', 'vipcall/webhook'])
+  @HttpCode(200)
+  @ApiOperation({ summary: 'VIP Call Dialer (vipcalldailer.com) Inbound Webhook for status, ping, and QC updates' })
+  async handleVipCallWebhook(
+    @Body() body: any,
+    @Headers('x-lk-signature') signature?: string,
+    @Headers('x-lk-delivery') deliveryId?: string,
+    @Req() req?: any
+  ) {
+    const rawBody = req?.rawBody || JSON.stringify(body);
+    return this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId);
+  }
+
+  @Get(['vipcall', 'vipcall/webhook'])
+  @ApiOperation({ summary: 'VIP Call Webhook Health Check & Verification' })
+  async verifyVipCallWebhook() {
+    return this.marketplaceService.getVipCallWebhookHealth();
+  }
+}
+
+@ApiTags('Inbound Webhooks')
+@Controller('vipcall')
+export class VipCallWebhookController {
+  constructor(private readonly marketplaceService: MarketplaceService) {}
+
+  @Post('webhook')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'VIP Call /vipcall/webhook Direct Inbound Endpoint' })
+  async handleDirectWebhook(
+    @Body() body: any,
+    @Headers('x-lk-signature') signature?: string,
+    @Headers('x-lk-delivery') deliveryId?: string,
+    @Req() req?: any
+  ) {
+    const rawBody = req?.rawBody || JSON.stringify(body);
+    return this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId);
+  }
+
+  @Get('webhook')
+  @ApiOperation({ summary: 'VIP Call /vipcall/webhook Health Check' })
+  async verifyDirectWebhook() {
+    return this.marketplaceService.getVipCallWebhookHealth();
   }
 }

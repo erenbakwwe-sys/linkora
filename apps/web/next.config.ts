@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: `${backendUrl.replace(/\/$/, '')}/api/:path*`,
       },
+      {
+        source: '/vipcall/:path*',
+        destination: `${backendUrl.replace(/\/$/, '')}/api/webhooks/vipcall`,
+      },
     ];
   },
 };

@@ -716,16 +716,115 @@ export class MarketplaceService {
       processedAt: new Date().toISOString(),
     });
 
+    // 11. 🚀 SALE FORWARDING: If this is a CONFIRMED sale, automatically push to Aroundhome
+    //     Lead stays in Linkora DB (already saved above) AND gets forwarded to Aroundhome.
+    let aroundhomePushResult: any = null;
+    if (normalizedStatus === 'CONFIRMED') {
+      try {
+        const aroundhomeBuyer = Array.from(this.inMemoryBuyers.values()).find(
+          (b) => b.isActive && (b.id.includes('aroundhome') || b.name.toLowerCase().includes('aroundhome'))
+        );
+
+        if (aroundhomeBuyer) {
+          const salePayload = {
+            leadId,
+            externalRef: `GIT-${leadId.slice(0, 8).toUpperCase()}`,
+            source: 'gitasis.com',
+            gitasisRecordId,
+            timestamp: new Date().toISOString(),
+            disposition: rawDisposition,
+            agent: agentName,
+            customer: {
+              firstName,
+              lastName,
+              phone: phoneE164,
+              email: email || undefined,
+              address: {
+                street,
+                city,
+                district,
+                postalCode,
+                country: phoneCountry === 'TR' ? 'TR' : 'DE',
+              },
+            },
+            notes,
+            audioRecordingUrl: audioRecordingUrl || undefined,
+          };
+
+          aroundhomePushResult = await this.connectors.deliverToGermanBuyer(aroundhomeBuyer, salePayload);
+
+          aroundhomeBuyer.deliveredToday += 1;
+          aroundhomeBuyer.deliveredThisMonth += 1;
+          aroundhomeBuyer.totalDelivered += 1;
+
+          // Record sale in inMemorySales
+          const saleRecord: LeadSaleRecord = {
+            id: `sale-git-${randomUUID()}`,
+            tenantId: defaultTenantId,
+            leadId,
+            buyerId: aroundhomeBuyer.id,
+            buyerName: aroundhomeBuyer.name,
+            salePrice: 0, // Commission tracked separately
+            currency: 'EUR',
+            exclusivity: 'EXCLUSIVE',
+            status: 'COMPLETED',
+            soldAt: new Date().toISOString(),
+            returnStatus: 'NONE',
+            returnWindowExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          };
+          this.inMemorySales.unshift(saleRecord);
+
+          // Also record a sale event in lead_events
+          try {
+            await this.db.query(
+              `INSERT INTO lead_events (
+                id, lead_id, tenant_id, event_type, actor_type, payload, created_at
+              ) VALUES ($1, $2, $3, 'SALE_FORWARDED_TO_AROUNDHOME', 'SYSTEM_MARKETPLACE', $4::jsonb, NOW())`,
+              [
+                randomUUID(),
+                leadId,
+                defaultTenantId,
+                JSON.stringify({
+                  buyer: aroundhomeBuyer.name,
+                  deliveryId: aroundhomePushResult?.deliveryId,
+                  statusCode: aroundhomePushResult?.statusCode,
+                  disposition: rawDisposition,
+                }),
+              ]
+            );
+          } catch {
+            // Non-critical
+          }
+
+          this.logger.log(
+            `✅ SALE FORWARDED: Lead ${leadId} (${firstName} ${lastName}) → ${aroundhomeBuyer.name} | Delivery: ${aroundhomePushResult?.deliveryId}`
+          );
+        } else {
+          this.logger.warn(`⚠️  No active Aroundhome buyer found for sale forwarding (leadId: ${leadId})`);
+        }
+      } catch (saleErr: any) {
+        this.logger.error(`❌ Sale forwarding to Aroundhome failed for lead ${leadId}: ${saleErr.message}`);
+      }
+    }
+
     return {
       success: true,
       code: 200,
-      message: 'Gitasis çağrı ve randevu verisi Linkora sistemine başarıyla kaydedildi.',
+      message: normalizedStatus === 'CONFIRMED'
+        ? `Satış kaydedildi ve Aroundhome'a iletildi. Lead Linkora veritabanında da saklanmaktadır.`
+        : 'Gitasis çağrı ve randevu verisi Linkora sistemine başarıyla kaydedildi.',
       leadId,
       isExistingLead: isExisting,
       status: normalizedStatus,
       rawDisposition,
       appointmentScheduled: !!scheduledDate || isAppointment,
       callbackLogId: log.id,
+      aroundhomeForward: aroundhomePushResult ? {
+        forwarded: true,
+        deliveryId: aroundhomePushResult.deliveryId,
+        statusCode: aroundhomePushResult.statusCode,
+        buyer: aroundhomePushResult.recipient,
+      } : null,
       timestamp: new Date().toISOString(),
     };
   }

@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { LeadsService } from '../leads/leads.service.js';
+import { MarketplaceService } from '../marketplace/marketplace.service.js';
 import { AgentStateService } from './agent-state.service.js';
 import { LiveGateway } from '../gateway/live.gateway.js';
 import {
@@ -34,6 +35,7 @@ const memoryActiveCalls = new Map<string, ActiveCallDto>();
 @Injectable()
 export class DialerService {
   private telephony: TelephonyProvider;
+  private readonly logger = new Logger(DialerService.name);
 
   constructor(
     private readonly db: DatabaseService,
@@ -41,6 +43,7 @@ export class DialerService {
     private readonly leadsService: LeadsService,
     private readonly agentStateService: AgentStateService,
     private readonly liveGateway: LiveGateway,
+    private readonly marketplaceService: MarketplaceService,
   ) {
     const provider = process.env.TELEPHONY_PROVIDER || 'GITASIS';
     if (provider === 'GITASIS') {
@@ -236,9 +239,37 @@ export class DialerService {
       // Memory fallback
     }
 
+    // 3. 🚀 SALE FORWARDING: If this call resulted in a sale, push to Aroundhome
+    //    Lead is already in Linkora DB — this just forwards it to Aroundhome on top.
+    let aroundhomePush: any = null;
+    if (data.countsAsConversion) {
+      try {
+        const lead = await this.leadsService.getLeadDetail(tenantId, data.leadId).catch(() => null);
+        if (lead?.lead) {
+          aroundhomePush = await this.marketplaceService.deliverLeadDirectly({
+            tenantId,
+            leadId: data.leadId,
+            customPayload: {
+              first_name: lead.lead.first_name,
+              last_name: lead.lead.last_name,
+              phone_e164: lead.lead.phone_e164,
+              email: lead.lead.email,
+              postal_code: lead.lead.postal_code,
+              city: lead.lead.city,
+              street: lead.lead.street,
+              notes: data.notes || `Wrap-up satış: ${data.wrapupCode}`,
+            },
+          });
+          this.logger.log(`✅ SALE FORWARDED via Wrapup: Lead ${data.leadId} → Aroundhome | Delivery: ${aroundhomePush?.deliveryId}`);
+        }
+      } catch (e: any) {
+        this.logger.error(`❌ Wrapup sale forwarding failed for lead ${data.leadId}: ${e.message}`);
+      }
+    }
+
     memoryActiveCalls.delete(callId);
 
-    // 3. Transition agent from WRAP_UP back to READY
+    // 4. Transition agent from WRAP_UP back to READY
     await this.agentStateService.setAgentState(tenantId, agentId, 'READY', {
       agentName: 'Agent',
     });
@@ -247,7 +278,14 @@ export class DialerService {
       success: true,
       callId,
       nextAgentState: 'READY',
-      message: 'Nachbearbeitung abgeschlossen. Agent ist wieder anrufbereit.',
+      message: data.countsAsConversion
+        ? 'Satış kaydedildi ve Aroundhome\'a iletildi. Lead Linkora veritabanında da saklanmaktadır.'
+        : 'Nachbearbeitung abgeschlossen. Agent ist wieder anrufbereit.',
+      aroundhomeForward: aroundhomePush ? {
+        forwarded: true,
+        deliveryId: aroundhomePush.deliveryId,
+        buyer: aroundhomePush.buyerName,
+      } : null,
     };
   }
 

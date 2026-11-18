@@ -12,7 +12,7 @@ import {
 
 describe('Shared Domain Contracts & Zod Schemas', () => {
   it('should validate valid login credentials', () => {
-    const valid = { email: 'admin@lead-kontackt.de', password: 'Password123!' };
+    const valid = { email: 'admin@linkora.io', password: 'Password123!' };
     const res = LoginSchema.safeParse(valid);
     expect(res.success).toBe(true);
   });

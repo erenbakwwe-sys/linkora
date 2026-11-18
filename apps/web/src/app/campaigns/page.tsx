@@ -55,7 +55,7 @@ export default function CampaignsPage() {
       id: 'camp-1',
       number: 1,
       name: 'Kampanya 1',
-      companyName: 'Lead-Kontackt',
+      companyName: 'Linkora',
       status: 'Offen',
       isActive: true,
       tempo: 5,
@@ -69,7 +69,7 @@ export default function CampaignsPage() {
       id: 'camp-2',
       number: 2,
       name: 'Kampanya 2',
-      companyName: 'Lead-Kontackt',
+      companyName: 'Linkora',
       status: 'Offen',
       isActive: true,
       tempo: 5,
@@ -83,7 +83,7 @@ export default function CampaignsPage() {
       id: 'camp-3',
       number: 3,
       name: 'Kampanya 3',
-      companyName: 'Lead-Kontackt',
+      companyName: 'Linkora',
       status: 'Offen',
       isActive: true,
       tempo: 5,
@@ -97,7 +97,7 @@ export default function CampaignsPage() {
       id: 'camp-4',
       number: 4,
       name: 'Kampanya 4',
-      companyName: 'Lead-Kontackt',
+      companyName: 'Linkora',
       status: 'Offen',
       isActive: true,
       tempo: 5,
@@ -165,7 +165,7 @@ export default function CampaignsPage() {
             id: `camp-${i}`,
             number: i,
             name: `Kampanya ${i}`,
-            companyName: 'Lead-Kontackt',
+            companyName: 'Linkora',
             status: 'Offen',
             isActive: true,
             tempo: 5,
@@ -415,7 +415,7 @@ export default function CampaignsPage() {
 
                   {/* Company Tag */}
                   <span className="text-xs font-semibold text-slate-600">
-                    {camp.companyName || 'Lead-Kontackt'}
+                    {camp.companyName || 'Linkora'}
                   </span>
 
                   {/* Team status banner */}

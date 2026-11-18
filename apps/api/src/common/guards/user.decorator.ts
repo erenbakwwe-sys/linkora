@@ -17,7 +17,7 @@ export const CurrentUser = createParamDecorator(
     return (
       request.user || {
         id: '99999999-0000-0000-0000-000000000002',
-        email: 'admin@lead-kontackt.de',
+        email: 'admin@linkora.io',
         tenantId: '11111111-1111-1111-1111-111111111111',
         role: 'COMPANY_ADMIN',
         mode: 'MANAGER',

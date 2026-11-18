@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [tenantSlug, setTenantSlug] = useState('lead-kontackt');
+  const [tenantSlug, setTenantSlug] = useState('linkora');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await login(cleanEmail, cleanPassword, tenantSlug.trim() || 'lead-kontackt');
+      await login(cleanEmail, cleanPassword, tenantSlug.trim() || 'linkora');
       router.push('/dashboard');
     } catch (err: any) {
       setError(
@@ -161,7 +161,7 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={isTr ? 'Örn. Murat2 veya murat2@lead-kontackt.de' : 'z.B. Murat2 oder murat2@lead-kontackt.de'}
+                  placeholder={isTr ? 'Örn. Murat2 veya murat2@linkora.io' : 'z.B. Murat2 oder murat2@linkora.io'}
                   className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
                   type="text"
                   value={tenantSlug}
                   onChange={(e) => setTenantSlug(e.target.value)}
-                  placeholder="lead-kontackt"
+                  placeholder="linkora"
                   className="w-full bg-[#11192e] border border-slate-700/80 rounded-xl pl-10 pr-3 py-2.5 text-base sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-400 transition-all duration-200 shadow-inner"
                 />
               </div>
@@ -229,7 +229,7 @@ export default function LoginPage() {
               <span>{isTr ? '256-Bit SSL Şifreleme · %100 KVKK & GDPR Uyumlu' : 'Verifizierte 256-Bit SSL-Verschlüsselung · DSGVO-konform'}</span>
             </div>
             <p className="text-[11px] text-slate-500">
-              Linkora Platform &middot; Mandant: Lead-Kontackt &middot; {isTr ? 'Sunucu Konumu: Almanya' : 'Serverstandort Deutschland'}
+              Linkora Platform &middot; Mandant: Linkora &middot; {isTr ? 'Sunucu Konumu: Almanya' : 'Serverstandort Deutschland'}
             </p>
           </div>
         </div>

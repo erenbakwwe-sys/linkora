@@ -57,7 +57,7 @@ const fallbackShifts: Shift[] = [
   },
   {
     id: 's3',
-    teamName: 'Lead-Kontackt Berlin Core',
+    teamName: 'Linkora Berlin Core',
     userId: '99999999-0000-0000-0000-000000000007',
     userName: 'Birgit Schneider',
     date: '2026-10-30',
@@ -237,7 +237,7 @@ export default function RotaPage() {
             {[
               { id: 'ALL', label: 'Alle Standorte' },
               { id: 'Izmir', label: 'CC Izmir' },
-              { id: 'Berlin', label: 'Lead-Kontackt Berlin' },
+              { id: 'Berlin', label: 'Linkora Berlin' },
               { id: 'Solar', label: 'Solar Direkt' },
             ].map((tab) => (
               <button

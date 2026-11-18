@@ -11,7 +11,7 @@ export async function testRlsIsolation() {
     connectionString: process.env.DATABASE_URL || 'postgresql://linkora_user:linkora_password@localhost:5432/linkora_db',
   });
 
-  const tenantA = '11111111-1111-1111-1111-111111111111'; // Lead-Kontackt (Parent)
+  const tenantA = '11111111-1111-1111-1111-111111111111'; // Linkora (Parent)
   const tenantSub = '22222222-2222-2222-2222-222222222222'; // CC Izmir (Child of A)
   const tenantB = '33333333-3333-3333-3333-333333333333'; // Solar Direkt (Unrelated)
 

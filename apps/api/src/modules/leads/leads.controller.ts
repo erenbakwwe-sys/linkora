@@ -268,6 +268,6 @@ export class LeadsController {
       throw new BadRequestException(parseRes.error.errors.map((e) => e.message).join(', '));
     }
 
-    return this.leadsService.handleQcAction(tId, id, parseRes.data, user || { id: 'qc-user', email: 'qc@lead-kontackt.de' });
+    return this.leadsService.handleQcAction(tId, id, parseRes.data, user || { id: 'qc-user', email: 'qc@linkora.io' });
   }
 }

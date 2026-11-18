@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setAccessibleTenants([
-      { id: '11111111-1111-1111-1111-111111111111', name: 'Lead-Kontackt', slug: 'lead-kontackt' },
+      { id: '11111111-1111-1111-1111-111111111111', name: 'Linkora', slug: 'linkora' },
       { id: '22222222-2222-2222-2222-222222222222', name: 'Call-Center Izmir', slug: 'cc-izmir' },
     ]);
 
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string, tenantSlug?: string) => {
     const cleanEmail = (email || '').trim();
     const cleanPassword = (password || '').trim();
-    const cleanSlug = (tenantSlug || '').trim() || 'lead-kontackt';
+    const cleanSlug = (tenantSlug || '').trim() || 'linkora';
 
     if (!cleanEmail) {
       throw new Error('Bitte geben Sie Ihre E-Mail-Adresse oder Ihren Benutzernamen ein.');
@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const defaultAccounts = [
       {
         id: 'usr-157',
-        email: 'murat2@lead-kontackt.de',
+        email: 'murat2@linkora.io',
         username: 'Murat2',
         name: 'Murat2',
         role: 'Agent',
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-156',
-        email: 'murat.dere@lead-kontackt.de',
+        email: 'murat.dere@linkora.io',
         username: 'Murat Dere',
         name: 'Murat Dere',
         role: 'Agent',
@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-210',
-        email: 'admin@lead-kontackt.de',
+        email: 'admin@linkora.io',
         username: 'Erensamsun',
         name: 'Erensamsun',
         role: 'Firmen-Admin',
@@ -173,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-210-alt',
-        email: 'erensamsun@lead-kontackt.de',
+        email: 'erensamsun@linkora.io',
         username: 'Erensamsun',
         name: 'Erensamsun',
         role: 'Firmen-Admin',
@@ -183,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-212',
-        email: 'derya@lead-kontackt.de',
+        email: 'derya@linkora.io',
         username: 'Derya',
         name: 'Derya',
         role: 'Firmen-Admin',
@@ -193,7 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-151',
-        email: 'murat.d@lead-kontackt.de',
+        email: 'murat.d@linkora.io',
         username: 'Murat.D',
         name: 'Murat.D',
         role: 'Firmen-Admin',
@@ -203,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       {
         id: 'usr-209',
-        email: 'eren.lead@lead-kontackt.de',
+        email: 'eren.lead@linkora.io',
         username: 'Eren',
         name: 'Eren',
         role: 'Teamleiter',
@@ -249,7 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isManager = matched.role === 'Firmen-Admin' || matched.role === 'COMPANY_ADMIN';
       const userObj: User = {
         id: matched.id || 'usr-' + Date.now(),
-        email: matched.email || `${(matched.username || 'agent').toLowerCase()}@lead-kontackt.de`,
+        email: matched.email || `${(matched.username || 'agent').toLowerCase()}@linkora.io`,
         firstName: matched.username?.split(' ')[0] || matched.name || 'Agent',
         lastName: matched.username?.split(' ')[1] || '',
         username: matched.username || matched.name || 'Agent',
@@ -263,10 +263,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const tenantObj: Tenant = {
         id: '11111111-1111-1111-1111-111111111111',
-        name: 'Lead-Kontackt',
-        slug: 'lead-kontackt',
+        name: 'Linkora',
+        slug: 'linkora',
         branding: {
-          brand_name: 'Lead-Kontackt',
+          brand_name: 'Linkora',
           primary_color: '#0b1220',
           logo_url: null,
         },

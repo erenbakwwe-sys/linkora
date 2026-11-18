@@ -29,13 +29,13 @@ export async function runSeed(pool?: pg.Pool) {
       INSERT INTO tenants (id, parent_tenant_id, name, slug, type, currency, minute_rate_eur, low_balance_threshold_eur, branding)
       VALUES 
         ('${rootTenantId}', NULL, 'Linkora Platform', 'platform-root', 'ROOT', 'EUR', 0.0400, 10.00, '{"brand_name": "Linkora", "primary_color": "#0b1220"}'),
-        ('${parentTenantId}', NULL, 'Lead-Kontackt GmbH', 'lead-kontackt', 'AGENCY_PARENT', 'EUR', 0.0400, 10.00, '{"brand_name": "Lead-Kontackt", "primary_color": "#0b1220"}'),
+        ('${parentTenantId}', NULL, 'Linkora GmbH', 'linkora', 'AGENCY_PARENT', 'EUR', 0.0400, 10.00, '{"brand_name": "Linkora", "primary_color": "#0b1220"}'),
         ('${subTenantId}', '${parentTenantId}', 'Call-Center Izmir', 'cc-izmir', 'CALL_CENTER_SUB', 'EUR', 0.0400, 10.00, '{"brand_name": "CC-Izmir", "primary_color": "#0b1220"}'),
         ('${unrelatedTenantId}', NULL, 'Solar Direkt GmbH', 'solar-direkt', 'AGENCY_PARENT', 'EUR', 0.0400, 10.00, '{"brand_name": "Solar Direkt", "primary_color": "#0b1220"}')
       ON CONFLICT (id) DO NOTHING;
     `);
 
-    // 2. Wallets (Lead-Kontackt set to 10.00 EUR low balance trigger)
+    // 2. Wallets (Linkora set to 10.00 EUR low balance trigger)
     await client.query(`
       INSERT INTO wallets (tenant_id, balance, credit_limit, currency)
       VALUES
@@ -75,12 +75,12 @@ export async function runSeed(pool?: pg.Pool) {
       INSERT INTO users (id, tenant_id, email, password_hash, first_name, last_name, default_mode, language)
       VALUES
         ('99999999-0000-0000-0000-000000000001', '${rootTenantId}', 'super@yourbrand.com', '${pwdHash}', 'Root', 'SuperAdmin', 'MANAGER', 'de'),
-        ('99999999-0000-0000-0000-000000000002', '${parentTenantId}', 'admin@lead-kontackt.de', '${pwdHash}', 'Admin', 'LeadKontackt', 'MANAGER', 'de'),
+        ('99999999-0000-0000-0000-000000000002', '${parentTenantId}', 'admin@linkora.io', '${pwdHash}', 'Admin', 'Linkora', 'MANAGER', 'de'),
         ('99999999-0000-0000-0000-000000000003', '${subTenantId}', 'admin@cc-izmir.com', '${pwdHash}', 'Kemal', 'Yilmaz', 'MANAGER', 'tr'),
         ('99999999-0000-0000-0000-000000000004', '${subTenantId}', 'teamlead@cc-izmir.com', '${pwdHash}', 'Serkan', 'Demir', 'MANAGER', 'tr'),
         ('99999999-0000-0000-0000-000000000005', '${subTenantId}', 'umut@cc-izmir.com', '${pwdHash}', 'Umut', 'Kaya', 'AGENT', 'de'),
         ('99999999-0000-0000-0000-000000000006', '${subTenantId}', 'eren@cc-izmir.com', '${pwdHash}', 'Erensamsun', 'Aydin', 'AGENT', 'de'),
-        ('99999999-0000-0000-0000-000000000007', '${parentTenantId}', 'qc@lead-kontackt.de', '${pwdHash}', 'Birgit', 'Schneider', 'MANAGER', 'de'),
+        ('99999999-0000-0000-0000-000000000007', '${parentTenantId}', 'qc@linkora.io', '${pwdHash}', 'Birgit', 'Schneider', 'MANAGER', 'de'),
         ('99999999-0000-0000-0000-000000000008', '${unrelatedTenantId}', 'admin@solardirekt.de', '${pwdHash}', 'Hans', 'Meyer', 'MANAGER', 'de')
       ON CONFLICT (id) DO NOTHING;
     `);
@@ -215,7 +215,7 @@ export async function runSeed(pool?: pg.Pool) {
         NOW() - INTERVAL '2 days',
         '194.25.0.12',
         'https://angebot.solarenergie-portal.de/pv-muenchen',
-        'Ich erkläre mich damit einverstanden, dass die Lead-Kontackt GmbH und deren Partner mich bezüglich eines unverbindlichen Photovoltaik-Angebots telefonisch oder per E-Mail kontaktieren dürfen. Diese Einwilligung kann ich jederzeit widerrufen.',
+        'Ich erkläre mich damit einverstanden, dass die Linkora GmbH und deren Partner mich bezüglich eines unverbindlichen Photovoltaik-Angebots telefonisch oder per E-Mail kontaktieren dürfen. Diese Einwilligung kann ich jederzeit widerrufen.',
         'v2.1',
         'ONLINE_FORM'
       )

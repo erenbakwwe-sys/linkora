@@ -53,7 +53,7 @@ const defaultFloorAgents: ActiveAgent[] = [
   {
     agentId: '3',
     name: 'Birgit Schneider',
-    companyName: 'Lead-Kontackt Berlin',
+    companyName: 'Linkora Berlin',
     status: 'ON_CALL',
     statusLabelDe: 'Am Telefon',
     durationFormatted: '07:15',

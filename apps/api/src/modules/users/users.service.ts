@@ -28,7 +28,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#157',
       username: 'Murat2',
       name: 'Murat2',
-      email: 'murat2@lead-kontackt.de',
+      email: 'murat2@linkora.io',
       role: 'Agent',
       team: 'MD-Team',
       isActive: true,
@@ -43,7 +43,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#156',
       username: 'Murat Dere',
       name: 'Murat Dere',
-      email: 'murat.dere@lead-kontackt.de',
+      email: 'murat.dere@linkora.io',
       role: 'Agent',
       team: 'MD-Team',
       isActive: true,
@@ -57,7 +57,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#209',
       username: 'Eren',
       name: 'Eren',
-      email: 'eren.lead@lead-kontackt.de',
+      email: 'eren.lead@linkora.io',
       role: 'Teamleiter',
       team: 'Testcalendra',
       isActive: true,
@@ -71,7 +71,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#212',
       username: 'Derya',
       name: 'Derya',
-      email: 'derya@lead-kontackt.de',
+      email: 'derya@linkora.io',
       role: 'Firmen-Admin',
       team: '—',
       isActive: true,
@@ -85,7 +85,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#210',
       username: 'Erensamsun',
       name: 'Erensamsun',
-      email: 'erensamsun@lead-kontackt.de',
+      email: 'erensamsun@linkora.io',
       role: 'Firmen-Admin',
       team: '—',
       isActive: true,
@@ -99,7 +99,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#240',
       username: 'Erensamsun',
       name: 'Erensamsun',
-      email: 'erensamsun.admin@lead-kontackt.de',
+      email: 'erensamsun.admin@linkora.io',
       role: 'Firmen-Admin',
       team: '—',
       isActive: true,
@@ -113,7 +113,7 @@ export class UsersService implements OnModuleInit {
       userNumber: '#151',
       username: 'Murat.D',
       name: 'Murat.D',
-      email: 'murat.d@lead-kontackt.de',
+      email: 'murat.d@linkora.io',
       role: 'Firmen-Admin',
       team: '—',
       isActive: true,
@@ -372,7 +372,7 @@ export class UsersService implements OnModuleInit {
         u.email.toLowerCase() === term ||
         u.username.toLowerCase() === term ||
         u.name.toLowerCase() === term ||
-        (term === 'admin@lead-kontackt.de' && (u.username.toLowerCase() === 'erensamsun' || u.email.toLowerCase() === 'erensamsun@lead-kontackt.de')) ||
+        (term === 'admin@linkora.io' && (u.username.toLowerCase() === 'erensamsun' || u.email.toLowerCase() === 'erensamsun@linkora.io')) ||
         (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun'))
     );
   }

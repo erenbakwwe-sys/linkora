@@ -44,7 +44,7 @@ export const TopBar: React.FC = () => {
                 L
               </div>
               <span className="font-extrabold text-slate-900 text-sm tracking-tight hidden lg:inline">
-                {tenant?.name || 'Lead-Kontackt'}
+                {tenant?.name || 'Linkora'}
               </span>
             </Link>
 
@@ -57,7 +57,7 @@ export const TopBar: React.FC = () => {
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                 <span className="truncate max-w-[80px] sm:max-w-[120px]">
-                  Firma: {tenant?.name || 'Lead-Kontackt'}
+                  Firma: {tenant?.name || 'Linkora'}
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
@@ -351,7 +351,7 @@ export const TopBar: React.FC = () => {
             className="flex items-center space-x-1.5 sm:space-x-2 bg-[#121c33]/90 hover:bg-[#182645] text-slate-200 text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-xl border border-slate-700/80 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.98]"
           >
             <Building2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span className="truncate max-w-[90px] sm:max-w-[130px]">{tenant?.name || 'Lead-Kontackt'}</span>
+            <span className="truncate max-w-[90px] sm:max-w-[130px]">{tenant?.name || 'Linkora'}</span>
             <ChevronDown className="w-3 h-3 text-slate-400 transition-transform flex-shrink-0" />
           </button>
 

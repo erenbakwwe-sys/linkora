@@ -299,7 +299,7 @@ export default function CallScreenPage() {
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-2 font-bold text-white">
             <Headphones className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <span className="text-amber-400 font-extrabold text-sm">Lead-Kontackt</span>
+            <span className="text-amber-400 font-extrabold text-sm">Linkora</span>
             <span className="text-slate-500">&bull;</span>
             <span className="text-slate-200 truncate max-w-[110px] sm:max-w-none">{userName}</span>
           </div>

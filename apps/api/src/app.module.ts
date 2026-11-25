@@ -22,6 +22,7 @@ import { MarketplaceModule } from './modules/marketplace/marketplace.module.js';
 import { OperationsModule } from './modules/operations/operations.module.js';
 import { FinancesModule } from './modules/finances/finances.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
+import { HyperionModule } from './modules/integrations/hyperion/hyperion.module.js';
 
 import { UsersService } from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
@@ -45,6 +46,7 @@ import { UsersController } from './modules/users/users.controller.js';
     OperationsModule,
     FinancesModule,
     ReportsModule,
+    HyperionModule,
   ],
   controllers: [
     AuthController,

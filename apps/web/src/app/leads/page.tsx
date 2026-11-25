@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/shell/AppShell';
+import { HyperionCard, isTreppenliftLead } from '@/components/leads/HyperionCard';
 import { useI18n } from '@/context/I18nContext';
 import {
   Search,
@@ -123,7 +124,7 @@ const QUESTION_LABELS: Record<string, string> = {
   tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
   tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
   tlTimeFrame: 'Wann wird der Lift benötigt?',
-  tlIsOwner: 'Sind Sie Eigentümer/Entscheider',
+  tlIsOwner: 'Eigentum oder Miete?',
   tlFloors: 'Wie viele Etagen müssen überwunden werden?',
   tlCareLevel: 'Liegt ein Pflegegrad vor?',
   tlStairCourse: 'Wie verläuft die Treppe?',
@@ -131,7 +132,9 @@ const QUESTION_LABELS: Record<string, string> = {
   tlStairWidth: 'Treppenbreite (in cm)',
   tlStepCount: 'Anzahl der Stufen',
   tlHeightDiff: 'Höhenunterschied (in cm)',
-  tlOutdoor: 'Wird der Lift im Außenbereich benötigt?',
+  tlOutdoor: 'Innen oder außen?',
+  tlNutzer: 'Für wen ist der Lift?',
+  tlKontaktWunsch: 'Kontaktwunsch',
   tlAvailability: 'Treppenlift · Erreichbarkeit',
   // WP
   wpCurrentSystem: 'Aktuelles Heizsystem?',
@@ -984,6 +987,8 @@ export default function LeadsPage() {
                       )}
                     </div>
                   )}
+
+                  {isTreppenliftLead(leadDetail.lead) && <HyperionCard leadId={String(leadDetail.lead.id)} />}
 
                   {/* B2B Partner API Integration Card (Aroundhome GmbH / Employer Outbound & Inbound) */}
                   <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-xl p-4 space-y-3.5 border border-slate-700/60 shadow-lg">

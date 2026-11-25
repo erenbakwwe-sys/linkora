@@ -279,8 +279,10 @@ export class LeadsService {
 
     // Fallback sample detail if not found in DB
     if (!lead) {
-      if (memoryLeads.has(leadId)) {
-        const mem = memoryLeads.get(leadId);
+      const memCandidate = memoryLeads.get(leadId);
+      // In-memory leads are tenant-scoped as well
+      if (memCandidate && (!memCandidate.tenantId || memCandidate.tenantId === tenantId)) {
+        const mem = memCandidate;
         lead = {
           id: mem.id,
           first_name: mem.first_name || mem.firstName,
@@ -295,6 +297,7 @@ export class LeadsService {
           status: mem.status || 'NEW',
           consent_verified: mem.consent_verified !== undefined ? mem.consent_verified : true,
           dnc_flag: mem.dnc_flag || false,
+          extra_data: mem.extra_data || mem.extraData || {},
           project_id: mem.project_id || mem.projectId || 'cccccccc-0000-0000-0000-000000000001',
           project_name: mem.project_name || 'Photovoltaik',
           project_slug: (mem.project_name || 'Photovoltaik').toLowerCase(),
@@ -329,7 +332,7 @@ export class LeadsService {
           tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
           tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
           tlTimeFrame: 'Wann wird der Lift benötigt?',
-          tlIsOwner: 'Sind Sie Eigentümer/Entscheider',
+          tlIsOwner: 'Eigentum oder Miete?',
           tlFloors: 'Wie viele Etagen müssen überwunden werden?',
           tlCareLevel: 'Liegt ein Pflegegrad vor?',
           tlStairCourse: 'Wie verläuft die Treppe?',
@@ -337,7 +340,9 @@ export class LeadsService {
           tlStairWidth: 'Treppenbreite (in cm)',
           tlStepCount: 'Anzahl der Stufen',
           tlHeightDiff: 'Höhenunterschied (in cm)',
-          tlOutdoor: 'Wird der Lift im Außenbereich benötigt?',
+          tlOutdoor: 'Innen oder außen?',
+          tlNutzer: 'Für wen ist der Lift?',
+          tlKontaktWunsch: 'Kontaktwunsch',
           tlAvailability: 'Treppenlift · Erreichbarkeit',
           wpCurrentSystem: 'Aktuelles Heizsystem?',
           wpHeatingAge: 'Alter der Heizung?',

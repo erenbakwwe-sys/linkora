@@ -35,6 +35,70 @@ import {
   Accessibility,
 } from 'lucide-react';
 
+/**
+ * Treppenlift options use the Hyperion Lead-API enum values, so leads can be forwarded
+ * to hyperionleadspanel.online without lossy mapping. Labels stay German for agents.
+ */
+type Opt = { value: string; label: string };
+const TL_OPTIONS: Record<string, Opt[]> = {
+  tlLiftType: [
+    { value: 'SITZLIFT', label: 'Klassischer Treppenlift (Sitzlift)' },
+    { value: 'PLATTFORMLIFT', label: 'Plattformlift (Rollstuhllift)' },
+    { value: 'HUBLIFT', label: 'Hublift / Hebebühne / Homelift' },
+    { value: 'UNBEKANNT', label: 'Noch unklar' },
+  ],
+  tlStairCourse: [
+    { value: 'GERADE', label: 'Gerade Treppe' },
+    { value: 'KURVIG', label: 'Kurvige Treppe (Kurve/Podest)' },
+    { value: 'MEHRERE_ETAGEN', label: 'Über mehrere Etagen' },
+    { value: 'WENDELTREPPE', label: 'Wendeltreppe' },
+    { value: 'UNKLAR', label: 'Unklar' },
+  ],
+  tlOutdoor: [
+    { value: 'INNEN', label: 'Innenbereich' },
+    { value: 'AUSSEN', label: 'Außenbereich (wetterfest)' },
+    { value: 'INNEN_UND_AUSSEN', label: 'Innen und außen' },
+  ],
+  tlFloors: Array.from({ length: 10 }, (_, i) => ({
+    value: String(i + 1),
+    label: i === 0 ? '1 Etage' : `${i + 1} Etagen`,
+  })),
+  tlNutzer: [
+    { value: 'SELBST', label: 'Der Anrufer selbst' },
+    { value: 'ANGEHOERIGER', label: 'Ein Angehöriger' },
+  ],
+  tlIsOwner: [
+    { value: 'EIGENTUM', label: 'Eigentum' },
+    { value: 'MIETE', label: 'Miete' },
+  ],
+  tlTimeFrame: [
+    { value: 'SOFORT', label: 'Sofort / dringend' },
+    { value: 'M1_3', label: 'In 1–3 Monaten' },
+    { value: 'M3_6', label: 'In 3–6 Monaten' },
+    { value: 'SPAETER', label: 'Später' },
+    { value: 'UNKLAR', label: 'Unklar' },
+  ],
+  tlCareLevel: [
+    { value: 'KEIN', label: 'Kein Pflegegrad' },
+    { value: 'PG1', label: 'Pflegegrad 1' },
+    { value: 'PG2', label: 'Pflegegrad 2' },
+    { value: 'PG3', label: 'Pflegegrad 3' },
+    { value: 'PG4', label: 'Pflegegrad 4' },
+    { value: 'PG5', label: 'Pflegegrad 5' },
+    { value: 'BEANTRAGT', label: 'Beantragt' },
+  ],
+  tlKontaktWunsch: [
+    { value: 'TELEFON', label: 'Telefon' },
+    { value: 'EMAIL', label: 'E-Mail' },
+    { value: 'BEIDES', label: 'Telefon und E-Mail' },
+  ],
+};
+
+const optionLabel = (key: string, value: string) =>
+  TL_OPTIONS[key]?.find((o) => o.value === value)?.label || value;
+
+const ANREDE_TO_HYPERION: Record<string, string> = { Herr: 'HERR', Frau: 'FRAU' };
+
 interface ChatMessage {
   id: string;
   sender: string;
@@ -59,6 +123,7 @@ export default function KundeHinzufuegenPage() {
   const [vorname, setVorname] = useState('');
   const [nachname, setNachname] = useState('');
   const [adresse, setAdresse] = useState('');
+  const [hausnummer, setHausnummer] = useState('');
   const [plz, setPlz] = useState('');
   const [ort, setOrt] = useState('');
   const [telefonnummer, setTelefonnummer] = useState('');
@@ -95,6 +160,8 @@ export default function KundeHinzufuegenPage() {
   const [tlHeightDiff, setTlHeightDiff] = useState('');
   const [tlOutdoor, setTlOutdoor] = useState('');
   const [tlAvailability, setTlAvailability] = useState('');
+  const [tlNutzer, setTlNutzer] = useState('');
+  const [tlKontaktWunsch, setTlKontaktWunsch] = useState('');
 
   // WP States
   const [wpCurrentSystem, setWpCurrentSystem] = useState('');
@@ -271,6 +338,29 @@ export default function KundeHinzufuegenPage() {
       return;
     }
 
+    if (selectedProject === 'Treppenlift') {
+      // Required so the lead can be forwarded to Hyperion without guessing values
+      const missing: string[] = [];
+      if (!anrede) missing.push('Anrede');
+      if (!adresse.trim()) missing.push('Straße');
+      if (!hausnummer.trim()) missing.push('Hausnummer');
+      if (!/^\d{5}$/.test(plz.trim())) missing.push('PLZ (5-stellig)');
+      if (!ort.trim()) missing.push('Ort');
+      if (!tlLiftType) missing.push('Lift-Typ');
+      if (!tlStairCourse) missing.push('Treppenverlauf');
+      if (!tlOutdoor) missing.push('Innen/Außen');
+      if (!tlFloors) missing.push('Etagen');
+      if (!tlNutzer) missing.push('Für wen');
+      if (!tlIsOwner) missing.push('Eigentum/Miete');
+      if (!tlTimeFrame) missing.push('Zeitrahmen');
+      if (!tlCareLevel) missing.push('Pflegegrad');
+      if (!tlKontaktWunsch) missing.push('Kontaktwunsch');
+      if (missing.length > 0) {
+        showToast(`Bitte ergänzen: ${missing.join(', ')}`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       // Gather project answers
@@ -303,6 +393,8 @@ export default function KundeHinzufuegenPage() {
         answers['tlHeightDiff'] = tlHeightDiff;
         answers['tlOutdoor'] = tlOutdoor;
         answers['tlAvailability'] = tlAvailability;
+        answers['tlNutzer'] = tlNutzer;
+        answers['tlKontaktWunsch'] = tlKontaktWunsch;
       } else if (selectedProject === 'WP') {
         answers['wpCurrentSystem'] = wpCurrentSystem;
         answers['wpHeatingAge'] = wpHeatingAge;
@@ -358,7 +450,7 @@ export default function KundeHinzufuegenPage() {
         tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
         tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
         tlTimeFrame: 'Wann wird der Lift benötigt?',
-        tlIsOwner: 'Sind Sie Eigentümer/Entscheider',
+        tlIsOwner: 'Eigentum oder Miete?',
         tlFloors: 'Wie viele Etagen müssen überwunden werden?',
         tlCareLevel: 'Liegt ein Pflegegrad vor?',
         tlStairCourse: 'Wie verläuft die Treppe?',
@@ -366,8 +458,10 @@ export default function KundeHinzufuegenPage() {
         tlStairWidth: 'Treppenbreite (in cm)',
         tlStepCount: 'Anzahl der Stufen',
         tlHeightDiff: 'Höhenunterschied (in cm)',
-        tlOutdoor: 'Wird der Lift im Außenbereich benötigt?',
+        tlOutdoor: 'Innen oder außen?',
         tlAvailability: 'Treppenlift · Erreichbarkeit',
+        tlNutzer: 'Für wen ist der Lift?',
+        tlKontaktWunsch: 'Kontaktwunsch',
         wpCurrentSystem: 'Aktuelles Heizsystem?',
         wpHeatingAge: 'Alter der Heizung?',
         wpLivingSpace: 'Wohnfläche (in m²)?',
@@ -398,10 +492,30 @@ export default function KundeHinzufuegenPage() {
           formattedAnswers.push({
             question_code: key,
             question_label: questionLabels[key] || key,
-            value_raw: String(val),
+            value_raw: optionLabel(key, String(val)),
           });
         }
       });
+
+      const hyperionData =
+        selectedProject === 'Treppenlift'
+          ? {
+              anrede: ANREDE_TO_HYPERION[anrede] || 'KEINE_ANGABE',
+              liftTyp: tlLiftType,
+              treppenform: tlStairCourse,
+              innenAussen: tlOutdoor,
+              etagen: Number(tlFloors),
+              nutzer: tlNutzer,
+              eigentuemer: tlIsOwner,
+              zeitrahmen: tlTimeFrame,
+              pflegegrad: tlCareLevel,
+              kontaktWunsch: tlKontaktWunsch,
+              besteErreichbarkeit: tlAvailability || undefined,
+              haustyp: tlBuildingType || undefined,
+              rueckrufVon: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(wiedervorlageDate) ? wiedervorlageDate : undefined,
+              notizen: notiz.trim() || undefined,
+            }
+          : undefined;
 
       const cleanPhone = telefonnummer.trim();
       const phoneE164 = cleanPhone.startsWith('+') ? cleanPhone : '+49' + cleanPhone.replace(/^0/, '');
@@ -440,7 +554,7 @@ export default function KundeHinzufuegenPage() {
         postal_code: plz.trim() || null,
         city: ort.trim() || null,
         street: adresse.trim() || null,
-        house_number: '',
+        house_number: hausnummer.trim(),
         status: 'NEW',
         consent_verified: true,
         dnc_flag: false,
@@ -503,9 +617,11 @@ export default function KundeHinzufuegenPage() {
             phoneCountry: 'DE',
             email: email.trim() || undefined,
             street: adresse.trim() || undefined,
+            houseNumber: hausnummer.trim() || undefined,
             postalCode: plz.trim() || undefined,
             city: ort.trim() || undefined,
             salutation: anrede,
+            extraData: hyperionData ? { anrede, hyperion: hyperionData } : { anrede },
             source: 'Agent-Erfassung (' + agentName + ')',
             provenance: {
               source: 'Agent-Erfassung (' + agentName + ')',
@@ -539,6 +655,7 @@ export default function KundeHinzufuegenPage() {
               phoneCountry: 'DE',
               email: email.trim() || undefined,
               street: adresse.trim() || undefined,
+              houseNumber: hausnummer.trim() || undefined,
               postalCode: plz.trim() || undefined,
               city: ort.trim() || undefined,
               salutation: anrede,
@@ -708,6 +825,7 @@ export default function KundeHinzufuegenPage() {
                           <option value="Frau">Frau</option>
                           <option value="Familie">Familie</option>
                           <option value="Firma">Firma</option>
+                          <option value="Keine Angabe">Keine Angabe</option>
                         </select>
                       </div>
 
@@ -742,18 +860,33 @@ export default function KundeHinzufuegenPage() {
                       </div>
 
                       {/* Adresse (Straße & Hausnummer) */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Adresse <span className="text-rose-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={adresse}
-                          onChange={(e) => setAdresse(e.target.value)}
-                          placeholder="z.B. Hauptstraße 12"
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
-                        />
+                      <div className="grid grid-cols-3 gap-3.5">
+                        <div className="col-span-2">
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Straße <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={adresse}
+                            onChange={(e) => setAdresse(e.target.value)}
+                            placeholder="z.B. Hauptstraße"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Hausnr. <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={hausnummer}
+                            onChange={(e) => setHausnummer(e.target.value)}
+                            placeholder="z.B. 12a"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-900"
+                          />
+                        </div>
                       </div>
 
                       {/* PLZ & Ort */}
@@ -1146,10 +1279,11 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Klassischer Treppenlift (Sitzlift)">Klassischer Treppenlift (Sitzlift)</option>
-                            <option value="Plattformlift (Rollstuhllift)">Plattformlift (Rollstuhllift)</option>
-                            <option value="Hublift / Hebebühne">Hublift / Hebebühne</option>
-                            <option value="Homelift / Senkrechtlift">Homelift / Senkrechtlift</option>
+                            {TL_OPTIONS.tlLiftType.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -1199,17 +1333,36 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Dringend / Schnellstmöglich (Akutfall)">Dringend / Schnellstmöglich (Akutfall)</option>
-                            <option value="In 1-3 Monaten">In 1-3 Monaten</option>
-                            <option value="In 3-6 Monaten">In 3-6 Monaten</option>
-                            <option value="Vorsorgliche Beratung">Vorsorgliche Beratung</option>
+                            {TL_OPTIONS.tlTimeFrame.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
+                        {/* Für wen ist der Lift? */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Für wen ist der Lift? <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={tlNutzer}
+                            onChange={(e) => setTlNutzer(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
+                          >
+                            <option value="">Bitte wählen…</option>
+                            {TL_OPTIONS.tlNutzer.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         {/* Sind Sie Eigentümer/Entscheider */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Sind Sie Eigentümer/Entscheider <span className="text-rose-500">*</span>
+                            Eigentum oder Miete? <span className="text-rose-500">*</span>
                           </label>
                           <select
                             value={tlIsOwner}
@@ -1217,16 +1370,18 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Ja, Eigentümer des Hauses">Ja, Eigentümer des Hauses</option>
-                            <option value="Angehöriger / Betreuer des Eigentümers">Angehöriger / Betreuer des Eigentümers</option>
-                            <option value="Mieter (Eigentümer ist informiert)">Mieter (Eigentümer ist informiert)</option>
+                            {TL_OPTIONS.tlIsOwner.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
                         {/* Wie viele Etagen müssen überwunden werden? */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Wie viele Etagen müssen überwunden werden?
+                            Wie viele Etagen müssen überwunden werden? <span className="text-rose-500">*</span>
                           </label>
                           <select
                             value={tlFloors}
@@ -1234,17 +1389,18 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="1 Etage">1 Etage</option>
-                            <option value="2 Etagen">2 Etagen</option>
-                            <option value="3 oder mehr Etagen">3 oder mehr Etagen</option>
-                            <option value="Nur wenige Stufen / Eingangsbereich">Nur wenige Stufen / Eingangsbereich</option>
+                            {TL_OPTIONS.tlFloors.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
                         {/* Liegt ein Pflegegrad vor? */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Liegt ein Pflegegrad vor?
+                            Liegt ein Pflegegrad vor? <span className="text-rose-500">*</span>
                           </label>
                           <select
                             value={tlCareLevel}
@@ -1252,19 +1408,18 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Ja, Pflegegrad 1">Ja, Pflegegrad 1</option>
-                            <option value="Ja, Pflegegrad 2">Ja, Pflegegrad 2</option>
-                            <option value="Ja, Pflegegrad 3">Ja, Pflegegrad 3</option>
-                            <option value="Ja, Pflegegrad 4 oder 5">Ja, Pflegegrad 4 oder 5</option>
-                            <option value="Nein, aber Pflegegrad ist beantragt">Nein, aber Pflegegrad ist beantragt</option>
-                            <option value="Nein, kein Pflegegrad (Selbstzahler)">Nein, kein Pflegegrad (Selbstzahler)</option>
+                            {TL_OPTIONS.tlCareLevel.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
                         {/* Wie verläuft die Treppe? */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Wie verläuft die Treppe?
+                            Wie verläuft die Treppe? <span className="text-rose-500">*</span>
                           </label>
                           <select
                             value={tlStairCourse}
@@ -1272,10 +1427,11 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Gerade Treppe">Gerade Treppe</option>
-                            <option value="Kurvige Treppe (mit 1 Kurve/Podest)">Kurvige Treppe (mit 1 Kurve/Podest)</option>
-                            <option value="Kurvige Treppe (mit mehreren Kurven)">Kurvige Treppe (mit mehreren Kurven)</option>
-                            <option value="Wendeltreppe">Wendeltreppe</option>
+                            {TL_OPTIONS.tlStairCourse.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -1339,7 +1495,7 @@ export default function KundeHinzufuegenPage() {
                         {/* Wird der Lift im Außenbereich benötigt? */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Wird der Lift im Außenbereich benötigt?
+                            Wird der Lift innen oder außen benötigt? <span className="text-rose-500">*</span>
                           </label>
                           <select
                             value={tlOutdoor}
@@ -1347,11 +1503,32 @@ export default function KundeHinzufuegenPage() {
                             className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
                           >
                             <option value="">Bitte wählen…</option>
-                            <option value="Nein, im Innenbereich">Nein, im Innenbereich</option>
-                            <option value="Ja, im Außenbereich (Wetterfest)">Ja, im Außenbereich (Wetterfest)</option>
+                            {TL_OPTIONS.tlOutdoor.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
+                        {/* Kontaktwunsch */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Wie möchte der Kunde kontaktiert werden? <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={tlKontaktWunsch}
+                            onChange={(e) => setTlKontaktWunsch(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 sm:py-2 text-base sm:text-xs text-slate-800"
+                          >
+                            <option value="">Bitte wählen…</option>
+                            {TL_OPTIONS.tlKontaktWunsch.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         {/* Treppenlift · Erreichbarkeit */}
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">

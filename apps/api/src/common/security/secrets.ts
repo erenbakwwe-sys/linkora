@@ -36,11 +36,14 @@ export function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(aBuf, bBuf);
 }
 
-/** Partner API keys accepted by the API (configured exclusively via environment variables). */
+/**
+ * Partner API keys accepted by the API (configured exclusively via environment variables).
+ * VIPCALL_API_KEY is deliberately NOT included: it is the credential Linkora uses to call
+ * VIP Call (outbound); VIP Call's inbound webhooks authenticate with an HMAC signature.
+ */
 export function getPartnerApiKeys(): string[] {
   return [
     process.env.LINKORA_LIVE_API_KEY,
-    process.env.VIPCALL_API_KEY,
     process.env.LINKORA_TEST_API_KEY,
   ].filter((k): k is string => typeof k === 'string' && k.length > 0);
 }

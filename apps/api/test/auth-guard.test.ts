@@ -61,3 +61,26 @@ describe('JwtAuthGuard (global authentication)', () => {
     expect(req.user.tenantId).not.toBe('attacker-tenant');
   });
 });
+
+describe('Built-in account passwords', () => {
+  const { UsersService } = require('../src/modules/users/users.service.js');
+  const { scryptSync } = require('node:crypto');
+  const hash = (p: string) => scryptSync(p, 'linkora-secure-salt-2026', 32).toString('hex');
+
+  afterEach(() => {
+    delete process.env.BUILTIN_USER_PASSWORD_HASHES;
+    delete process.env.VERCEL;
+  });
+
+  it('uses the per-account hash from BUILTIN_USER_PASSWORD_HASHES', () => {
+    process.env.VERCEL = '1';
+    process.env.BUILTIN_USER_PASSWORD_HASHES = JSON.stringify({ 'murat2@linkora.io': hash('Lang-und-Zufaellig-42') });
+    const svc = new UsersService({} as any);
+    const murat = svc.findUserByEmailOrUsername('murat2@linkora.io');
+    expect(svc.verifyUserPassword(murat, 'Lang-und-Zufaellig-42')).toBe(true);
+    expect(svc.verifyUserPassword(murat, 'Agent123!')).toBe(false);
+    // other built-in accounts without a configured hash stay disabled in production
+    const derya = svc.findUserByEmailOrUsername('derya@linkora.io');
+    expect(svc.verifyUserPassword(derya, 'Admin123!')).toBe(false);
+  });
+});

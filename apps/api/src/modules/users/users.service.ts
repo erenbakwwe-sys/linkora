@@ -25,6 +25,13 @@ export interface UserItem {
   builtin?: 'admin' | 'agent';
 }
 
+const ROLE_SLUGS: Record<string, string> = {
+  'Firmen-Admin': 'COMPANY_ADMIN',
+  Teamleiter: 'TEAM_LEAD',
+  Agent: 'AGENT',
+  'QC-Prüfer': 'QC_REVIEWER',
+};
+
 export type PublicUserItem = Omit<UserItem, 'passwordHash' | 'passwordPlain' | 'builtin'>;
 
 export function toPublicUser(u: UserItem): PublicUserItem {
@@ -223,6 +230,21 @@ export class UsersService implements OnModuleInit {
     return scryptSync(password, salt, 32).toString('hex');
   }
 
+  private getBuiltinPasswordHashes(): Record<string, string> {
+    const raw = process.env.BUILTIN_USER_PASSWORD_HASHES;
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw);
+      const out: Record<string, string> = {};
+      for (const [email, hash] of Object.entries(parsed || {})) {
+        if (typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash)) out[email.toLowerCase()] = hash;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+
   /** Verifies a password against an in-memory user record (no master passwords). */
   verifyUserPassword(user: UserItem, password: string): boolean {
     if (!password) return false;
@@ -230,6 +252,11 @@ export class UsersService implements OnModuleInit {
       return safeEqual(this.hashPassword(password), user.passwordHash);
     }
     if (user.builtin) {
+      // Per-account password hashes (JSON map email -> scrypt hash) configured in the environment
+      const perUser = this.getBuiltinPasswordHashes()[user.email.toLowerCase()];
+      if (perUser) {
+        return safeEqual(this.hashPassword(password), perUser);
+      }
       const configured = process.env.DEMO_USERS_PASSWORD;
       if (configured) return safeEqual(password, configured);
       const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
@@ -409,10 +436,11 @@ export class UsersService implements OnModuleInit {
 
     if (plainPwd && plainPwd.length >= 8) {
       try {
-        await this.db.query(
+        const inserted = await this.db.query(
           `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, default_mode, is_active)
            VALUES ($6, $1, $2, $3, $4, $5, true)
-           ON CONFLICT DO NOTHING`,
+           ON CONFLICT DO NOTHING
+           RETURNING id`,
           [
             email,
             hashed,
@@ -422,6 +450,17 @@ export class UsersService implements OnModuleInit {
             tenantId,
           ]
         );
+        const dbUserId = inserted?.rows?.[0]?.id;
+        const roleSlug = ROLE_SLUGS[dto.role || 'Agent'] || 'AGENT';
+        if (dbUserId) {
+          // Without a user_roles row the user would always be treated as AGENT at login
+          await this.db.query(
+            `INSERT INTO user_roles (user_id, role_id, tenant_id)
+             SELECT $1, r.id, $2 FROM roles r WHERE r.slug = $3
+             ON CONFLICT DO NOTHING`,
+            [dbUserId, tenantId, roleSlug],
+          );
+        }
       } catch {
         // Ignored if local
       }

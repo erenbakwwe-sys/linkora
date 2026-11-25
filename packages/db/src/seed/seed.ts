@@ -69,7 +69,19 @@ export async function runSeed(pool?: pg.Pool) {
     `);
 
     // 5. Users
-    const pwdHash = await hashPassword('Admin123!');
+    const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+    let seedPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!seedPassword) {
+      if (isProd) {
+        seedPassword = crypto.randomBytes(18).toString('base64url');
+        console.warn(
+          `[seed] SEED_ADMIN_PASSWORD not set – generated a one-time admin password: ${seedPassword} (change it after first login)`,
+        );
+      } else {
+        seedPassword = 'Admin123!';
+      }
+    }
+    const pwdHash = await hashPassword(seedPassword);
 
     await client.query(`
       INSERT INTO users (id, tenant_id, email, password_hash, first_name, last_name, default_mode, language)

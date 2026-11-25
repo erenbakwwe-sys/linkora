@@ -49,7 +49,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await login(cleanEmail, cleanPassword, tenantSlug.trim() || 'linkora');
+      await login(cleanEmail, cleanPassword, tenantSlug.trim());
       router.push('/dashboard');
     } catch (err: any) {
       setError(

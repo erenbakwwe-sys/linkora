@@ -292,16 +292,10 @@ export default function ApiWebhooksPage() {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
               <div className="flex items-center bg-black/60 border border-emerald-500/30 rounded-xl px-3 py-1.5 justify-between gap-3">
-                <code className="text-xs font-mono text-emerald-400 select-all truncate max-w-[240px]">
-                  lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b
+                {/* The live key is a server-side secret (env VIPCALL_API_KEY) and must never be shipped to the browser. */}
+                <code className="text-xs font-mono text-emerald-400 truncate max-w-[240px]">
+                  lk_live_•••••••• (VIPCALL_API_KEY)
                 </code>
-                <button
-                  onClick={() => handleCopyKey('lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b', 'key')}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1 transition shrink-0"
-                >
-                  {copiedKey === 'key' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'key' ? 'Kopiert' : 'Live Key Kopieren'}</span>
-                </button>
               </div>
 
               <button

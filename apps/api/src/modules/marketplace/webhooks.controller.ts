@@ -1,8 +1,11 @@
 import { Controller, Get, Post, Body, Query, Headers, Req, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MarketplaceService } from './marketplace.service.js';
+import { Public } from '../../common/guards/public.decorator.js';
+import { getGitasisWebhookTokens, matchesAny } from '../../common/security/secrets.js';
 
 @ApiTags('Inbound Webhooks')
+@Public() // inbound webhooks authenticate via token (Gitasis) or HMAC signature (VIP Call)
 @Controller(['webhooks', 'v1/webhooks'])
 export class WebhooksController {
   constructor(private readonly marketplaceService: MarketplaceService) {}
@@ -14,29 +17,18 @@ export class WebhooksController {
     @Query('token') queryToken?: string,
     @Headers('X-API-KEY') headerToken?: string
   ) {
-    return this.marketplaceService.processGitasisWebhook(body, queryToken, headerToken);
+    return this.marketplaceService.processGitasisWebhook(body, queryToken, headerToken, { requireToken: true });
   }
 
   @Get('gitasis')
   @ApiOperation({ summary: 'Gitasis Webhook Health Check and URL Verification' })
   async verifyGitasisWebhook(@Query('token') token?: string) {
-    const validTokens = [
-      process.env.LINKORA_LIVE_API_KEY,
-      process.env.VIPCALL_API_KEY,
-      'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
-      process.env.LINKORA_TEST_API_KEY,
-      process.env.GITASIS_WEBHOOK_SECRET,
-      'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',
-      'gitasis_linkora_2026',
-    ].filter(Boolean);
-
     return {
       status: 'active',
       service: 'Linkora Gitasis Webhook Receiver',
       method: 'POST',
       acceptedFormats: ['application/json', 'application/x-www-form-urlencoded'],
-      tokenValid: !token || validTokens.includes(token),
-      activeApiKey: 'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',
+      tokenValid: matchesAny(token, getGitasisWebhookTokens()),
       documentation: 'Send POST requests with customer data and call disposition (Randevu, Satış, Olumsuz, etc.)',
       timestamp: new Date().toISOString(),
     };
@@ -63,6 +55,7 @@ export class WebhooksController {
 }
 
 @ApiTags('Inbound Webhooks')
+@Public() // authenticated via X-LK-Signature HMAC
 @Controller('vipcall')
 export class VipCallWebhookController {
   constructor(private readonly marketplaceService: MarketplaceService) {}

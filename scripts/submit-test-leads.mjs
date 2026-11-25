@@ -1,6 +1,10 @@
 // scripts/submit-test-leads.mjs
 const API_URL = 'https://vipcalldailer.com/api/v1/leads';
-const API_KEY = process.env.VIPCALL_API_KEY || 'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b';
+const API_KEY = process.env.VIPCALL_API_KEY;
+if (!API_KEY) {
+  console.error('VIPCALL_API_KEY environment variable is required.');
+  process.exit(1);
+}
 
 async function submitLead(payload) {
   console.log(`\nSubmitting ${payload.product.toUpperCase()} Lead (${payload.external_id})...`);

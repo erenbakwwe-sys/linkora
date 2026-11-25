@@ -1,8 +1,10 @@
-import { Controller, Get, Put, Post, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { TenantsService } from './tenants.service.js';
 import { CurrentTenant } from '../../common/guards/user.decorator.js';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard.js';
 
 @Controller('tenants')
+@UseGuards(RolesGuard)
 export class TenantsController {
   constructor(private tenantsService: TenantsService) {}
 
@@ -12,6 +14,7 @@ export class TenantsController {
   }
 
   @Post('sub-companies')
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
   createSubCompany(
     @Body()
     body: {
@@ -25,6 +28,7 @@ export class TenantsController {
   }
 
   @Put('sub-companies/:id')
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
   updateSubCompany(
     @Param('id') id: string,
     @Body()
@@ -39,32 +43,31 @@ export class TenantsController {
   }
 
   @Delete('sub-companies/:id')
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
   deleteSubCompany(@Param('id') id: string) {
     return { success: this.tenantsService.deleteSubCompany(id) };
   }
 
   @Get('accessible')
-  async getAccessible(@Req() req: any, @CurrentTenant() tenantId?: string) {
-    const tId = tenantId || req?.user?.tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.tenantsService.getAccessibleTenants(tId);
+  async getAccessible(@CurrentTenant() tenantId: string) {
+    return this.tenantsService.getAccessibleTenants(tenantId);
   }
 
   @Put('branding')
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
   async updateBranding(
-    @Req() req: any,
     @Body() body: { brand_name: string; primary_color: string; logo_url: string | null },
-    @CurrentTenant() tenantId?: string
+    @CurrentTenant() tenantId: string
   ) {
-    const tId = tenantId || req?.user?.tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.tenantsService.updateBranding(tId, body);
+    return this.tenantsService.updateBranding(tenantId, body);
   }
 
   @Post('provision-subcompany')
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
   async provisionSubCompany(
     @Body() body: any,
-    @CurrentTenant() tenantId?: string
+    @CurrentTenant() tenantId: string
   ) {
-    const tId = tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.tenantsService.provisionSubCompany(tId, body);
+    return this.tenantsService.provisionSubCompany(tenantId, body);
   }
 }

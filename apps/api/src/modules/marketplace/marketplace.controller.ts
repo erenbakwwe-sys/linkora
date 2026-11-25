@@ -1,10 +1,17 @@
 import { Controller, Get, Post, Put, Body, Param, Query, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentTenant } from '../../common/guards/user.decorator.js';
+import { getGitasisWebhookTokens, matchesAny } from '../../common/security/secrets.js';
 import { MarketplaceService } from './marketplace.service.js';
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
 import { ConnectorsService } from './connectors.service.js';
+
+/** Never expose buyer signing secrets / API keys to the browser. */
+function redactBuyer<T extends { signingSecret?: string }>(buyer: T): T {
+  if (!buyer || !buyer.signingSecret) return buyer;
+  return { ...buyer, signingSecret: `${buyer.signingSecret.slice(0, 8)}…` };
+}
 
 @ApiTags('Marketplace, Buyers & Ping-Post')
 @Controller('marketplace')
@@ -20,14 +27,14 @@ export class MarketplaceController {
   @ApiOperation({ summary: 'List all buyer partner companies with caps, criteria, and return rates' })
   async getBuyers(@CurrentTenant() tenantId?: string) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.marketplaceService.getBuyers(tId);
+    return this.marketplaceService.getBuyers(tId).map(redactBuyer);
   }
 
   @Get('buyers/:id')
   @ApiOperation({ summary: 'Get buyer details' })
   async getBuyer(@Param('id') id: string, @CurrentTenant() tenantId?: string) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.marketplaceService.getBuyer(tId, id);
+    return redactBuyer(this.marketplaceService.getBuyer(tId, id));
   }
 
   @Post('buyers')
@@ -47,7 +54,7 @@ export class MarketplaceController {
     @CurrentTenant() tenantId?: string
   ) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.marketplaceService.createBuyer(tId, body);
+    return redactBuyer(this.marketplaceService.createBuyer(tId, body));
   }
 
   @Put('buyers/:id')
@@ -58,7 +65,7 @@ export class MarketplaceController {
     @CurrentTenant() tenantId?: string
   ) {
     const tId = tenantId || '11111111-1111-1111-1111-111111111111';
-    return this.marketplaceService.updateBuyer(tId, id, body);
+    return redactBuyer(this.marketplaceService.updateBuyer(tId, id, body));
   }
 
   @Post('deliver')
@@ -125,7 +132,7 @@ export class MarketplaceController {
       service: 'Linkora Gitasis Webhook Receiver',
       method: 'POST',
       acceptedFormats: ['application/json', 'application/x-www-form-urlencoded'],
-      tokenValid: token === (process.env.GITASIS_WEBHOOK_SECRET || 'gitasis_linkora_2026'),
+      tokenValid: matchesAny(token, getGitasisWebhookTokens()),
       timestamp: new Date().toISOString(),
     };
   }

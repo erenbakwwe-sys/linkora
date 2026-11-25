@@ -1,35 +1,40 @@
-import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { Public } from '../../common/guards/public.decorator.js';
 
 @Controller(['v1/auth', 'auth'])
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('login')
   async login(@Body() body: { email?: string; username?: string; identifier?: string; password: string; tenantSlug?: string }) {
     const id = body.email || body.username || body.identifier || '';
     return this.authService.login(id, body.password, body.tenantSlug);
   }
 
+  @Public()
   @Post('refresh')
   async refresh(@Body() body: { refreshToken: string }) {
     return this.authService.refreshToken(body.refreshToken);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('switch-mode')
   async switchMode(@Req() req: any, @Body() body: { mode: 'MANAGER' | 'AGENT' }) {
-    return this.authService.switchMode(req.user.sub, body.mode);
+    if (body?.mode !== 'MANAGER' && body?.mode !== 'AGENT') {
+      throw new BadRequestException('mode must be MANAGER or AGENT');
+    }
+    return this.authService.switchMode(req.user.sub, body.mode, req.user.role, req.user.tenantId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('switch-tenant')
   async switchTenant(@Req() req: any, @Body() body: { tenantId: string }) {
-    return this.authService.switchTenant(req.user.sub, req.user.tenantId, body.tenantId);
+    if (!body?.tenantId || typeof body.tenantId !== 'string') {
+      throw new BadRequestException('tenantId is required');
+    }
+    return this.authService.switchTenant(req.user.sub, req.user.tenantId, body.tenantId, req.user.role);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req: any) {
     return this.authService.getMe(req.user.sub, req.user.tenantId);

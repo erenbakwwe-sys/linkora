@@ -12,11 +12,11 @@ import {
 } from '../interfaces/provider.js';
 
 export interface GitasisSipConfig {
-  sipHost: string; // '217.131.14.34'
+  sipHost: string; // e.g. 'sip.example.com'
   sipPort: number; // 5060
   sipUser: string; // 'calendra'
-  sipPass: string; // 'c888eYKa3uLmJGdA'
-  realm: string; // '217.131.14.34'
+  sipPass: string; // from GITASIS_SIP_PASS
+  realm: string;
   callerId: string; // '4981317799867'
   transport: 'UDP' | 'TCP';
   codecs: string[]; // ['G.711 Alaw', 'G.711 Ulaw']
@@ -28,11 +28,11 @@ export class GitasisProvider implements TelephonyProvider {
 
   constructor(config?: Partial<GitasisSipConfig>) {
     this.config = {
-      sipHost: config?.sipHost || process.env.GITASIS_SIP_HOST || '217.131.14.34',
+      sipHost: config?.sipHost || process.env.GITASIS_SIP_HOST || '',
       sipPort: config?.sipPort || Number(process.env.GITASIS_SIP_PORT) || 5060,
       sipUser: config?.sipUser || process.env.GITASIS_SIP_USER || 'calendra',
-      sipPass: config?.sipPass || process.env.GITASIS_SIP_PASS || 'c888eYKa3uLmJGdA',
-      realm: config?.realm || process.env.GITASIS_SIP_REALM || '217.131.14.34',
+      sipPass: config?.sipPass || process.env.GITASIS_SIP_PASS || '',
+      realm: config?.realm || process.env.GITASIS_SIP_REALM || process.env.GITASIS_SIP_HOST || '',
       callerId: config?.callerId || process.env.GITASIS_CALLER_ID || '4981317799867',
       transport: (config?.transport || process.env.GITASIS_TRANSPORT || 'UDP') as 'UDP' | 'TCP',
       codecs: ['G.711 (Alaw)', 'G.711 (Ulaw)'],

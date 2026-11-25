@@ -4,6 +4,8 @@ import { CurrentTenant, CurrentUser } from '../../common/guards/user.decorator.j
 import { LeadsService } from './leads.service.js';
 import { IngestionService } from './ingestion.service.js';
 import { TelegramService } from '../../common/services/telegram.service.js';
+import { Public } from '../../common/guards/public.decorator.js';
+import { DEFAULT_TENANT_ID } from '../../common/security/secrets.js';
 import { leadIngestSchema, qcActionSchema, LeadIngestInput, QcActionInput } from '@linkora/shared';
 
 @ApiTags('Leads & Kunden')
@@ -132,6 +134,7 @@ export class LeadsController {
     return result;
   }
 
+  @Public()
   @Post('public-inquiry')
   @ApiOperation({ summary: 'Public landing page inquiry with honeypot bot trap and consent validation' })
   async publicInquiry(
@@ -154,9 +157,13 @@ export class LeadsController {
       throw new BadRequestException('Die ausdrückliche Einwilligung gemäß DSGVO (Art. 6 Abs. 1 lit. a) ist erforderlich.');
     }
 
-    // 3. Fallback tenant (default primary platform tenant)
-    const tenantId = body.tenantId || '11111111-1111-1111-1111-111111111111';
-    const clientIp = xForwardedFor || (req && req.ip) || '127.0.0.1';
+    // 3. Public inquiries always go to the configured platform tenant.
+    //    A client-supplied tenantId must NOT be trusted (would allow injecting leads into any tenant).
+    const tenantId = process.env.PUBLIC_INQUIRY_TENANT_ID || DEFAULT_TENANT_ID;
+    const clientIp =
+      (typeof xForwardedFor === 'string' ? xForwardedFor.split(',')[0].trim() : '') ||
+      (req && req.ip) ||
+      '127.0.0.1';
 
     // 4. Construct LeadIngestInput
     const leadInput: LeadIngestInput = {

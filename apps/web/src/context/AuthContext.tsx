@@ -44,6 +44,104 @@ interface AuthContextType {
   isBannerDismissed: boolean;
 }
 
+function clearStoredSession() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('linkora_token');
+  localStorage.removeItem('linkora_refresh_token');
+  localStorage.removeItem('linkora_user');
+  localStorage.removeItem('linkora_tenant');
+}
+
+function isApiRequest(url: string): boolean {
+  if (url.startsWith('/api/')) return true;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.origin === window.location.origin && parsed.pathname.startsWith('/api/');
+  } catch {
+    return false;
+  }
+}
+
+function isAuthEndpoint(url: string): boolean {
+  return /\/api\/(v1\/)?auth\/(login|refresh)/.test(url);
+}
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+/**
+ * Attaches the access token to every same-origin `/api/` request, transparently refreshes an
+ * expired access token once, and ends the session if the backend rejects the credentials.
+ */
+function installAuthFetch() {
+  if (typeof window === 'undefined' || (window as any).__linkoraAuthFetch) return;
+  (window as any).__linkoraAuthFetch = true;
+  const originalFetch = window.fetch.bind(window);
+
+  const withAuth = (input: RequestInfo | URL, init: RequestInit | undefined, token: string | null) => {
+    const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    return originalFetch(input, { ...init, headers });
+  };
+
+  const refreshAccessToken = async (): Promise<string | null> => {
+    const refreshToken = localStorage.getItem('linkora_refresh_token');
+    if (!refreshToken) return null;
+    if (!refreshInFlight) {
+      refreshInFlight = (async () => {
+        try {
+          const res = await originalFetch('/api/v1/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          if (data?.accessToken) {
+            localStorage.setItem('linkora_token', data.accessToken);
+            return data.accessToken as string;
+          }
+          return null;
+        } catch {
+          return null;
+        } finally {
+          setTimeout(() => {
+            refreshInFlight = null;
+          }, 0);
+        }
+      })();
+    }
+    return refreshInFlight;
+  };
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (!isApiRequest(url) || isAuthEndpoint(url)) {
+      return originalFetch(input, init);
+    }
+
+    const token = localStorage.getItem('linkora_token');
+    const res = await withAuth(input, init, token);
+    if (res.status !== 401 || !token) return res;
+
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return withAuth(input, init, newToken);
+    }
+
+    clearStoredSession();
+    if (!window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login';
+    }
+    return res;
+  };
+}
+
+if (typeof window !== 'undefined') {
+  installAuthFetch();
+}
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   tenant: null,
@@ -98,10 +196,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
+  const persistSession = (data: { accessToken: string; refreshToken?: string; user: User; tenant: Tenant }) => {
+    setToken(data.accessToken);
+    setUser(data.user);
+    setTenant(data.tenant);
+    localStorage.setItem('linkora_token', data.accessToken);
+    if (data.refreshToken) {
+      localStorage.setItem('linkora_refresh_token', data.refreshToken);
+    }
+    localStorage.setItem('linkora_user', JSON.stringify(data.user));
+    localStorage.setItem('linkora_tenant', JSON.stringify(data.tenant));
+  };
+
   const login = async (email: string, password: string, tenantSlug?: string) => {
     const cleanEmail = (email || '').trim();
     const cleanPassword = (password || '').trim();
-    const cleanSlug = (tenantSlug || '').trim() || 'linkora';
+    const cleanSlug = (tenantSlug || '').trim();
 
     if (!cleanEmail) {
       throw new Error('Bitte geben Sie Ihre E-Mail-Adresse oder Ihren Benutzernamen ein.');
@@ -110,209 +220,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Bitte geben Sie Ihr Passwort ein.');
     }
 
-    let backendError: string | null = null;
+    // Authentication is performed exclusively by the backend.
+    // (A former client-side fallback accepted hardcoded passwords and issued fake tokens.)
+    let res: Response;
     try {
-      const res = await fetch('/api/v1/auth/login', {
+      res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, password: cleanPassword, tenantSlug: cleanSlug }),
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: cleanPassword,
+          ...(cleanSlug ? { tenantSlug: cleanSlug } : {}),
+        }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setToken(data.accessToken);
-        setUser(data.user);
-        setTenant(data.tenant);
-        localStorage.setItem('linkora_token', data.accessToken);
-        localStorage.setItem('linkora_user', JSON.stringify(data.user));
-        localStorage.setItem('linkora_tenant', JSON.stringify(data.tenant));
-        return;
-      } else {
-        const errJson = await res.json().catch(() => null);
-        if (errJson?.message) {
-          backendError = Array.isArray(errJson.message) ? errJson.message[0] : errJson.message;
-        }
-      }
     } catch {
-      // Backend offline or local fallback
+      throw new Error('Server nicht erreichbar. Bitte versuchen Sie es später erneut.');
     }
 
-    // Client-side fallback for newly created users or default accounts
-    const customUsersRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-    const customUsers = customUsersRaw ? JSON.parse(customUsersRaw) : [];
-
-    const defaultAccounts = [
-      {
-        id: 'usr-157',
-        email: 'murat2@linkora.io',
-        username: 'Murat2',
-        name: 'Murat2',
-        role: 'Agent',
-        team: 'MD-Team',
-        callerIdNumber: '+49 40 42925873',
-        password: 'Agent123!',
-      },
-      {
-        id: 'usr-156',
-        email: 'murat.dere@linkora.io',
-        username: 'Murat Dere',
-        name: 'Murat Dere',
-        role: 'Agent',
-        team: 'MD-Team',
-        callerIdNumber: '+49 30 901820',
-        password: 'Agent123!',
-      },
-      {
-        id: 'usr-210',
-        email: 'admin@linkora.io',
-        username: 'Erensamsun',
-        name: 'Erensamsun',
-        role: 'Firmen-Admin',
-        team: '—',
-        callerIdNumber: '+49 40 325510',
-        password: 'Admin123!',
-      },
-      {
-        id: 'usr-210-alt',
-        email: 'erensamsun@linkora.io',
-        username: 'Erensamsun',
-        name: 'Erensamsun',
-        role: 'Firmen-Admin',
-        team: '—',
-        callerIdNumber: '+49 40 325510',
-        password: 'Admin123!',
-      },
-      {
-        id: 'usr-212',
-        email: 'derya@linkora.io',
-        username: 'Derya',
-        name: 'Derya',
-        role: 'Firmen-Admin',
-        team: '—',
-        callerIdNumber: '+49 89 203040',
-        password: 'Admin123!',
-      },
-      {
-        id: 'usr-151',
-        email: 'murat.d@linkora.io',
-        username: 'Murat.D',
-        name: 'Murat.D',
-        role: 'Firmen-Admin',
-        team: '—',
-        callerIdNumber: '+49 221 498230',
-        password: 'Admin123!',
-      },
-      {
-        id: 'usr-209',
-        email: 'eren.lead@linkora.io',
-        username: 'Eren',
-        name: 'Eren',
-        role: 'Teamleiter',
-        team: 'Testcalendra',
-        callerIdNumber: null,
-        password: 'Agent123!',
-      },
-      {
-        id: 'usr-211',
-        email: 'umut@cc-izmir.com',
-        username: 'Umut',
-        name: 'Umut',
-        role: 'Firmen-Admin',
-        team: '—',
-        callerIdNumber: null,
-        password: 'Admin123!',
-      },
-    ];
-
-    const allUsers = [...customUsers, ...defaultAccounts];
-    const term = cleanEmail.toLowerCase();
-    const matched = allUsers.find(
-      (u: any) =>
-        (u.email && u.email.toLowerCase() === term) ||
-        (u.username && u.username.toLowerCase() === term) ||
-        (u.name && u.name.toLowerCase() === term) ||
-        (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun')) ||
-        (term === 'agent' && (u.role === 'Agent' || u.username.toLowerCase() === 'murat2'))
-    );
-
-    if (matched) {
-      const isPwdValid =
-        !matched.password ||
-        matched.password === cleanPassword ||
-        matched.passwordPlain === cleanPassword ||
-        cleanPassword === 'Agent123!' ||
-        cleanPassword === 'Admin123!';
-
-      if (!isPwdValid) {
-        throw new Error('Ungültiges Passwort. Bitte überprüfen Sie Ihre Eingabe.');
-      }
-
-      const isManager = matched.role === 'Firmen-Admin' || matched.role === 'COMPANY_ADMIN';
-      const userObj: User = {
-        id: matched.id || 'usr-' + Date.now(),
-        email: matched.email || `${(matched.username || 'agent').toLowerCase()}@linkora.io`,
-        firstName: matched.username?.split(' ')[0] || matched.name || 'Agent',
-        lastName: matched.username?.split(' ')[1] || '',
-        username: matched.username || matched.name || 'Agent',
-        role: isManager ? 'COMPANY_ADMIN' : 'AGENT',
-        mode: isManager ? 'MANAGER' : 'AGENT',
-        language: 'de',
-        tenantId: '11111111-1111-1111-1111-111111111111',
-        callerIdNumber: matched.callerIdNumber || (isManager ? '+49 40 325510' : '+49 40 42925873'),
-        team: matched.team || (isManager ? '—' : 'MD-Team'),
-      };
-
-      const tenantObj: Tenant = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Linkora',
-        slug: 'linkora',
-        branding: {
-          brand_name: 'Linkora',
-          primary_color: '#0b1220',
-          logo_url: null,
-        },
-        walletBalance: 10.0,
-        lowBalanceWarning: isManager,
-      };
-
-      const tokenStr = 'mock-jwt-' + Date.now();
-      setToken(tokenStr);
-      setUser(userObj);
-      setTenant(tenantObj);
-      localStorage.setItem('linkora_token', tokenStr);
-      localStorage.setItem('linkora_user', JSON.stringify(userObj));
-      localStorage.setItem('linkora_tenant', JSON.stringify(tenantObj));
+    if (res.ok) {
+      persistSession(await res.json());
       return;
     }
 
-    if (backendError) {
-      throw new Error(backendError);
-    }
-    throw new Error('Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden.');
+    const errJson = await res.json().catch(() => null);
+    const backendError = errJson?.message
+      ? Array.isArray(errJson.message)
+        ? errJson.message[0]
+        : errJson.message
+      : null;
+    throw new Error(backendError || 'Ungültige Anmeldedaten.');
   };
 
   const switchMode = async () => {
     if (!user) return;
     const newMode: 'MANAGER' | 'AGENT' = user.mode === 'MANAGER' ? 'AGENT' : 'MANAGER';
+    if (newMode === 'MANAGER' && user.role === 'AGENT') return; // agents have no manager view
+    try {
+      const res = await fetch('/api/v1/auth/switch-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: newMode }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.accessToken) {
+          setToken(data.accessToken);
+          localStorage.setItem('linkora_token', data.accessToken);
+        }
+      }
+    } catch {
+      // view mode is a UI preference; authorization is enforced by the backend role
+    }
     const updated: User = { ...user, mode: newMode };
     setUser(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('linkora_user', JSON.stringify(updated));
-    }
+    localStorage.setItem('linkora_user', JSON.stringify(updated));
   };
 
   const switchTenant = async (tenantId: string) => {
-    const found = accessibleTenants.find((t) => t.id === tenantId);
-    if (found && tenant) {
-      const updatedTenant = {
-        ...tenant,
-        id: found.id,
-        name: found.name,
-        slug: found.slug,
-      };
-      setTenant(updatedTenant);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('linkora_tenant', JSON.stringify(updatedTenant));
+    try {
+      const res = await fetch('/api/v1/auth/switch-tenant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId }),
+      });
+      if (res.ok) {
+        persistSession(await res.json());
       }
+    } catch {
+      // keep current tenant on failure
     }
   };
 
@@ -320,9 +295,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setTenant(null);
     setToken(null);
-    localStorage.removeItem('linkora_token');
-    localStorage.removeItem('linkora_user');
-    localStorage.removeItem('linkora_tenant');
+    clearStoredSession();
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }

@@ -75,14 +75,19 @@ export class DialerService {
       };
     }
 
+    // SIP credentials come exclusively from environment variables (never hardcode them).
+    const sipHost = process.env.GITASIS_SIP_HOST || '';
+    const sipUser = process.env.GITASIS_SIP_USER || '';
+    const sipPass = process.env.GITASIS_SIP_PASS || '';
     return {
       provider: 'GITASIS_PJSIP',
       accountName: 'Calendra SIP',
-      sipServer: process.env.GITASIS_SIP_HOST || '217.131.14.34',
+      configured: Boolean(sipHost && sipUser && sipPass),
+      sipServer: sipHost,
       sipPort: Number(process.env.GITASIS_SIP_PORT) || 5060,
-      username: process.env.GITASIS_SIP_USER || 'calendra',
-      password: process.env.GITASIS_SIP_PASS || 'c888eYKa3uLmJGdA',
-      realm: process.env.GITASIS_SIP_REALM || '217.131.14.34',
+      username: sipUser,
+      password: sipPass,
+      realm: process.env.GITASIS_SIP_REALM || sipHost,
       callerId: process.env.GITASIS_CALLER_ID || '4981317799867',
       callerIdFormatted: '+49 8131 7799867',
       transport: 'UDP',
@@ -93,12 +98,12 @@ export class DialerService {
         {
           name: 'MicroSIP (Windows)',
           url: 'https://www.microsip.org/',
-          instructions: 'Ayarlar -> Hesap Ekle -> SIP Sunucu: 217.131.14.34, Kullanıcı: calendra, Şifre: c888eYKa3uLmJGdA',
+          instructions: `Ayarlar -> Hesap Ekle -> SIP Sunucu: ${sipHost}, Kullanıcı: ${sipUser}, Şifre: (yukarıdaki şifre)`,
         },
         {
           name: 'Zoiper (Windows / Mac / Mobil)',
           url: 'https://www.zoiper.com/',
-          instructions: 'Settings -> Accounts -> Create -> SIP -> Domain: 217.131.14.34, Username: calendra, Password: c888eYKa3uLmJGdA',
+          instructions: `Settings -> Accounts -> Create -> SIP -> Domain: ${sipHost}, Username: ${sipUser}, Password: (see above)`,
         },
       ],
     };

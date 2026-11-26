@@ -170,6 +170,44 @@ export class UsersService implements OnModuleInit {
 
   onModuleInit() {
     this.loadPersistedUsers();
+    this.loadEnvUsers();
+  }
+
+  /**
+   * Accounts defined in the EXTRA_USERS environment variable survive restarts/redeploys even
+   * when no database is reachable. Format: JSON array of
+   * { email, username, role, team?, passwordHash } (passwordHash = scrypt hash, 64 hex chars).
+   */
+  private loadEnvUsers() {
+    const raw = process.env.EXTRA_USERS;
+    if (!raw) return;
+    let list: any[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (!Array.isArray(list)) return;
+    const roles = ['Firmen-Admin', 'Teamleiter', 'Agent', 'QC-Prüfer'];
+    for (const [i, u] of list.entries()) {
+      if (!u?.email || !u?.username || !/^[0-9a-f]{64}$/.test(String(u.passwordHash || ''))) continue;
+      const email = String(u.email).trim();
+      if (this.inMemoryUsers.some((x) => x.email.toLowerCase() === email.toLowerCase())) continue;
+      this.inMemoryUsers.push({
+        id: `usr-env-${i + 1}`,
+        userNumber: `#E${i + 1}`,
+        username: String(u.username).trim(),
+        name: String(u.username).trim(),
+        email,
+        role: roles.includes(u.role) ? u.role : 'Agent',
+        team: u.team || '—',
+        isActive: u.isActive !== false,
+        callerIdNumber: u.callerIdNumber || null,
+        lastLogin: '—',
+        createdAt: '—',
+        passwordHash: String(u.passwordHash),
+      });
+    }
   }
 
   private getStorageFilePath(): string {

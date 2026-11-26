@@ -108,3 +108,21 @@ describe('Login with shared display names', () => {
     expect(svc.findUserForLogin('Erensamsun', 'falsch')).toBeUndefined();
   });
 });
+
+describe('EXTRA_USERS environment accounts', () => {
+  const { UsersService } = require('../src/modules/users/users.service.js');
+  const { scryptSync } = require('node:crypto');
+  afterEach(() => delete process.env.EXTRA_USERS);
+
+  it('loads accounts from EXTRA_USERS and verifies their password', () => {
+    process.env.EXTRA_USERS = JSON.stringify([
+      { email: 'neu@linkora.io', username: 'Neu Admin', role: 'Firmen-Admin', passwordHash: scryptSync('Geheim-123', 'linkora-secure-salt-2026', 32).toString('hex') },
+      { email: 'kaputt@linkora.io', username: 'Ohne Hash' },
+    ]);
+    const svc = new UsersService({} as any);
+    svc.onModuleInit();
+    expect(svc.findUserForLogin('neu@linkora.io', 'Geheim-123')?.role).toBe('Firmen-Admin');
+    expect(svc.findUserForLogin('Neu Admin', 'falsch')).toBeUndefined();
+    expect(svc.findUserByEmailOrUsername('kaputt@linkora.io')).toBeUndefined();
+  });
+});

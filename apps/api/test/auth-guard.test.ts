@@ -84,3 +84,27 @@ describe('Built-in account passwords', () => {
     expect(svc.verifyUserPassword(derya, 'Admin123!')).toBe(false);
   });
 });
+
+describe('Login with shared display names', () => {
+  const { UsersService } = require('../src/modules/users/users.service.js');
+  const { scryptSync } = require('node:crypto');
+  const hash = (p: string) => scryptSync(p, 'linkora-secure-salt-2026', 32).toString('hex');
+
+  afterEach(() => {
+    delete process.env.BUILTIN_USER_PASSWORD_HASHES;
+    delete process.env.VERCEL;
+  });
+
+  it('finds the account whose password matches when two accounts share a name', () => {
+    process.env.VERCEL = '1';
+    process.env.BUILTIN_USER_PASSWORD_HASHES = JSON.stringify({
+      'erensamsun@linkora.io': hash('Erstes-Passwort-1'),
+      'erensamsun.admin@linkora.io': hash('Zweites-Passwort-2'),
+    });
+    const svc = new UsersService({} as any);
+    expect(svc.findUserForLogin('Erensamsun', 'Erstes-Passwort-1')?.email).toBe('erensamsun@linkora.io');
+    expect(svc.findUserForLogin('Erensamsun', 'Zweites-Passwort-2')?.email).toBe('erensamsun.admin@linkora.io');
+    expect(svc.findUserForLogin('admin', 'Zweites-Passwort-2')?.email).toBe('erensamsun.admin@linkora.io');
+    expect(svc.findUserForLogin('Erensamsun', 'falsch')).toBeUndefined();
+  });
+});

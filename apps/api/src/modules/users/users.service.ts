@@ -476,16 +476,32 @@ export class UsersService implements OnModuleInit {
     return this.inMemoryUsers.find((u) => u.id === id);
   }
 
-  findUserByEmailOrUsername(identifier: string): UserItem | undefined {
-    if (!identifier) return undefined;
+  /** All in-memory accounts that match a login identifier (email, username or legacy alias). */
+  findUsersByEmailOrUsername(identifier: string): UserItem[] {
+    if (!identifier) return [];
     const term = identifier.trim().toLowerCase();
-    return this.inMemoryUsers.find(
-      (u) =>
-        u.email.toLowerCase() === term ||
-        u.username.toLowerCase() === term ||
-        u.name.toLowerCase() === term ||
-        (term === 'admin@linkora.io' && (u.username.toLowerCase() === 'erensamsun' || u.email.toLowerCase() === 'erensamsun@linkora.io')) ||
-        (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun'))
+    const matches = (u: UserItem) =>
+      u.email.toLowerCase() === term ||
+      u.username.toLowerCase() === term ||
+      u.name.toLowerCase() === term ||
+      (term === 'admin@linkora.io' && (u.username.toLowerCase() === 'erensamsun' || u.email.toLowerCase() === 'erensamsun@linkora.io')) ||
+      (term === 'admin' && (u.role === 'Firmen-Admin' || u.username.toLowerCase() === 'erensamsun'));
+    // Exact e-mail matches first, then the rest
+    const all = this.inMemoryUsers.filter(matches);
+    return [...all.filter((u) => u.email.toLowerCase() === term), ...all.filter((u) => u.email.toLowerCase() !== term)];
+  }
+
+  findUserByEmailOrUsername(identifier: string): UserItem | undefined {
+    return this.findUsersByEmailOrUsername(identifier)[0];
+  }
+
+  /**
+   * Several accounts can share a display name (e.g. two "Erensamsun" accounts).
+   * Returns the active account whose password matches, if any.
+   */
+  findUserForLogin(identifier: string, password: string): UserItem | undefined {
+    return this.findUsersByEmailOrUsername(identifier).find(
+      (u) => u.isActive && this.verifyUserPassword(u, password),
     );
   }
 

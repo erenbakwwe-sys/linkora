@@ -26,6 +26,7 @@ import { HyperionModule } from './modules/integrations/hyperion/hyperion.module.
 
 import { UsersService } from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
+import { SystemController } from './modules/system/system.controller.js';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { UsersController } from './modules/users/users.controller.js';
     TenantsController,
     DashboardController,
     UsersController,
+    SystemController,
   ],
   providers: [
     // Every route requires authentication unless explicitly marked with @Public()

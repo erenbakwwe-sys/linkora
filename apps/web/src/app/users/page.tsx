@@ -78,28 +78,20 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      // Legacy versions kept plaintext passwords in localStorage – remove them.
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('linkora_custom_users');
+      }
       const [usersRes, numbersRes] = await Promise.all([
         fetch('/api/users').catch(() => null),
         fetch('/api/users/free-numbers').catch(() => null),
       ]);
 
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-      const custom: UserItem[] = customRaw ? JSON.parse(customRaw) : [];
-
       if (usersRes && usersRes.ok) {
         const data = await usersRes.json();
         if (Array.isArray(data)) {
-          const customIds = new Set(custom.map((u: any) => u.id));
-          const customUsernames = new Set(custom.map((u: any) => (u.username || '').toLowerCase()));
-          const serverFiltered = data.filter(
-            (u: any) => !customIds.has(u.id) && !customUsernames.has((u.username || '').toLowerCase())
-          );
-          setUsers([...custom, ...serverFiltered]);
-        } else if (custom.length > 0) {
-          setUsers(custom);
+          setUsers(data);
         }
-      } else if (custom.length > 0) {
-        setUsers(custom);
       }
 
       if (numbersRes && numbersRes.ok) {
@@ -110,13 +102,15 @@ export default function UsersPage() {
       }
     } catch (err) {
       console.error('Failed to load users:', err);
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-      if (customRaw) {
-        setUsers(JSON.parse(customRaw));
-      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const readError = async (res: Response, fallback: string) => {
+    const body = await res.json().catch(() => null);
+    const msg = body?.message;
+    return Array.isArray(msg) ? msg[0] : msg || fallback;
   };
 
   useEffect(() => {
@@ -142,69 +136,27 @@ export default function UsersPage() {
 
     try {
       setSaveLoading(true);
-      let updated: any = null;
-      try {
-        const res = await fetch(`/api/users/${editingUser.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: editUsername,
-            role: editRole,
-            team: editTeam,
-            callerIdNumber: editCallerId === '' ? null : editCallerId,
-            isActive: editIsActive,
-            newPassword: editNewPassword.trim() ? editNewPassword.trim() : undefined,
-          }),
-        });
-
-        if (res.ok) {
-          updated = await res.json();
-        }
-      } catch {
-        // Local fallback
-      }
-
-      const finalUser: UserItem = updated || {
-        ...editingUser,
-        username: editUsername,
-        name: editUsername,
-        role: editRole,
-        team: editTeam,
-        callerIdNumber: editCallerId === '' ? null : editCallerId,
-        isActive: editIsActive,
-      };
-
-      // Always update linkora_custom_users so login works instantly with new password / role
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-      const custom = customRaw ? JSON.parse(customRaw) : [];
-      let foundInCustom = false;
-
-      const updatedCustom = custom.map((u: any) => {
-        if (u.id === editingUser.id || (u.username && u.username.toLowerCase() === editingUser.username.toLowerCase())) {
-          foundInCustom = true;
-          return {
-            ...u,
-            username: editUsername,
-            name: editUsername,
-            role: editRole,
-            team: editTeam,
-            callerIdNumber: editCallerId === '' ? null : editCallerId,
-            isActive: editIsActive,
-            ...(editNewPassword.trim() ? { password: editNewPassword.trim(), passwordPlain: editNewPassword.trim() } : {}),
-          };
-        }
-        return u;
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: editUsername,
+          role: editRole,
+          team: editTeam,
+          callerIdNumber: editCallerId === '' ? null : editCallerId,
+          isActive: editIsActive,
+          newPassword: editNewPassword.trim() ? editNewPassword.trim() : undefined,
+        }),
       });
 
-      if (!foundInCustom) {
-        updatedCustom.push({
-          ...finalUser,
-          password: editNewPassword.trim() || 'Agent123!',
-          passwordPlain: editNewPassword.trim() || 'Agent123!',
-        });
+      if (!res.ok) {
+        const msg = await readError(res, 'Benutzer konnte nicht aktualisiert werden.');
+        setSaveSuccessToast(`Fehler: ${msg}`);
+        setTimeout(() => setSaveSuccessToast(null), 5000);
+        return;
       }
 
-      localStorage.setItem('linkora_custom_users', JSON.stringify(updatedCustom));
+      const finalUser: UserItem = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? finalUser : u)));
       setSaveSuccessToast(`Benutzer "${finalUser.username}" erfolgreich aktualisiert!`);
       setTimeout(() => setSaveSuccessToast(null), 4000);
@@ -240,54 +192,33 @@ export default function UsersPage() {
     e.preventDefault();
     if (!newUsername.trim() || !newEmail.trim()) return;
 
+    if (newPassword.trim().length < 8) {
+      setSaveSuccessToast('Fehler: Das Passwort muss mindestens 8 Zeichen lang sein.');
+      setTimeout(() => setSaveSuccessToast(null), 5000);
+      return;
+    }
+
     try {
       setSaveLoading(true);
-      let created: any = null;
-      try {
-        const res = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: newUsername,
-            email: newEmail,
-            role: newRole,
-            team: newTeam,
-            callerIdNumber: newCallerId === '' ? null : newCallerId,
-            password: newPassword,
-          }),
-        });
-        if (res.ok) {
-          created = await res.json();
-        }
-      } catch {
-        // Local mode
-      }
-
-      if (!created) {
-        created = {
-          id: 'usr-' + Date.now(),
-          userNumber: '#' + Math.floor(100 + Math.random() * 899),
-          username: newUsername.trim(),
-          name: newUsername.trim(),
-          email: newEmail.trim(),
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: newUsername,
+          email: newEmail,
           role: newRole,
-          team: newTeam || 'MD-Team',
-          isActive: true,
-          callerIdNumber: newCallerId || '+49 40 42925873',
-          lastLogin: '—',
-          createdAt: new Date().toLocaleDateString('de-DE'),
-          password: newPassword || 'Agent123!',
-        };
+          team: newTeam,
+          callerIdNumber: newCallerId === '' ? null : newCallerId,
+          password: newPassword,
+        }),
+      });
+      if (!res.ok) {
+        const msg = await readError(res, 'Benutzer konnte nicht angelegt werden.');
+        setSaveSuccessToast(`Fehler: ${msg}`);
+        setTimeout(() => setSaveSuccessToast(null), 5000);
+        return;
       }
-
-      // Store in linkora_custom_users
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_users') : null;
-      const custom = customRaw ? JSON.parse(customRaw) : [];
-      const userToStore = {
-        ...created,
-        password: newPassword || 'Agent123!',
-      };
-      localStorage.setItem('linkora_custom_users', JSON.stringify([userToStore, ...custom]));
+      const created: UserItem = await res.json();
 
       setUsers((prev) => [created, ...prev]);
       setShowNewUserModal(false);
@@ -416,7 +347,7 @@ export default function UsersPage() {
         </div>
 
         {/* Summary Metric KPI Cards Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 stagger-items">
           {/* 1: Total */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:shadow-md transition">
             <div className="text-3xl font-black text-slate-900 font-mono">{totalCount}</div>
@@ -583,7 +514,7 @@ export default function UsersPage() {
                   <th className="py-3.5 px-6 text-right">AKTION</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 stagger-items">
                 {filteredUsers.map((user) => (
                   <tr
                     key={user.id}
@@ -803,7 +734,7 @@ export default function UsersPage() {
         {/* EDIT USER MODAL ("Benutzer bearbeiten")                 */}
         {/* ======================================================== */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
               {/* Modal Header */}
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
@@ -1009,7 +940,7 @@ export default function UsersPage() {
         {/* NEW USER MODAL                                          */}
         {/* ======================================================== */}
         {showNewUserModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
                 <div className="flex items-center gap-2">
@@ -1136,7 +1067,7 @@ export default function UsersPage() {
         {/* ADD TEAM MODAL                                          */}
         {/* ======================================================== */}
         {showTeamModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">

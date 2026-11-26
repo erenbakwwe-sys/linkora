@@ -16,7 +16,7 @@ describe('Phase 5: Operations, HR-Zeit, Rota, Finances & 1-Click Provisioning', 
   beforeEach(() => {
     db = new DatabaseService();
     operations = new OperationsService(db);
-    finances = new FinancesService(db);
+    finances = new FinancesService(db, { sendMessage: async () => null, isConfigured: () => false } as any);
     reports = new ReportsService(db);
     tenants = new TenantsService(db);
   });

@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { UsersService } from '../users/users.service.js';
 import { scryptSync } from 'node:crypto';
+import { getJwtRefreshSecret, getJwtSecret, safeEqual } from '../../common/security/secrets.js';
 
 export interface AuthTokens {
   accessToken: string;
@@ -46,8 +47,9 @@ export class AuthService {
 
   private verifyPassword(password: string, hash: string): boolean {
     const salt = 'linkora-secure-salt-2026';
+    if (!hash || typeof hash !== 'string') return false;
     const computed = scryptSync(password, salt, 32).toString('hex');
-    return computed === hash;
+    return safeEqual(computed, hash);
   }
 
   async login(email: string, password: string, tenantSlug?: string): Promise<AuthTokens> {
@@ -110,11 +112,8 @@ export class AuthService {
         throw new UnauthorizedException('Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden');
       }
 
-      const isPwdMatch =
-        (memUser.passwordHash && this.verifyPassword(cleanPwd, memUser.passwordHash)) ||
-        (memUser.passwordPlain && memUser.passwordPlain.trim() === cleanPwd) ||
-        cleanPwd === 'Agent123!' ||
-        cleanPwd === 'Admin123!';
+      // No master passwords: only the user's own (hashed) password is accepted.
+      const isPwdMatch = this.usersService.verifyUserPassword(memUser, cleanPwd);
 
       if (!isPwdMatch) {
         throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
@@ -132,7 +131,7 @@ export class AuthService {
         username: memUser.username,
         role_slug: roleSlug,
         default_mode: mode,
-        tenant_id: '11111111-1111-1111-1111-111111111111',
+        tenant_id: memUser.tenantId || '11111111-1111-1111-1111-111111111111',
         tenant_name: 'Linkora',
         tenant_slug: 'linkora',
         caller_id_number: memUser.callerIdNumber || (isManager ? '+49 40 325510' : '+49 40 42925873'),
@@ -156,7 +155,7 @@ export class AuthService {
 
     const refreshToken = await this.jwtService.signAsync(
       { sub: user.id, tenantId: user.tenant_id, type: 'refresh' },
-      { expiresIn: 604800 } as any
+      { expiresIn: 604800, secret: getJwtRefreshSecret() } as any
     );
 
     try {
@@ -207,28 +206,51 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
     try {
       const decoded = await this.jwtService.verifyAsync(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'super-secret-jwt-refresh-key-minimum-32-chars-linkora',
+        secret: getJwtRefreshSecret(),
       });
+      if (decoded?.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
-      const userRes = await this.db.query(
-        `SELECT u.*, r.slug as role_slug FROM users u
-         LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.tenant_id = u.tenant_id
-         LEFT JOIN roles r ON ur.role_id = r.id
-         WHERE u.id = $1 AND u.is_active = true LIMIT 1`,
-        [decoded.sub]
-      );
+      let user: any = null;
+      try {
+        const userRes = await this.db.query(
+          `SELECT u.*, r.slug as role_slug FROM users u
+           LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.tenant_id = u.tenant_id
+           LEFT JOIN roles r ON ur.role_id = r.id
+           WHERE u.id::text = $1 AND u.is_active = true LIMIT 1`,
+          [decoded.sub]
+        );
+        user = userRes.rows[0] || null;
+      } catch {
+        // DB not reachable – fall back to in-memory accounts below
+      }
 
-      if (userRes.rows.length === 0) {
+      if (!user) {
+        const memUser = this.usersService.findUserById(decoded.sub);
+        if (memUser && memUser.isActive) {
+          const isManager = memUser.role === 'Firmen-Admin';
+          user = {
+            id: memUser.id,
+            email: memUser.email,
+            tenant_id: memUser.tenantId || '11111111-1111-1111-1111-111111111111',
+            role_slug: isManager ? 'COMPANY_ADMIN' : 'AGENT',
+            default_mode: isManager ? 'MANAGER' : 'AGENT',
+          };
+        }
+      }
+
+      if (!user) {
         throw new UnauthorizedException('User not found or inactive');
       }
 
-      const user = userRes.rows[0];
       const payload = {
         sub: user.id,
         email: user.email,
-        tenantId: user.tenant_id,
+        // keep the tenant the refresh token was issued for (it was validated at switch time)
+        tenantId: decoded.tenantId || user.tenant_id,
         role: user.role_slug || 'AGENT',
-        mode: user.default_mode || 'MANAGER',
+        mode: user.default_mode || 'AGENT',
       };
 
       const accessToken = await this.jwtService.signAsync(payload, {
@@ -241,7 +263,15 @@ export class AuthService {
     }
   }
 
-  async switchMode(userId: string, mode: 'MANAGER' | 'AGENT'): Promise<{ mode: 'MANAGER' | 'AGENT'; accessToken: string }> {
+  async switchMode(
+    userId: string,
+    mode: 'MANAGER' | 'AGENT',
+    currentRole?: string,
+    currentTenantId?: string,
+  ): Promise<{ mode: 'MANAGER' | 'AGENT'; accessToken: string }> {
+    if (mode === 'MANAGER' && (!currentRole || currentRole === 'AGENT')) {
+      throw new ForbiddenException('Agents cannot switch to manager mode');
+    }
     await this.db.query('UPDATE users SET default_mode = $1 WHERE id = $2', [mode, userId]);
 
     const userRes = await this.db.query(
@@ -253,11 +283,14 @@ export class AuthService {
     );
 
     const user = userRes.rows[0];
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
     const payload = {
       sub: user.id,
       email: user.email,
-      tenantId: user.tenant_id,
-      role: user.role_slug || 'AGENT',
+      tenantId: currentTenantId || user.tenant_id,
+      role: user.role_slug || currentRole || 'AGENT',
       mode,
     };
 
@@ -268,7 +301,15 @@ export class AuthService {
     return { mode, accessToken };
   }
 
-  async switchTenant(userId: string, currentTenantId: string, targetTenantId: string): Promise<AuthTokens> {
+  async switchTenant(
+    userId: string,
+    currentTenantId: string,
+    targetTenantId: string,
+    currentRole: string = 'AGENT',
+  ): Promise<AuthTokens> {
+    if (currentRole === 'AGENT') {
+      throw new ForbiddenException('Agents cannot switch tenants');
+    }
     // Check if user has access to target tenant (either direct membership or target is child of current tenant)
     const allowedRes = await this.db.query(
       `WITH RECURSIVE tenant_tree AS (
@@ -295,17 +336,24 @@ export class AuthService {
 
     const user = userRes.rows[0];
     const targetTenant = tenantRes.rows[0];
+    if (!user || !targetTenant) {
+      throw new BadRequestException('Not authorized to access the requested tenant in hierarchy');
+    }
 
+    // Keep the caller's role – switching tenant must never grant admin rights.
     const payload = {
       sub: user.id,
       email: user.email,
       tenantId: targetTenantId,
-      role: 'COMPANY_ADMIN',
+      role: currentRole,
       mode: user.default_mode || 'MANAGER',
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.jwtService.signAsync({ sub: user.id, tenantId: targetTenantId, type: 'refresh' });
+    const accessToken = await this.jwtService.signAsync(payload, { expiresIn: 900, secret: getJwtSecret() } as any);
+    const refreshToken = await this.jwtService.signAsync(
+      { sub: user.id, tenantId: targetTenantId, type: 'refresh' },
+      { expiresIn: 604800, secret: getJwtRefreshSecret() } as any,
+    );
 
     const walletBalance = Number(targetTenant.wallet_balance || 0);
     const lowThreshold = Number(targetTenant.low_balance_threshold_eur || 10.0);
@@ -318,7 +366,7 @@ export class AuthService {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        role: 'COMPANY_ADMIN',
+        role: currentRole,
         mode: user.default_mode || 'MANAGER',
         language: user.language || 'de',
         tenantId: targetTenantId,

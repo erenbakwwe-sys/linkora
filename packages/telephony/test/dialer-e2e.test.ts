@@ -30,7 +30,9 @@ describe('Phase 2: End-to-End Mock Campaign & Dialer Session Tests', () => {
     liveGateway = new LiveGateway();
     agentStateService = new AgentStateService(db, liveGateway);
     campaignsService = new CampaignsService(db, agentStateService);
-    dialerService = new DialerService(db, auditService, leadsService, agentStateService, liveGateway);
+    // Marketplace forwarding is not under test here – stub it so no external delivery is attempted
+    const marketplaceStub = { deliverLeadDirectly: async () => null } as any;
+    dialerService = new DialerService(db, auditService, leadsService, agentStateService, liveGateway, marketplaceStub);
   });
 
   afterAll(async () => {

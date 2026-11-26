@@ -265,7 +265,7 @@ export default function RotaPage() {
         </div>
 
         {/* Shifts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-items">
           {filteredShifts.map((s) => (
             <div
               key={s.id}
@@ -339,7 +339,7 @@ export default function RotaPage() {
 
         {/* Create Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 max-w-md w-full space-y-5">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-base font-black text-slate-900 flex items-center gap-2">

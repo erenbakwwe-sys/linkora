@@ -1,9 +1,10 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
 import { ConnectorsService } from './connectors.service.js';
+import { getGitasisWebhookTokens, matchesAny } from '../../common/security/secrets.js';
 import {
   Buyer,
   BuyerCriteria,
@@ -185,7 +186,7 @@ export class MarketplaceService {
           companyIdentifier: 'DE-AROUNDHOME-005',
           pingEndpoint: 'https://vipcalldailer.com/api/v1/ping',
           postEndpoint: 'https://vipcalldailer.com/api/v1/leads',
-          signingSecret: process.env.VIPCALL_API_KEY || 'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
+          signingSecret: process.env.VIPCALL_API_KEY || '',
           pingEnabled: true,
           dailyCap: 100,
           monthlyCap: 2500,
@@ -453,22 +454,26 @@ export class MarketplaceService {
   /**
    * Processes incoming customer appointments, sales, and status webhooks from Gitasis (gitasis.com).
    */
-  public async processGitasisWebhook(body: any, queryToken?: string, headersToken?: string) {
+  public async processGitasisWebhook(
+    body: any,
+    queryToken?: string,
+    headersToken?: string,
+    options: { requireToken?: boolean } = {},
+  ) {
     const rawData = body || {};
 
-    // 1. Token validation (protect against unauthorized calls if token configured)
-    const validTokens = [
-      process.env.LINKORA_LIVE_API_KEY,
-      process.env.VIPCALL_API_KEY,
-      'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
-      process.env.LINKORA_TEST_API_KEY,
-      process.env.GITASIS_WEBHOOK_SECRET,
-      'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',
-      'gitasis_linkora_2026',
-    ].filter(Boolean);
-    const providedToken = queryToken || rawData.token || rawData.apiKey || headersToken;
-    if (providedToken && !validTokens.includes(providedToken)) {
-      this.logger.warn(`Gitasis webhook provided token '${providedToken}' does not match any valid secret.`);
+    // 1. Token validation. Unauthenticated (public) calls MUST carry a valid token, otherwise
+    //    anyone could create leads / change lead status. Fails closed if no secret is configured.
+    if (options.requireToken) {
+      const providedToken = queryToken || headersToken || rawData.token || rawData.apiKey;
+      if (!matchesAny(providedToken, getGitasisWebhookTokens())) {
+        this.logger.warn('Gitasis webhook rejected: missing or invalid token.');
+        throw new UnauthorizedException('Invalid or missing webhook token');
+      }
+    }
+    if (rawData && typeof rawData === 'object') {
+      delete rawData.token;
+      delete rawData.apiKey;
     }
 
     // 2. Extract Customer Name
@@ -874,13 +879,19 @@ export class MarketplaceService {
           const v1Buf = Buffer.from(v1, 'hex');
           const expBuf = Buffer.from(expected, 'hex');
 
-          if (v1Buf.length === expBuf.length && timingSafeEqual(v1Buf, expBuf)) {
+          // Replay protection: reject signatures older/newer than 5 minutes
+          const tsSeconds = Number(t);
+          const ageSeconds = Math.abs(Date.now() / 1000 - (tsSeconds > 1e12 ? tsSeconds / 1000 : tsSeconds));
+          if (!Number.isFinite(tsSeconds) || ageSeconds > 300) {
+            signatureValid = false;
+            signatureReason = 'Signature timestamp outside the allowed tolerance';
+          } else if (v1Buf.length === expBuf.length && timingSafeEqual(v1Buf, expBuf)) {
             signatureValid = true;
             signatureReason = 'HMAC-SHA256 signature verified successfully';
           } else {
             signatureValid = false;
             signatureReason = 'HMAC signature mismatch';
-            this.logger.warn(`[VIPCALL WEBHOOK] Signature mismatch. Received: ${v1}, Expected: ${expected}`);
+            this.logger.warn('[VIPCALL WEBHOOK] Signature mismatch');
           }
         } else {
           signatureValid = false;
@@ -897,7 +908,12 @@ export class MarketplaceService {
       this.logger.warn(`[VIPCALL WEBHOOK] Missing signature header when secret is configured`);
     } else if (signatureHeader) {
       signatureReason = `Signature received (${signatureHeader.slice(0, 20)}...), awaiting VIPCALL_WEBHOOK_SECRET env setup`;
-      this.logger.log(`[VIPCALL WEBHOOK] Signature present: ${signatureHeader}`);
+      this.logger.log('[VIPCALL WEBHOOK] Signature present but no secret configured');
+    }
+
+    // A signature that is present but wrong (or missing while a secret is configured) is always rejected.
+    if (!signatureValid) {
+      throw new UnauthorizedException(`Webhook signature rejected: ${signatureReason}`);
     }
 
     // 2. Handle 'ping' test event (Sent when user clicks "Test bildirimi" in VIP Call portal)
@@ -926,6 +942,12 @@ export class MarketplaceService {
         },
         timestamp: new Date().toISOString(),
       };
+    }
+
+    // State-changing events require a verified signature (fail closed when no secret is configured).
+    if (!secret) {
+      this.logger.warn('[VIPCALL WEBHOOK] Rejected status event: VIPCALL_WEBHOOK_SECRET is not configured');
+      throw new UnauthorizedException('VIPCALL_WEBHOOK_SECRET is not configured; status events are not accepted');
     }
 
     // 3. Handle Lead Status / Money / Returned Events

@@ -75,7 +75,7 @@ export const PricingSection: React.FC = () => {
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 stagger-items">
           {packages.map((pkg) => (
             <div
               key={pkg.id}

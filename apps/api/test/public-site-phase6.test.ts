@@ -27,7 +27,8 @@ describe('Phase 6: Public Website, Anti-Spam Honeypot, Consent & Golden Path', (
     auditService = new AuditService(db);
     leadsService = new LeadsService(db, auditService);
     ingestionService = new IngestionService(db, auditService);
-    leadsController = new LeadsController(leadsService, ingestionService);
+    const telegramStub = { sendInquiryNotification: async () => null, isConfigured: () => false } as any;
+    leadsController = new LeadsController(leadsService, ingestionService, telegramStub);
     pricingEngine = new PricingEngineService();
     walletLedger = new WalletLedgerService(db);
     connectors = new ConnectorsService();

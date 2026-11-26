@@ -1,27 +1,29 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
+/**
+ * Resolves the tenant of the authenticated principal.
+ * The tenant is taken exclusively from the verified token – never from a client-supplied header,
+ * otherwise any user could read/write another tenant's data by sending `X-Tenant-Id`.
+ */
 export const CurrentTenant = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): string => {
     const request = ctx.switchToHttp().getRequest();
-    return (
-      request.user?.tenantId ||
-      request.headers['x-tenant-id'] ||
-      '11111111-1111-1111-1111-111111111111'
-    );
+    const tenantId = request.user?.tenantId;
+    if (!tenantId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    return tenantId;
   },
 );
 
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return (
-      request.user || {
-        id: '99999999-0000-0000-0000-000000000002',
-        email: 'admin@linkora.io',
-        tenantId: '11111111-1111-1111-1111-111111111111',
-        role: 'COMPANY_ADMIN',
-        mode: 'MANAGER',
-      }
-    );
+    const user = request.user;
+    if (!user) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    // Expose `id` as an alias of the JWT `sub` claim for services that expect it
+    return { ...user, id: user.id || user.sub };
   },
 );

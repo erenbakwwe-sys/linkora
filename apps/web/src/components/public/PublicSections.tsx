@@ -46,7 +46,7 @@ export const ThreeFeatureCards: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 stagger-items">
           {/* Card 1: Teams */}
           <div className="bg-white rounded-3xl p-8 border border-slate-200/90 hover:border-slate-300 shadow-md hover:shadow-xl transition duration-300 flex flex-col justify-between group">
             <div>
@@ -155,7 +155,7 @@ export const LeadPartnersProcess: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 stagger-items">
           {steps.map((st, i) => (
             <div
               key={i}
@@ -187,7 +187,7 @@ export const ProofStatsGrid: React.FC = () => {
   return (
     <section className="py-14 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-y border-slate-800 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center stagger-items">
           {stats.map((s, idx) => (
             <div key={idx} className="p-4">
               <div className="text-3xl sm:text-4xl font-extrabold font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200 mb-1">
@@ -228,7 +228,7 @@ export const IndustriesGrid: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 stagger-items">
           {industries.map((ind, i) => {
             const Icon = ind.icon;
             return (

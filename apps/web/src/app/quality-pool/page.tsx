@@ -117,7 +117,7 @@ export default function QualityPoolPage() {
                 <th className="py-3 px-4 text-right">Aktion</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 stagger-items">
               {leads.map((lead) => (
                 <tr key={lead.leadId} className="hover:bg-slate-50/70">
                   <td className="py-3 px-4 font-bold text-slate-900">{lead.customerName}</td>

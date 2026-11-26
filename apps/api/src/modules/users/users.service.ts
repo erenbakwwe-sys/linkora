@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../../common/services/database.service.js';
 import { scryptSync } from 'node:crypto';
+import { DEFAULT_TENANT_ID, safeEqual } from '../../common/security/secrets.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -17,7 +18,26 @@ export interface UserItem {
   lastLogin: string;
   createdAt: string;
   passwordHash?: string;
+  tenantId?: string;
+  /** @deprecated legacy plaintext password from persisted files; migrated to a hash on load */
   passwordPlain?: string;
+  /** Built-in demo account; its password comes from DEMO_USERS_PASSWORD (or dev defaults outside production) */
+  builtin?: 'admin' | 'agent';
+}
+
+const ROLE_SLUGS: Record<string, string> = {
+  'Firmen-Admin': 'COMPANY_ADMIN',
+  Teamleiter: 'TEAM_LEAD',
+  Agent: 'AGENT',
+  'QC-Prüfer': 'QC_REVIEWER',
+};
+
+export type PublicUserItem = Omit<UserItem, 'passwordHash' | 'passwordPlain' | 'builtin'>;
+
+export function toPublicUser(u: UserItem): PublicUserItem {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { passwordHash, passwordPlain, builtin, ...rest } = u;
+  return rest;
 }
 
 @Injectable()
@@ -35,8 +55,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: '+49 40 42925873',
       lastLogin: 'vor 5 Min.',
       createdAt: '31.10.2026',
-      passwordPlain: 'Agent123!',
-      passwordHash: '8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f8dfcfb9b8b7f',
+      builtin: 'agent',
     },
     {
       id: 'usr-156',
@@ -50,7 +69,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: '+49 30 901820',
       lastLogin: 'vor 18 Std.',
       createdAt: '13.08.2026',
-      passwordPlain: 'Agent123!',
+      builtin: 'agent',
     },
     {
       id: 'usr-209',
@@ -64,7 +83,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: null,
       lastLogin: 'vor 27 Tagen',
       createdAt: '02.10.2026',
-      passwordPlain: 'Agent123!',
+      builtin: 'agent',
     },
     {
       id: 'usr-212',
@@ -78,7 +97,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: '+49 89 203040',
       lastLogin: 'vor 1 Std.',
       createdAt: '02.10.2026',
-      passwordPlain: 'Admin123!',
+      builtin: 'admin',
     },
     {
       id: 'usr-210',
@@ -92,7 +111,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: '+49 40 325510',
       lastLogin: 'vor 18 Std.',
       createdAt: '02.10.2026',
-      passwordPlain: 'Admin123!',
+      builtin: 'admin',
     },
     {
       id: 'usr-240',
@@ -106,7 +125,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: null,
       lastLogin: '—',
       createdAt: '28.10.2026',
-      passwordPlain: 'Admin123!',
+      builtin: 'admin',
     },
     {
       id: 'usr-151',
@@ -120,7 +139,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: '+49 221 498230',
       lastLogin: 'vor 24 Tagen',
       createdAt: '10.08.2026',
-      passwordPlain: 'Admin123!',
+      builtin: 'admin',
     },
     {
       id: 'usr-211',
@@ -134,7 +153,7 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: null,
       lastLogin: 'vor 1 Tagen',
       createdAt: '02.10.2026',
-      passwordPlain: 'Admin123!',
+      builtin: 'admin',
     },
   ];
 
@@ -175,6 +194,11 @@ export class UsersService implements OnModuleInit {
           const existingIds = new Set(this.inMemoryUsers.map(u => u.id));
           const existingEmails = new Set(this.inMemoryUsers.map(u => u.email.toLowerCase()));
           for (const u of parsed) {
+            if (u && typeof u.passwordPlain === 'string' && u.passwordPlain) {
+              u.passwordHash = this.hashPassword(u.passwordPlain);
+              delete u.passwordPlain;
+            }
+            if (!u || !u.id || !u.email) continue;
             if (!existingIds.has(u.id) && !existingEmails.has(u.email.toLowerCase())) {
               this.inMemoryUsers.unshift(u);
               existingIds.add(u.id);
@@ -193,7 +217,9 @@ export class UsersService implements OnModuleInit {
   private savePersistedUsers() {
     try {
       const filePath = this.getStorageFilePath();
-      fs.writeFileSync(filePath, JSON.stringify(this.inMemoryUsers, null, 2), 'utf-8');
+      // Never persist plaintext passwords
+      const data = this.inMemoryUsers.map(({ passwordPlain, ...rest }) => rest);
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 });
     } catch {
       // Ignore in read-only environments
     }
@@ -204,12 +230,50 @@ export class UsersService implements OnModuleInit {
     return scryptSync(password, salt, 32).toString('hex');
   }
 
-  async getAllUsers(tenantId?: string): Promise<UserItem[]> {
+  private getBuiltinPasswordHashes(): Record<string, string> {
+    const raw = process.env.BUILTIN_USER_PASSWORD_HASHES;
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw);
+      const out: Record<string, string> = {};
+      for (const [email, hash] of Object.entries(parsed || {})) {
+        if (typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash)) out[email.toLowerCase()] = hash;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+
+  /** Verifies a password against an in-memory user record (no master passwords). */
+  verifyUserPassword(user: UserItem, password: string): boolean {
+    if (!password) return false;
+    if (user.passwordHash) {
+      return safeEqual(this.hashPassword(password), user.passwordHash);
+    }
+    if (user.builtin) {
+      // Per-account password hashes (JSON map email -> scrypt hash) configured in the environment
+      const perUser = this.getBuiltinPasswordHashes()[user.email.toLowerCase()];
+      if (perUser) {
+        return safeEqual(this.hashPassword(password), perUser);
+      }
+      const configured = process.env.DEMO_USERS_PASSWORD;
+      if (configured) return safeEqual(password, configured);
+      const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+      if (isProd) return false; // built-in demo credentials are disabled in production
+      return safeEqual(password, user.builtin === 'admin' ? 'Admin123!' : 'Agent123!');
+    }
+    return false;
+  }
+
+  async getAllUsers(tenantId: string = DEFAULT_TENANT_ID): Promise<PublicUserItem[]> {
     try {
       const dbUsers = await this.db.query(
         `SELECT id, email, first_name, last_name, default_mode, is_active, created_at, last_login_at
          FROM users
-         ORDER BY created_at DESC LIMIT 50`
+         WHERE tenant_id = $1
+         ORDER BY created_at DESC LIMIT 50`,
+        [tenantId]
       );
 
       if (dbUsers.rows && dbUsers.rows.length > 0) {
@@ -230,6 +294,7 @@ export class UsersService implements OnModuleInit {
               callerIdNumber: null,
               lastLogin: row.last_login_at ? new Date(row.last_login_at).toLocaleDateString('de-DE') : '—',
               createdAt: new Date(row.created_at).toLocaleDateString('de-DE'),
+              tenantId,
             });
             existingEmails.add(row.email.toLowerCase());
           }
@@ -238,7 +303,16 @@ export class UsersService implements OnModuleInit {
     } catch {
       // Fallback cleanly to inMemoryUsers
     }
-    return this.inMemoryUsers;
+    // In-memory accounts without an explicit tenant belong to the default platform tenant
+    return this.inMemoryUsers
+      .filter((u) => (u.tenantId || DEFAULT_TENANT_ID) === tenantId)
+      .map(toPublicUser);
+  }
+
+  private findInTenant(id: string, tenantId: string): UserItem | undefined {
+    return this.inMemoryUsers.find(
+      (u) => (u.id === id || u.userNumber === id) && (u.tenantId || DEFAULT_TENANT_ID) === tenantId,
+    );
   }
 
   getFreeSystemNumbers(): string[] {
@@ -251,6 +325,7 @@ export class UsersService implements OnModuleInit {
   }
 
   async updateUser(
+    tenantId: string,
     id: string,
     dto: {
       username?: string;
@@ -261,8 +336,8 @@ export class UsersService implements OnModuleInit {
       callerIdNumber?: string | null;
       newPassword?: string;
     }
-  ): Promise<UserItem> {
-    const user = this.inMemoryUsers.find(u => u.id === id || u.userNumber === id);
+  ): Promise<PublicUserItem> {
+    const user = this.findInTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`Benutzer mit ID ${id} nicht gefunden`);
     }
@@ -298,10 +373,14 @@ export class UsersService implements OnModuleInit {
         throw new BadRequestException('Das Passwort muss mindestens 8 Zeichen lang sein.');
       }
       const hashed = this.hashPassword(dto.newPassword.trim());
+      // Apply to the in-memory record as well (previously the new password never took effect here)
+      user.passwordHash = hashed;
+      delete user.passwordPlain;
+      delete user.builtin;
       try {
         await this.db.query(
-          `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE email = $2 OR id::text = $3`,
-          [hashed, user.email, user.id]
+          `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE (email = $2 OR id::text = $3) AND tenant_id = $4`,
+          [hashed, user.email, user.id, tenantId]
         );
       } catch (err) {
         // Updated in DB if available
@@ -309,19 +388,34 @@ export class UsersService implements OnModuleInit {
     }
 
     this.savePersistedUsers();
-    return user;
+    return toPublicUser(user);
   }
 
-  async createUser(dto: {
+  async createUser(tenantId: string, dto: {
     username: string;
     email: string;
     role: 'Firmen-Admin' | 'Teamleiter' | 'Agent' | 'QC-Prüfer';
     team?: string;
     callerIdNumber?: string | null;
     password?: string;
-  }): Promise<UserItem> {
+  }): Promise<PublicUserItem> {
+    const username = (dto?.username || '').trim();
+    const email = (dto?.email || '').trim();
+    if (!username || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException('Benutzername und gültige E-Mail sind erforderlich.');
+    }
+    const allowedRoles = ['Firmen-Admin', 'Teamleiter', 'Agent', 'QC-Prüfer'];
+    if (dto.role && !allowedRoles.includes(dto.role)) {
+      throw new BadRequestException('Ungültige Rolle.');
+    }
+    if (this.inMemoryUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+      throw new BadRequestException('Ein Benutzer mit dieser E-Mail existiert bereits.');
+    }
+    const plainPwd = dto.password?.trim() || '';
+    if (plainPwd.length < 8) {
+      throw new BadRequestException('Das Passwort muss mindestens 8 Zeichen lang sein.');
+    }
     const num = '#' + Math.floor(100 + Math.random() * 899);
-    const plainPwd = dto.password?.trim() || 'Agent123!';
     const hashed = this.hashPassword(plainPwd);
 
     const newUser: UserItem = {
@@ -336,24 +430,37 @@ export class UsersService implements OnModuleInit {
       callerIdNumber: dto.callerIdNumber || '+49 40 42925873',
       lastLogin: '—',
       createdAt: new Date().toLocaleDateString('de-DE'),
-      passwordPlain: plainPwd,
       passwordHash: hashed,
+      tenantId,
     };
 
     if (plainPwd && plainPwd.length >= 8) {
       try {
-        await this.db.query(
-          `INSERT INTO users (email, password_hash, first_name, last_name, default_mode, is_active)
-           VALUES ($1, $2, $3, $4, $5, true)
-           ON CONFLICT DO NOTHING`,
+        const inserted = await this.db.query(
+          `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, default_mode, is_active)
+           VALUES ($6, $1, $2, $3, $4, $5, true)
+           ON CONFLICT DO NOTHING
+           RETURNING id`,
           [
-            dto.email.trim(),
+            email,
             hashed,
             dto.username.split(' ')[0] || dto.username,
             dto.username.split(' ')[1] || '',
             dto.role === 'Firmen-Admin' ? 'MANAGER' : 'AGENT',
+            tenantId,
           ]
         );
+        const dbUserId = inserted?.rows?.[0]?.id;
+        const roleSlug = ROLE_SLUGS[dto.role || 'Agent'] || 'AGENT';
+        if (dbUserId) {
+          // Without a user_roles row the user would always be treated as AGENT at login
+          await this.db.query(
+            `INSERT INTO user_roles (user_id, role_id, tenant_id)
+             SELECT $1, r.id, $2 FROM roles r WHERE r.slug = $3
+             ON CONFLICT DO NOTHING`,
+            [dbUserId, tenantId, roleSlug],
+          );
+        }
       } catch {
         // Ignored if local
       }
@@ -361,7 +468,12 @@ export class UsersService implements OnModuleInit {
 
     this.inMemoryUsers.unshift(newUser);
     this.savePersistedUsers();
-    return newUser;
+    return toPublicUser(newUser);
+  }
+
+  findUserById(id: string): UserItem | undefined {
+    if (!id) return undefined;
+    return this.inMemoryUsers.find((u) => u.id === id);
   }
 
   findUserByEmailOrUsername(identifier: string): UserItem | undefined {
@@ -377,8 +489,8 @@ export class UsersService implements OnModuleInit {
     );
   }
 
-  async toggleStatus(id: string): Promise<UserItem> {
-    const user = this.inMemoryUsers.find(u => u.id === id || u.userNumber === id);
+  async toggleStatus(tenantId: string, id: string): Promise<PublicUserItem> {
+    const user = this.findInTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`Benutzer mit ID ${id} nicht gefunden`);
     }
@@ -391,14 +503,14 @@ export class UsersService implements OnModuleInit {
 
     try {
       await this.db.query(
-        `UPDATE users SET is_active = $1, updated_at = NOW() WHERE email = $2 OR id::text = $3`,
-        [user.isActive, user.email, user.id]
+        `UPDATE users SET is_active = $1, updated_at = NOW() WHERE (email = $2 OR id::text = $3) AND tenant_id = $4`,
+        [user.isActive, user.email, user.id, tenantId]
       );
     } catch {
       // DB sync
     }
 
     this.savePersistedUsers();
-    return user;
+    return toPublicUser(user);
   }
 }

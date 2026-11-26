@@ -1,22 +1,43 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { INestApplication } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { getJwtRefreshSecret, getJwtSecret } from './common/security/secrets.js';
 
 let cachedServer: any = null;
 
-async function bootstrapServer() {
-  if (!cachedServer) {
-    const app = await NestFactory.create(AppModule, { rawBody: true });
+function getAllowedOrigins(): string[] {
+  const raw = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000';
+  return raw
+    .split(',')
+    .map((o) => o.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+}
 
-    app.enableCors({
-      origin: '*',
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-      credentials: true,
-    });
+function configureApp(app: INestApplication) {
+  // Fail fast if secrets are missing/weak in production
+  getJwtSecret();
+  getJwtRefreshSecret();
 
-    app.setGlobalPrefix('api');
+  app.use(helmet());
 
+  const allowedOrigins = getAllowedOrigins();
+  app.enableCors({
+    // Same-origin requests (no Origin header, e.g. via Next.js/Vercel rewrites) are always allowed.
+    origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) return cb(null, true);
+      return cb(null, false);
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  app.setGlobalPrefix('api');
+
+  const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+  if (!isProd || process.env.ENABLE_SWAGGER === 'true') {
     const config = new DocumentBuilder()
       .setTitle('Linkora Platform API')
       .setDescription('Unified Lead Bank + AI Call-Center Platform API (v1)')
@@ -26,7 +47,13 @@ async function bootstrapServer() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, document);
+  }
+}
 
+async function bootstrapServer() {
+  if (!cachedServer) {
+    const app = await NestFactory.create(AppModule, { rawBody: true });
+    configureApp(app);
     await app.init();
     cachedServer = app.getHttpAdapter().getInstance();
   }
@@ -44,13 +71,13 @@ if (!process.env.VERCEL) {
   (async () => {
     try {
       const app = await NestFactory.create(AppModule, { rawBody: true });
-      app.enableCors({ origin: '*', credentials: true });
-      app.setGlobalPrefix('api');
+      configureApp(app);
       const port = process.env.PORT || process.env.API_PORT || 3001;
       await app.listen(port);
       console.log(`Linkora API listening on port ${port}`);
     } catch (err) {
       console.error('Error starting standalone server:', err);
+      process.exitCode = 1;
     }
   })();
 }

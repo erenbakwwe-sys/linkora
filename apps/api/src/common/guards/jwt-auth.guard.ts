@@ -1,5 +1,13 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { IS_PUBLIC_KEY } from './public.decorator.js';
+import {
+  DEFAULT_TENANT_ID,
+  getGitasisWebhookTokens,
+  getJwtSecret,
+  matchesAny,
+} from '../security/secrets.js';
 
 export interface JwtPayload {
   sub: string;
@@ -7,17 +15,29 @@ export interface JwtPayload {
   tenantId: string;
   role: string;
   mode: 'MANAGER' | 'AGENT';
+  type?: string;
 }
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const isPublic = this.reflector?.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
 
-    // 1. Check for API Key Authentication (X-API-Key, X-API-Token, Bearer lk_test_..., or query param)
+    const request = context.switchToHttp().getRequest();
+    const authHeader: string | undefined = request.headers.authorization;
+
+    // 1. Partner API key authentication (keys come from environment variables only)
     const apiKey =
       request.headers['x-api-key'] ||
       request.headers['x-api-token'] ||
@@ -25,22 +45,13 @@ export class JwtAuthGuard implements CanActivate {
       request.query?.apiKey ||
       request.query?.token;
 
-    const validKeys = [
-      process.env.LINKORA_LIVE_API_KEY,
-      process.env.VIPCALL_API_KEY,
-      'lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b',
-      process.env.LINKORA_TEST_API_KEY,
-      process.env.GITASIS_WEBHOOK_SECRET,
-      'lk_test_7c18f17ba37eb06e1ead5a581f0098795eb979d3',
-      'gitasis_linkora_2026',
-    ].filter(Boolean);
-
-    if (apiKey && validKeys.includes(apiKey)) {
+    if (apiKey && matchesAny(apiKey, getGitasisWebhookTokens())) {
+      // The partner key is bound to a fixed tenant; it can NOT be overridden by a request header.
       request.user = {
         sub: 'usr-api-partner',
-        email: 'api-partner@calendra-group.online',
-        tenantId: request.headers['x-tenant-id'] || '11111111-1111-1111-1111-111111111111',
-        role: 'COMPANY_ADMIN',
+        email: 'api-partner@linkora.io',
+        tenantId: process.env.API_KEY_TENANT_ID || DEFAULT_TENANT_ID,
+        role: 'API_PARTNER',
         mode: 'MANAGER',
       };
       return true;
@@ -51,14 +62,19 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const token = authHeader.split(' ')[1];
+    let payload: JwtPayload;
     try {
-      const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'super-secret-jwt-key-minimum-32-chars-long-linkora-2026',
-      });
-      request.user = payload;
-      return true;
+      payload = await this.jwtService.verifyAsync(token, { secret: getJwtSecret() });
     } catch {
       throw new UnauthorizedException('Token is invalid or expired');
     }
+
+    // Refresh tokens must never be usable as access tokens
+    if (payload.type === 'refresh' || !payload.tenantId) {
+      throw new UnauthorizedException('Token is invalid or expired');
+    }
+
+    request.user = payload;
+    return true;
   }
 }

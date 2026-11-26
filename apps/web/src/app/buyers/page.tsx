@@ -315,7 +315,7 @@ Content-Type: application/json
         </div>
 
         {/* Buyer Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 stagger-items">
           {loading ? (
             <div className="col-span-2 p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 flex items-center justify-center gap-3">
               <RefreshCw className="w-5 h-5 animate-spin text-sky-600" />
@@ -331,16 +331,16 @@ Content-Type: application/json
               return (
                 <div
                   key={buyer.id}
-                  className={`bg-white rounded-2xl border shadow-xs p-6 space-y-5 transition-all ${
+                  className={`bg-white rounded-2xl border shadow-xs p-4 sm:p-6 space-y-5 transition-all ${
                     isAroundhome
                       ? 'border-sky-300 ring-2 ring-sky-500/10 hover:border-sky-400'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h2 className="text-lg font-bold text-slate-900">{buyer.name}</h2>
                         {isAroundhome && (
                           <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300">
@@ -348,7 +348,7 @@ Content-Type: application/json
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-400 font-mono mt-0.5 block">
+                      <span className="text-xs text-slate-400 font-mono mt-0.5 block break-all">
                         Kennung: {buyer.companyIdentifier} • {buyer.id}
                       </span>
                     </div>
@@ -457,7 +457,7 @@ Content-Type: application/json
 
       {/* Add Partner Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 modal-overlay">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b pb-4">
               <div className="flex items-center gap-2">

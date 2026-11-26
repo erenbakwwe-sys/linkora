@@ -108,17 +108,17 @@ export default function ChatPage() {
         </div>
 
         {/* Input Bar */}
-        <form onSubmit={handleSend} className="p-4 border-t bg-slate-50 flex items-center gap-3">
+        <form onSubmit={handleSend} className="p-3 sm:p-4 border-t bg-slate-50 flex items-center gap-2 sm:gap-3">
           <input
             type="text"
             value={inputMsg}
             onChange={(e) => setInputMsg(e.target.value)}
             placeholder="Nachricht an #general senden..."
-            className="flex-1 border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+            className="flex-1 min-w-0 border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
           />
           <button
             type="submit"
-            className="px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            className="shrink-0 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
           >
             <Send className="w-3.5 h-3.5" />
             Senden

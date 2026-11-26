@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
+import { getJwtSecret } from './common/security/secrets.js';
 import { DatabaseService } from './common/services/database.service.js';
 import { AuditService } from './modules/audit/audit.service.js';
 import { AuthService } from './modules/auth/auth.service.js';
@@ -19,16 +22,19 @@ import { MarketplaceModule } from './modules/marketplace/marketplace.module.js';
 import { OperationsModule } from './modules/operations/operations.module.js';
 import { FinancesModule } from './modules/finances/finances.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
+import { HyperionModule } from './modules/integrations/hyperion/hyperion.module.js';
 
 import { UsersService } from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
 
 @Module({
   imports: [
-    JwtModule.register({
+    JwtModule.registerAsync({
       global: true,
-      secret: process.env.JWT_SECRET || 'super-secret-jwt-key-minimum-32-chars-long-linkora-2026',
-      signOptions: { expiresIn: '15m' },
+      useFactory: () => ({
+        secret: getJwtSecret(),
+        signOptions: { expiresIn: '15m' },
+      }),
     }),
     ProjectsModule,
     LeadsModule,
@@ -40,6 +46,7 @@ import { UsersController } from './modules/users/users.controller.js';
     OperationsModule,
     FinancesModule,
     ReportsModule,
+    HyperionModule,
   ],
   controllers: [
     AuthController,
@@ -48,6 +55,8 @@ import { UsersController } from './modules/users/users.controller.js';
     UsersController,
   ],
   providers: [
+    // Every route requires authentication unless explicitly marked with @Public()
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     DatabaseService,
     AuditService,
     AuthService,

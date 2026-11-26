@@ -30,7 +30,10 @@
       "BERICHTE": "RAPORLAR",
       "BENUTZER": "KULLANICILAR",
       "ALLGEMEIN": "GENEL",
-      "LEAD_MARKTPLATZ": "LEAD PAZARYERİ"
+      "LEAD_MARKTPLATZ": "LEAD PAZARYERİ",
+      "MANAGEMENT": "YÖNETİM",
+      "ADMINISTRATION": "YÖNETİCİ",
+      "HANDELSPLATZ": "PAZARYERİ"
     },
     "items": {
       "call_screen": "Çağrı Ekranı",
@@ -69,7 +72,18 @@
       "buyers": "Alıcılar",
       "price_lists": "Fiyat Listeleri",
       "returns_credits": "İadeler & Alacaklar",
-      "api_webhooks": "API & Webhooklar"
+      "api_webhooks": "API & Webhooklar",
+      "leads": "Lead Müşterileri",
+      "qc": "QC Denetimi",
+      "projects": "Projeler",
+      "auto_dial": "Otomatik Arama",
+      "recordings": "Ses Kayıtları",
+      "excel_import": "Excel İçe Aktarma",
+      "analytics_calibration": "Yapay Zeka Kalibrasyonu",
+      "branding": "Marka Ayarları",
+      "returns": "İadeler",
+      "users": "Kullanıcılar",
+      "vacation": "İzinler"
     }
   },
   "dashboard": {

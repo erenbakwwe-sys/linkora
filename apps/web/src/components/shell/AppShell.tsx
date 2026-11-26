@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { TopBar } from '@/components/shell/TopBar';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { FloatingWidgets } from '@/components/shell/FloatingWidgets';
@@ -17,6 +17,7 @@ interface AppShellProps {
 export const AppShell: React.FC<AppShellProps> = ({ children, noPadding = false, isAgentView }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -50,9 +51,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children, noPadding = false,
       <div className="flex-1 flex overflow-hidden relative">
         {!isAgent && <Sidebar />}
         <main
-          className={`flex-1 overflow-y-auto overflow-x-hidden animate-fade-in-up transition-all ${
+          key={pathname}
+          className={`flex-1 overflow-y-auto overflow-x-hidden animate-fade-in-up stagger-sections ${
             noPadding ? 'p-0' : isAgent ? 'p-3 sm:p-5 lg:p-6' : 'p-3 sm:p-4 md:p-6 lg:p-7'
-          }`}
+          } ${isAgent ? 'pb-24 md:pb-6' : ''}`}
         >
           {children}
         </main>

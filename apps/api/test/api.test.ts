@@ -64,10 +64,16 @@ describe('API Services & Logic Tests', () => {
     } as any;
 
     const jwtService = new JwtService({ secret: 'test-secret' });
-    const authService = new AuthService(mockDb, jwtService, {} as any);
+    const authService = new AuthService(mockDb, jwtService, {} as any, {} as any);
 
-    const res = await authService.switchMode('user-1', 'AGENT');
+    const res = await authService.switchMode('user-1', 'AGENT', 'COMPANY_ADMIN', 'tenant-1');
     expect(res.mode).toBe('AGENT');
     expect(res.accessToken).toBeDefined();
+  });
+
+  it('should forbid agents from switching into MANAGER mode', async () => {
+    const jwtService = new JwtService({ secret: 'test-secret' });
+    const authService = new AuthService({ query: async () => ({ rows: [] }) } as any, jwtService, {} as any, {} as any);
+    await expect(authService.switchMode('user-1', 'MANAGER', 'AGENT', 'tenant-1')).rejects.toThrow();
   });
 });

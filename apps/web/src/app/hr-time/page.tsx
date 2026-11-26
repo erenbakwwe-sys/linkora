@@ -143,7 +143,7 @@ export default function HrTimePage() {
                 <th className="py-3 px-4 text-right">Freigabe</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-100 font-sans stagger-items">
               {entries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{entry.userName}</td>

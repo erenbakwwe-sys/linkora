@@ -42,7 +42,7 @@ export default function DeutschsprachigesCallcenterPage() {
         </section>
 
         <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 stagger-items">
             <div className="bg-slate-800/40 p-7 rounded-2xl border border-slate-700/60">
               <Sparkles className="w-10 h-10 text-amber-400 mb-4" />
               <h3 className="font-bold text-lg text-white mb-2">Bilinguales KI-Briefing</h3>

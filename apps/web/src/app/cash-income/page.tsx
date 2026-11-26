@@ -46,7 +46,7 @@ export default function CashIncomePage() {
       </div>
 
       {/* KPI Tiles matching Screenshot */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-items">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-xs font-semibold text-slate-500 uppercase">Realisierte Einnahmen</span>
           <div className="text-2xl font-extrabold text-slate-900 mt-1">
@@ -97,7 +97,7 @@ export default function CashIncomePage() {
                 <th className="py-3 px-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-100 font-sans stagger-items">
               {data?.incomeEntries?.map((entry: any) => (
                 <tr key={entry.id} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{entry.source}</td>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/context/I18nContext';
 import {
@@ -116,14 +117,14 @@ export const DashboardOverview: React.FC = () => {
   return (
     <div className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-3 sm:space-y-4 animate-in fade-in duration-300">
       {/* 1. KPI Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5 stagger-items">
         {/* Leads diesen Monat */}
         <div
           onClick={() => router.push('/leads')}
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{totalLeadsCount}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={Number(totalLeadsCount) || 0} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.leads_this_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-teal-50 text-teal-600 border border-teal-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -137,7 +138,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{qcPendingCount}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={Number(qcPendingCount) || 0} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.in_qc')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -151,7 +152,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{confirmedCount}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={Number(confirmedCount) || 0} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.confirmed_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -165,7 +166,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{stornoCount}</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={Number(stornoCount) || 0} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.storno_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -193,7 +194,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">5.188,94 €</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={5188.94} format={(n) => `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.next_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">

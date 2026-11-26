@@ -292,16 +292,10 @@ export default function ApiWebhooksPage() {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
               <div className="flex items-center bg-black/60 border border-emerald-500/30 rounded-xl px-3 py-1.5 justify-between gap-3">
-                <code className="text-xs font-mono text-emerald-400 select-all truncate max-w-[240px]">
-                  lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b
+                {/* The live key is a server-side secret (env VIPCALL_API_KEY) and must never be shipped to the browser. */}
+                <code className="text-xs font-mono text-emerald-400 truncate max-w-[240px]">
+                  lk_live_•••••••• (VIPCALL_API_KEY)
                 </code>
-                <button
-                  onClick={() => handleCopyKey('lk_live_96bbc64bf9ab7c3d75a098a3b75e290968779c1b', 'key')}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1 transition shrink-0"
-                >
-                  {copiedKey === 'key' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'key' ? 'Kopiert' : 'Live Key Kopieren'}</span>
-                </button>
               </div>
 
               <button
@@ -316,7 +310,7 @@ export default function ApiWebhooksPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-items">
           <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase">Gesamte Ereignisse</span>
@@ -423,7 +417,7 @@ export default function ApiWebhooksPage() {
                   <th className="py-3 px-4 text-right">Aktionen</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 stagger-items">
                 {filteredDeliveries.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400 text-sm">
@@ -527,7 +521,7 @@ export default function ApiWebhooksPage() {
 
         {/* PAYLOAD INSPECTOR MODAL */}
         {selectedLog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in modal-overlay">
             <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
               {/* Modal Header */}
               <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">

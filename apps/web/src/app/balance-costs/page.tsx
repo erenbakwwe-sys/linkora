@@ -201,7 +201,7 @@ export default function BalanceCostsPage() {
         )}
 
         {/* Main Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-items">
           <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-3 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
             <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ export default function BalanceCostsPage() {
                   <th className="py-3 px-4 text-right">İşlem (Admin)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-slate-700 stagger-items">
                 {topupRequests.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
@@ -408,7 +408,7 @@ export default function BalanceCostsPage() {
 
         {/* Modal: Guthaben Aufladen per Banküberweisung */}
         {showTopupModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto modal-overlay">
             <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 animate-in zoom-in-95">
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b pb-4">

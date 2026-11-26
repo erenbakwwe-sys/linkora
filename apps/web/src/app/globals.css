@@ -118,3 +118,139 @@ body {
 .live-beacon-pulse {
   animation: pulseRadar 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
+
+/* ------------------------------------------------------------------ */
+/* Motion & mobile polish                                              */
+/* ------------------------------------------------------------------ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Horizontal swipe rows without a visible scrollbar */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * Staggered entrance of page sections.
+ * Uses fill-mode "backwards" so no transform remains after the animation –
+ * a lingering transform would turn the section into the containing block of
+ * its position:fixed modals/toasts and misplace them.
+ */
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-sections > * > *:not(.fixed) {
+  animation: section-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.stagger-sections > * > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-sections > * > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-sections > * > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-sections > * > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-sections > * > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-sections > * > *:nth-child(n + 7) { animation-delay: 300ms; }
+
+/* Staggered entrance for grids / lists (e.g. KPI tiles, cards) */
+.stagger-items > * {
+  animation: section-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.stagger-items > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-items > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-items > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-items > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-items > *:nth-child(6) { animation-delay: 200ms; }
+.stagger-items > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+/* Smooth colour/shadow transitions on interactive elements */
+button,
+a,
+[role='button'] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Visible press feedback on touch screens (no hover there) */
+@media (hover: none) {
+  button:not(:disabled):active,
+  a:active,
+  [role='button']:active {
+    opacity: 0.8;
+  }
+}
+
+/* Table rows: gentle highlight */
+tbody tr {
+  transition: background-color 150ms ease;
+}
+
+/* Form fields inside flex rows may shrink instead of pushing buttons off-screen */
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+/* Prevent iOS from zooming into form fields (it zooms when font-size < 16px) */
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Respect the OS "reduce motion" setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Modal dialogs: overlay fades in, dialog pops in */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-overlay {
+  animation: overlay-in 0.2s ease-out backwards;
+}
+.modal-overlay > *:not(.fixed) {
+  animation: dialog-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+@media (max-width: 640px) {
+  /* Dialogs never exceed the screen on phones – content scrolls inside */
+  .modal-overlay > *:not(.fixed) {
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

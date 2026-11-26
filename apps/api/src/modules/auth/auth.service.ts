@@ -98,24 +98,31 @@ export class AuthService {
       // DB not reachable, will check usersService fallback
     }
 
-    if (isFromDb && user) {
-      if (!this.verifyPassword(cleanPwd, user.password_hash)) {
+    // A DB account whose password does not match may share its name/e-mail alias with an
+    // in-memory account – in that case try the in-memory accounts as well.
+    if (isFromDb && user && !this.verifyPassword(cleanPwd, user.password_hash)) {
+      if (!this.usersService.findUserForLogin(cleanTerm, cleanPwd)) {
         throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
       }
+      isFromDb = false;
+      user = null;
+    }
+
+    if (isFromDb && user) {
       try {
         await this.db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
       } catch {}
     } else {
       // Check in UsersService (in-memory or admin created)
-      const memUser = this.usersService.findUserByEmailOrUsername(cleanTerm);
-      if (!memUser || !memUser.isActive) {
+      const candidates = this.usersService.findUsersByEmailOrUsername(cleanTerm).filter((u) => u.isActive);
+      if (candidates.length === 0) {
         throw new UnauthorizedException('Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden');
       }
 
       // No master passwords: only the user's own (hashed) password is accepted.
-      const isPwdMatch = this.usersService.verifyUserPassword(memUser, cleanPwd);
-
-      if (!isPwdMatch) {
+      // Several accounts may share a name, so pick the one whose password matches.
+      const memUser = this.usersService.findUserForLogin(cleanTerm, cleanPwd);
+      if (!memUser) {
         throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
       }
 

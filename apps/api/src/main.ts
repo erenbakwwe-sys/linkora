@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { getJwtRefreshSecret, getJwtSecret } from './common/security/secrets.js';
+import { runWithDbContext } from './common/services/request-context.js';
 
 let cachedServer: any = null;
 
@@ -20,6 +21,9 @@ function configureApp(app: INestApplication) {
   // Fail fast if secrets are missing/weak in production
   getJwtSecret();
   getJwtRefreshSecret();
+
+  // Every request gets its own database context (tenant is filled in by the auth guard)
+  app.use((_req: any, _res: any, next: () => void) => runWithDbContext(() => next()));
 
   app.use(helmet());
 

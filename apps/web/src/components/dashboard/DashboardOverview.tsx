@@ -32,50 +32,65 @@ export const DashboardOverview: React.FC = () => {
   const router = useRouter();
   const [isFrozen, setIsFrozen] = useState(false);
   const [companyFilter, setCompanyFilter] = useState('all');
-  const [totalLeadsCount, setTotalLeadsCount] = useState(190);
+  // Real figures from the API (no demo defaults)
+  const [totalLeadsCount, setTotalLeadsCount] = useState(0);
   const [qcPendingCount, setQcPendingCount] = useState(0);
-  const [confirmedCount, setConfirmedCount] = useState(38);
-  const [stornoCount, setStornoCount] = useState(103);
+  const [confirmedCount, setConfirmedCount] = useState(0);
+  const [stornoCount, setStornoCount] = useState(0);
+  const [openDueEur, setOpenDueEur] = useState(0);
+  const [nextMonthEur, setNextMonthEur] = useState(0);
+  const [live, setLive] = useState({
+    readyToCall: 0,
+    customersBeingCalled: 0,
+    agentsOnline: 0,
+    agentsJoining: 0,
+    dialingManually: 0,
+  });
+  const [agents, setAgents] = useState<Agent[]>([]);
 
-  // Sync counts with custom saved leads
   useEffect(() => {
-    try {
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
-      const customLeads = customRaw ? JSON.parse(customRaw) : [];
-      const customTotal = customLeads.length;
-      const customQc = customLeads.filter((l: any) => l.status === 'NEW' || l.status === 'QC_PENDING').length;
-      const customConfirmed = customLeads.filter((l: any) => l.status === 'CONFIRMED' || l.status === 'SOLD').length;
-      const customStorno = customLeads.filter((l: any) => l.status === 'STORNO' || l.status === 'REJECTED').length;
-
-      setTotalLeadsCount(190 + customTotal);
-      setQcPendingCount(customQc);
-      setConfirmedCount(38 + customConfirmed);
-      setStornoCount(103 + customStorno);
-    } catch {
-      //
-    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [statsRes, agentsRes] = await Promise.all([
+          fetch('/api/v1/dashboard/stats'),
+          fetch('/api/v1/dashboard/agents'),
+        ]);
+        if (cancelled) return;
+        if (statsRes.ok) {
+          const s = await statsRes.json();
+          setTotalLeadsCount(s.kpi?.leadsThisMonth || 0);
+          setQcPendingCount(s.kpi?.inQc || 0);
+          setConfirmedCount(s.kpi?.confirmedMonth || 0);
+          setStornoCount(s.kpi?.stornoMonth || 0);
+          setOpenDueEur(Number(s.kpi?.openDueEur || 0));
+          setNextMonthEur(Number(s.kpi?.nextMonthEur || 0));
+          if (s.liveDialer) setLive(s.liveDialer);
+        }
+        if (agentsRes.ok) {
+          const a = await agentsRes.json();
+          setAgents(
+            (a.agents || []).map((x: any) => ({
+              id: x.id,
+              name: x.name,
+              status: x.status,
+              statusLabelDe: x.statusLabelDe,
+              statusLabelTr: x.statusLabelTr,
+              seconds: x.durationSeconds || 0,
+            }))
+          );
+        }
+      } catch {
+        // keep last values
+      }
+    };
+    load();
+    const interval = setInterval(load, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
-
-  // Live agents state matching screenshot:
-  // Umut (165 min 18 sec = 9918 sec), Erensamsun (39 sec)
-  const [agents, setAgents] = useState<Agent[]>([
-    {
-      id: '1',
-      name: 'Umut',
-      status: 'WAITING',
-      statusLabelDe: 'Wartend',
-      statusLabelTr: 'Bekliyor',
-      seconds: 9918,
-    },
-    {
-      id: '2',
-      name: 'Erensamsun',
-      status: 'WAITING',
-      statusLabelDe: 'Wartend',
-      statusLabelTr: 'Bekliyor',
-      seconds: 39,
-    },
-  ]);
 
   // Live tick effect (unless frozen)
   useEffect(() => {
@@ -180,7 +195,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">0,00 €</div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={openDueEur} format={(n) => `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.open_due')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -194,7 +209,7 @@ export const DashboardOverview: React.FC = () => {
           className="card-elegant rounded-2xl p-3 sm:p-4.5 flex items-center justify-between cursor-pointer group"
         >
           <div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={5188.94} format={(n) => `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} /></div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={nextMonthEur} format={(n) => `${n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} /></div>
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">{t('dashboard.kpi.next_month')}</div>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/80 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform duration-200">
@@ -215,7 +230,7 @@ export const DashboardOverview: React.FC = () => {
               className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold px-3 py-1 rounded-full text-xs shadow-xs cursor-pointer transition-all hover:scale-105 active:scale-95 animate-shimmer"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>{t('dashboard.live_panel.ready_to_call', { count: 5 })}</span>
+              <span>{t('dashboard.live_panel.ready_to_call', { count: live.readyToCall })}</span>
             </div>
             <div className="inline-flex items-center space-x-1.5 text-emerald-600 font-bold text-xs bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 live-beacon-pulse"></span>
@@ -225,7 +240,7 @@ export const DashboardOverview: React.FC = () => {
 
           {/* Stat Tile 1 */}
           <div className="pt-2">
-            <div className="text-4xl font-black text-amber-600 tracking-tight">0</div>
+            <div className="text-4xl font-black text-amber-600 tracking-tight"><AnimatedNumber value={live.customersBeingCalled} /></div>
             <div className="text-xs text-slate-500 mt-1 font-semibold">
               {t('dashboard.live_panel.customers_being_called')}
             </div>
@@ -235,7 +250,7 @@ export const DashboardOverview: React.FC = () => {
 
           {/* Stat Tile 2 */}
           <div>
-            <div className="text-4xl font-black text-slate-900 tracking-tight">2</div>
+            <div className="text-4xl font-black text-slate-900 tracking-tight"><AnimatedNumber value={live.agentsOnline} /></div>
             <div className="text-xs text-slate-500 mt-1 font-semibold">
               {t('dashboard.live_panel.agents_online')}
             </div>
@@ -245,14 +260,14 @@ export const DashboardOverview: React.FC = () => {
 
           {/* Stat Tile 3 */}
           <div>
-            <div className="text-4xl font-black text-teal-600 tracking-tight">0</div>
+            <div className="text-4xl font-black text-teal-600 tracking-tight"><AnimatedNumber value={live.agentsJoining} /></div>
             <div className="text-xs text-slate-500 mt-1 font-semibold">
               {t('dashboard.live_panel.agents_joining_line')}
             </div>
           </div>
 
           <div className="border-t border-slate-100 pt-3 flex items-center justify-between text-xs text-slate-500">
-            <span>{t('dashboard.live_panel.dialing_manually', { count: 0 })}</span>
+            <span>{t('dashboard.live_panel.dialing_manually', { count: live.dialingManually })}</span>
           </div>
         </div>
 
@@ -305,7 +320,7 @@ export const DashboardOverview: React.FC = () => {
 
                 {/* Counter */}
                 <span className="text-slate-500 font-medium">
-                  {t('dashboard.active_agents.counter', { online: 2, waiting: 2 })}
+                  {t('dashboard.active_agents.counter', { online: agents.length, waiting: agents.filter((a) => a.status === 'WAITING' || a.status === 'READY').length })}
                 </span>
               </div>
             </div>

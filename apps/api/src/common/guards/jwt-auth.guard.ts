@@ -8,6 +8,7 @@ import {
   getJwtSecret,
   matchesAny,
 } from '../security/secrets.js';
+import { setRequestTenant } from '../services/request-context.js';
 
 export interface JwtPayload {
   sub: string;
@@ -54,6 +55,7 @@ export class JwtAuthGuard implements CanActivate {
         role: 'API_PARTNER',
         mode: 'MANAGER',
       };
+      setRequestTenant(request.user.tenantId);
       return true;
     }
 
@@ -75,6 +77,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     request.user = payload;
+    setRequestTenant(payload.tenantId);
     return true;
   }
 }

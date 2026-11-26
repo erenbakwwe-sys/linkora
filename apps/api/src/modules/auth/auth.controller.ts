@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, Req, BadRequestException } from '@nestjs/common';
+import { runAsSystem } from '../../common/services/request-context.js';
 import { AuthService } from './auth.service.js';
 import { Public } from '../../common/guards/public.decorator.js';
 
@@ -10,13 +11,14 @@ export class AuthController {
   @Post('login')
   async login(@Body() body: { email?: string; username?: string; identifier?: string; password: string; tenantSlug?: string }) {
     const id = body.email || body.username || body.identifier || '';
-    return this.authService.login(id, body.password, body.tenantSlug);
+    // The user's tenant is not known yet: look the account up across tenants
+    return runAsSystem(() => this.authService.login(id, body.password, body.tenantSlug));
   }
 
   @Public()
   @Post('refresh')
   async refresh(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshToken(body.refreshToken);
+    return runAsSystem(() => this.authService.refreshToken(body?.refreshToken));
   }
 
   @Post('switch-mode')

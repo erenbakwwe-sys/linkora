@@ -27,6 +27,7 @@ import { HyperionModule } from './modules/integrations/hyperion/hyperion.module.
 import { UsersService } from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
 import { SystemController } from './modules/system/system.controller.js';
+import { BootstrapService } from './modules/system/bootstrap.service.js';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { SystemController } from './modules/system/system.controller.js';
     DashboardService,
     LiveGateway,
     UsersService,
+    BootstrapService,
   ],
 })
 export class AppModule {}

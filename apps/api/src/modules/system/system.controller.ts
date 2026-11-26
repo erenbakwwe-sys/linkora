@@ -1,7 +1,8 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard.js';
 import { DatabaseService } from '../../common/services/database.service.js';
+import { BootstrapService } from './bootstrap.service.js';
 
 /** Removes anything that looks like a connection string or credentials from an error message. */
 function sanitize(msg: unknown): string {
@@ -16,7 +17,16 @@ function sanitize(msg: unknown): string {
 @UseGuards(RolesGuard)
 @Roles('COMPANY_ADMIN', 'SUPER_ADMIN')
 export class SystemController {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly bootstrap: BootstrapService,
+  ) {}
+
+  @Post('bootstrap')
+  @ApiOperation({ summary: 'Legt die echten Stammdaten an (idempotent, keine Demo-Daten)' })
+  runBootstrap() {
+    return this.bootstrap.run();
+  }
 
   @Get('health')
   @ApiOperation({ summary: 'Datenbank-Diagnose (nur Admins, ohne Zugangsdaten)' })

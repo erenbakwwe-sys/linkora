@@ -14,4 +14,9 @@ export class DashboardController {
   async getActiveAgents(@Req() req: any, @Query('company') companyFilter?: string) {
     return this.dashboardService.getActiveAgents(req.user.tenantId, companyFilter);
   }
+
+  @Get('leaderboard')
+  getLeaderboard(@Req() req: any) {
+    return this.dashboardService.getLeaderboard(req.user.tenantId, req.user.sub);
+  }
 }

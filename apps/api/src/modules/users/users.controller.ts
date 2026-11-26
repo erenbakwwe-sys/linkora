@@ -16,8 +16,8 @@ export class UsersController {
   }
 
   @Get('free-numbers')
-  getFreeNumbers() {
-    return this.usersService.getFreeSystemNumbers();
+  getFreeNumbers(@CurrentTenant() tenantId: string) {
+    return this.usersService.getFreeSystemNumbers(tenantId);
   }
 
   @Put(':id')

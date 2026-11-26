@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Query, Headers, Req, HttpCode } from '@nestjs/common';
+import { runAsSystem } from '../../common/services/request-context.js';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MarketplaceService } from './marketplace.service.js';
 import { Public } from '../../common/guards/public.decorator.js';
@@ -17,7 +18,9 @@ export class WebhooksController {
     @Query('token') queryToken?: string,
     @Headers('X-API-KEY') headerToken?: string
   ) {
-    return this.marketplaceService.processGitasisWebhook(body, queryToken, headerToken, { requireToken: true });
+    return runAsSystem(() =>
+      this.marketplaceService.processGitasisWebhook(body, queryToken, headerToken, { requireToken: true }),
+    );
   }
 
   @Get('gitasis')
@@ -44,7 +47,7 @@ export class WebhooksController {
     @Req() req?: any
   ) {
     const rawBody = req?.rawBody || JSON.stringify(body);
-    return this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId);
+    return runAsSystem(() => this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId));
   }
 
   @Get(['vipcall', 'vipcall/webhook'])
@@ -70,7 +73,7 @@ export class VipCallWebhookController {
     @Req() req?: any
   ) {
     const rawBody = req?.rawBody || JSON.stringify(body);
-    return this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId);
+    return runAsSystem(() => this.marketplaceService.processVipCallWebhook(body, signature, rawBody, deliveryId));
   }
 
   @Get('webhook')

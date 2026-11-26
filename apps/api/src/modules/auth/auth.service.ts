@@ -1,6 +1,6 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { DatabaseService } from '../../common/services/database.service.js';
+import { DatabaseService, isDatabaseConfigured } from '../../common/services/database.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { UsersService } from '../users/users.service.js';
 import { scryptSync } from 'node:crypto';
@@ -66,6 +66,9 @@ export class AuthService {
 
     let user: any = null;
     let isFromDb = false;
+    // In-memory accounts are only a first-setup mode: as soon as the database holds users,
+    // the database is the only source of accounts (deactivations/password changes must apply).
+    let memoryLoginAllowed = !isDatabaseConfigured();
 
     try {
       let tenantFilter = '';
@@ -84,28 +87,39 @@ export class AuthService {
          LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.tenant_id = u.tenant_id
          LEFT JOIN roles r ON ur.role_id = r.id
          LEFT JOIN wallets w ON t.id = w.tenant_id
-         WHERE (LOWER(u.email) = $1 OR LOWER(u.first_name) = $1 OR LOWER(u.first_name || ' ' || u.last_name) = $1 OR LOWER(u.first_name || u.last_name) = $1)
+         WHERE (LOWER(u.email) = $1 OR LOWER(u.first_name) = $1 OR LOWER(u.first_name || ' ' || u.last_name) = $1
+                OR LOWER(u.first_name || u.last_name) = $1 OR LOWER(COALESCE(u.display_name, '')) = $1)
                ${tenantFilter} AND u.is_active = true
-         LIMIT 1`,
+         ORDER BY (LOWER(u.email) = $1) DESC
+         LIMIT 20`,
         params
       );
 
-      if (userRes.rows && userRes.rows.length > 0) {
-        user = userRes.rows[0];
+      // Several accounts can share a name: use the one whose password matches
+      const match = (userRes.rows || []).find((row: any) => this.verifyPassword(cleanPwd, row.password_hash));
+      if (match) {
+        user = match;
         isFromDb = true;
+      } else if (isDatabaseConfigured()) {
+        const anyUsers = await this.db.query('SELECT 1 FROM users LIMIT 1');
+        memoryLoginAllowed = anyUsers.rows.length === 0;
+        if (!memoryLoginAllowed) {
+          throw new UnauthorizedException(
+            userRes.rows.length > 0
+              ? 'Ungültige Anmeldedaten (Passwort falsch)'
+              : 'Ungültige Anmeldedaten: E-Mail oder Benutzername nicht gefunden',
+          );
+        }
       }
-    } catch {
-      // DB not reachable, will check usersService fallback
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      if (isDatabaseConfigured()) {
+        throw new ServiceUnavailableException('Datenbank nicht erreichbar. Bitte später erneut versuchen.');
+      }
     }
 
-    // A DB account whose password does not match may share its name/e-mail alias with an
-    // in-memory account – in that case try the in-memory accounts as well.
-    if (isFromDb && user && !this.verifyPassword(cleanPwd, user.password_hash)) {
-      if (!this.usersService.findUserForLogin(cleanTerm, cleanPwd)) {
-        throw new UnauthorizedException('Ungültige Anmeldedaten (Passwort falsch)');
-      }
-      isFromDb = false;
-      user = null;
+    if (!isFromDb && !memoryLoginAllowed) {
+      throw new UnauthorizedException('Ungültige Anmeldedaten');
     }
 
     if (isFromDb && user) {
@@ -187,7 +201,7 @@ export class AuthService {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        username: user.username || `${user.first_name} ${user.last_name}`.trim(),
+        username: user.username || user.display_name || `${user.first_name} ${user.last_name}`.trim(),
         role: user.role_slug || 'AGENT',
         mode: user.default_mode || 'AGENT',
         language: user.language || 'de',
@@ -233,7 +247,9 @@ export class AuthService {
         // DB not reachable – fall back to in-memory accounts below
       }
 
-      if (!user) {
+      const memoryAllowed =
+        !isDatabaseConfigured() || (await this.db.query('SELECT 1 FROM users LIMIT 1').catch(() => ({ rows: [1] }))).rows.length === 0;
+      if (!user && memoryAllowed) {
         const memUser = this.usersService.findUserById(decoded.sub);
         if (memUser && memUser.isActive) {
           const isManager = memUser.role === 'Firmen-Admin';

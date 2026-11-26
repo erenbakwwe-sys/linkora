@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { DatabaseService } from '../../common/services/database.service.js';
+import { DatabaseService, isDatabaseConfigured } from '../../common/services/database.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { normalizePhoneNumber, LeadIngestInput, ProvenanceInput } from '@linkora/shared';
 
@@ -292,12 +292,30 @@ export class IngestionService {
       notiz: (rawData as any)?.notiz || (rawData as any)?.notes || null,
       notes: (rawData as any)?.notes || (rawData as any)?.notiz || null,
       audioFileName: (rawData as any)?.audioFileName || null,
-      extraData: input.extraData || {},
+      extraData: (input.extraData || {}) as Record<string, any>,
       createdAt: new Date().toISOString(),
       created_at: new Date().toISOString(),
     };
 
-    memoryLeads.set(leadId, newLead);
+    // Questionnaire answers, notes etc. are stored with the lead (lead_answers needs question ids
+    // that the free-form agent questionnaire does not have).
+    const raw: any = rawData || {};
+    const extraData = {
+      ...(input.extraData || {}),
+      ...(input.answers && Object.keys(input.answers).length > 0 ? { answers: input.answers } : {}),
+      ...(Array.isArray(raw.formattedAnswers) && raw.formattedAnswers.length > 0 ? { formattedAnswers: raw.formattedAnswers } : {}),
+      ...(raw.notes || raw.notiz ? { notes: raw.notes || raw.notiz } : {}),
+      ...(raw.salutation ? { anrede: raw.salutation } : {}),
+      ...(raw.audioFileName ? { audioFileName: raw.audioFileName } : {}),
+      ...(raw.callbackAt ? { callbackAt: raw.callbackAt } : {}),
+      // Who entered the lead (used for agent rankings)
+      ...(options.actorId && /^[0-9a-f-]{36}$/i.test(options.actorId) ? { createdBy: options.actorId } : {}),
+    };
+    newLead.extraData = extraData;
+
+    if (!isDatabaseConfigured()) {
+      memoryLeads.set(leadId, newLead);
+    }
 
     try {
       await this.db.query(
@@ -326,11 +344,16 @@ export class IngestionService {
           newLead.status,
           consentVerified,
           isDnc,
-          JSON.stringify(newLead.extraData),
+          JSON.stringify(extraData),
         ]
       );
     } catch (dbErr) {
-      this.logger.warn(`Database insert skipped/failed, saved in memory: ${dbErr}`);
+      if (isDatabaseConfigured()) {
+        // Never pretend success: the lead would only exist in this server's memory and vanish
+        this.logger.error(`Lead insert failed: ${dbErr}`);
+        throw new InternalServerErrorException('Lead konnte nicht gespeichert werden.');
+      }
+      this.logger.warn(`No database configured, lead kept in memory only: ${dbErr}`);
     }
 
     // 7. Save Provenance & Consent
@@ -341,10 +364,7 @@ export class IngestionService {
       }
     }
 
-    // 8. Save Questionnaire Answers
-    if (input.answers && Object.keys(input.answers).length > 0) {
-      await this.saveAnswers(tenantId, leadId, input.answers);
-    }
+    // 8. Questionnaire answers are stored in leads.extra_data (see above)
 
     // 9. Timeline Event & Audit Log
     await this.recordLeadEvent(tenantId, leadId, 'LEAD_CREATED', {

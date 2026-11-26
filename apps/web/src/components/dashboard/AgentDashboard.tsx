@@ -106,29 +106,32 @@ export const AgentDashboard: React.FC = () => {
   const [last30DaysSales, setLast30DaysSales] = useState(0);
   const [salesRecords, setSalesRecords] = useState<SaleRecord[]>([]);
 
-  // Load custom leads on mount for live metrics & sales
+  // Real rankings & own figures from the API
+  const [rankToday, setRankToday] = useState<{ name: string; count: number }[]>([]);
+  const [rankMonth, setRankMonth] = useState<{ name: string; count: number }[]>([]);
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('linkora_custom_leads');
-      if (raw) {
-        const savedLeads = JSON.parse(raw);
-        if (Array.isArray(savedLeads) && savedLeads.length > 0) {
-          setTotalSales(savedLeads.length);
-          setLast30DaysSales(savedLeads.length);
-          const mappedRecords: SaleRecord[] = savedLeads.slice(0, 10).map((l: any) => ({
+    if (typeof window !== 'undefined') localStorage.removeItem('linkora_custom_leads');
+    fetch('/api/v1/dashboard/leaderboard')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setRankToday(d.today || []);
+        setRankMonth(d.month || []);
+        setTotalSales(d.me?.total || 0);
+        setLast30DaysSales(d.me?.last30Days || 0);
+        setSalesRecords(
+          (d.me?.recent || []).map((l: any) => ({
             id: l.id,
             customerName: `${l.first_name || ''} ${l.last_name || ''}`.trim() || 'Kunde',
-            project: l.project_name || 'Photovoltaik',
-            amount: '450.00 €',
-            time: new Date(l.created_at || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-            status: l.status === 'NEW' ? 'Neu erfasst' : l.status || 'Neu erfasst',
-          }));
-          setSalesRecords(mappedRecords);
-        }
-      }
-    } catch {
-      // ignore
-    }
+            project: l.project_name || '—',
+            amount: '—',
+            time: new Date(l.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            status: l.status === 'NEW' ? 'Neu erfasst' : l.status,
+          }))
+        );
+      })
+      .catch(() => undefined);
   }, []);
 
   // Guide Modal
@@ -136,11 +139,7 @@ export const AgentDashboard: React.FC = () => {
 
   // Chat State
   const [chatTab, setChatTab] = useState<'TEAM' | 'FIRMA'>('TEAM');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { id: '1', sender: 'Murat Dere', text: 'Bugün randevular çok iyi gidiyor!', time: '14:22' },
-    { id: '2', sender: 'System', text: 'Floor 1 aktif arama modunda.', time: '14:30', isSystem: true },
-    { id: '3', sender: 'Umut', text: 'Yeni PV listesi yüklendi mi?', time: '14:45' },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
   // Toast State
@@ -616,12 +615,26 @@ export const AgentDashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-bold text-slate-900">Tagesrangliste ({formattedDate})</h2>
               <span className="bg-blue-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                14s
+                {rankToday.reduce((sum, r) => sum + r.count, 0)}
               </span>
             </div>
-            <div className="py-4 text-center text-xs text-slate-400 font-medium">
-              Keine Daten
-            </div>
+            {rankToday.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-400 font-medium">Keine Daten</div>
+            ) : (
+              <div className="space-y-2">
+                {rankToday.map((r, i) => (
+                  <div key={r.name + i} className="flex items-center justify-between py-1 px-2 rounded-xl hover:bg-slate-50 transition">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <span className="text-base w-5 text-center">{['🥇', '🥈', '🥉'][i] || `${i + 1}.`}</span>
+                      <span>{r.name}</span>
+                    </div>
+                    <span className={`${i === 0 ? 'bg-[#fef08a] text-amber-900' : 'bg-slate-100 text-slate-800'} font-extrabold text-xs px-2.5 py-0.5 rounded-full`}>
+                      {r.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Card 3: Monatsrangliste */}
@@ -629,27 +642,23 @@ export const AgentDashboard: React.FC = () => {
             <h2 className="text-xs font-bold text-slate-900 mb-3">
               Monatsrangliste ({formattedMonthYear})
             </h2>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between py-1 px-2 rounded-xl hover:bg-slate-50 transition">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                  <span className="text-base">🥇</span>
-                  <span>Murat Dere</span>
-                </div>
-                <span className="bg-[#fef08a] text-amber-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full">
-                  185
-                </span>
+            {rankMonth.length === 0 ? (
+              <div className="py-4 text-center text-xs text-slate-400 font-medium">Keine Daten</div>
+            ) : (
+              <div className="space-y-2">
+                {rankMonth.map((r, i) => (
+                  <div key={r.name + i} className="flex items-center justify-between py-1 px-2 rounded-xl hover:bg-slate-50 transition">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <span className="text-base w-5 text-center">{['🥇', '🥈', '🥉'][i] || `${i + 1}.`}</span>
+                      <span>{r.name}</span>
+                    </div>
+                    <span className={`${i === 0 ? 'bg-[#fef08a] text-amber-900' : 'bg-slate-100 text-slate-800'} font-extrabold text-xs px-2.5 py-0.5 rounded-full`}>
+                      {r.count}
+                    </span>
+                  </div>
+                ))}
               </div>
-
-              <div className="flex items-center justify-between py-1 px-2 rounded-xl hover:bg-slate-50 transition">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                  <span className="text-base">🥈</span>
-                  <span>Murat.D</span>
-                </div>
-                <span className="bg-slate-100 text-slate-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full">
-                  8
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Card 4: Sohbet (Live Chat) */}

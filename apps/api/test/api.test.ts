@@ -3,47 +3,52 @@ import { DashboardService } from '../src/modules/dashboard/dashboard.service.js'
 import { JwtService } from '@nestjs/jwt';
 
 describe('API Services & Logic Tests', () => {
-  it('should return KPI stats matching screenshot metrics', async () => {
-    const mockDb = { query: async () => ({ rows: [] }) } as any;
-    const dashboardService = new DashboardService(mockDb);
+  it('computes dashboard KPIs from the database (no demo numbers)', async () => {
+    const mockDb = {
+      query: async (sql: string) => {
+        if (sql.includes('leads_this_month')) {
+          return { rows: [{ leads_this_month: 7, in_qc: 2, confirmed_month: 3, storno_month: 1, ready_to_call: 4 }] };
+        }
+        if (sql.includes('open_due')) {
+          return { rows: [{ open_due: 120.5, next_month: 900 }] };
+        }
+        return { rows: [] };
+      },
+    } as any;
+    const agentState = {
+      getActiveAgents: () => [
+        { agentId: 'a1', name: 'Agent A', companyName: 'Linkora', status: 'ON_CALL', statusLabelDe: 'Im Gespräch', statusLabelTr: '', durationSeconds: 30, durationFormatted: '00:30', durationCategory: 'light' },
+        { agentId: 'a2', name: 'Agent B', companyName: 'Linkora', status: 'WAITING', statusLabelDe: 'Wartend', statusLabelTr: '', durationSeconds: 700, durationFormatted: '11:40', durationCategory: 'dark' },
+      ],
+    } as any;
+    const dashboardService = new DashboardService(mockDb, agentState);
 
     const stats = await dashboardService.getStats('tenant-id');
-    expect(stats.kpi.leadsThisMonth).toBe(190);
-    expect(stats.kpi.inQc).toBe(0);
-    expect(stats.kpi.confirmedMonth).toBe(38);
-    expect(stats.kpi.stornoMonth).toBe(103);
-    expect(stats.kpi.openDueEur).toBe(0.0);
-    expect(stats.kpi.nextMonthEur).toBe(5188.94);
-
-    expect(stats.liveDialer.readyToCall).toBe(5);
-    expect(stats.liveDialer.customersBeingCalled).toBe(0);
+    expect(stats.kpi).toEqual({
+      leadsThisMonth: 7,
+      inQc: 2,
+      confirmedMonth: 3,
+      stornoMonth: 1,
+      openDueEur: 120.5,
+      nextMonthEur: 900,
+    });
+    expect(stats.liveDialer.readyToCall).toBe(4);
     expect(stats.liveDialer.agentsOnline).toBe(2);
-    expect(stats.liveDialer.agentsJoining).toBe(0);
-    expect(stats.liveDialer.dialingManually).toBe(0);
+    expect(stats.liveDialer.customersBeingCalled).toBe(1);
+
+    const agents = await dashboardService.getActiveAgents('tenant-id');
+    expect(agents.onlineCount).toBe(2);
+    expect(agents.waitingCount).toBe(1);
+    expect(agents.agents.map((a) => a.name)).toEqual(['Agent A', 'Agent B']);
   });
 
-  it('should return active agents matching the screenshot (Umut and Erensamsun)', async () => {
-    const mockDb = { query: async () => ({ rows: [] }) } as any;
-    const dashboardService = new DashboardService(mockDb);
-
-    const result = await dashboardService.getActiveAgents('tenant-id');
-    expect(result.onlineCount).toBe(2);
-    expect(result.waitingCount).toBe(2);
-    expect(result.agents).toHaveLength(2);
-
-    const umut = result.agents.find((a) => a.name === 'Umut');
-    expect(umut).toBeDefined();
-    expect(umut?.status).toBe('WAITING');
-    expect(umut?.statusLabelDe).toBe('Wartend');
-    expect(umut?.durationFormatted).toBe('165:18');
-    expect(umut?.durationCategory).toBe('dark'); // 10+ min
-
-    const eren = result.agents.find((a) => a.name === 'Erensamsun');
-    expect(eren).toBeDefined();
-    expect(eren?.status).toBe('WAITING');
-    expect(eren?.statusLabelDe).toBe('Wartend');
-    expect(eren?.durationFormatted).toBe('00:39');
-    expect(eren?.durationCategory).toBe('light'); // 0-5 min
+  it('returns zeros and no agents for an empty tenant', async () => {
+    const mockDb = { query: async () => ({ rows: [{}] }) } as any;
+    const dashboardService = new DashboardService(mockDb, { getActiveAgents: () => [] } as any);
+    const stats = await dashboardService.getStats('tenant-id');
+    expect(stats.kpi.leadsThisMonth).toBe(0);
+    expect(stats.kpi.nextMonthEur).toBe(0);
+    expect((await dashboardService.getActiveAgents('tenant-id')).agents).toHaveLength(0);
   });
 
   it('should toggle user mode between MANAGER and AGENT', async () => {

@@ -1,9 +1,62 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { DatabaseService } from '../../common/services/database.service.js';
+import { DatabaseService, isDatabaseConfigured } from '../../common/services/database.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CanDialResult, QcActionInput } from '@linkora/shared';
 import { memoryLeads, memoryProvenance, memoryEvents } from './ingestion.service.js';
+
+const ANSWER_LABELS: Record<string, string> = {
+  pvInstallLocation: 'Wo möchten Sie die Photovoltaik installieren?',
+  pvRoofAge: 'Wie alt ist Ihr Dach?',
+  pvRoofArea: 'Wie groß ist Ihre nutzbare Dachfläche?',
+  pvRoofShape: 'Welche Dachform hat Ihr Haus?',
+  pvRoofCover: 'Womit ist ihr Dach gedeckt? (Dachdeckungstyp)',
+  pvIsOwner: 'Handelt es sich bei dem Interessenten um den Eigentümer/Entscheider?',
+  pvInstallTime: 'Wann soll die Photovoltaik installiert werden?',
+  pvFinancing: 'Welche Finanzierung kommt für Sie in Frage?',
+  pvRoofOrientation: 'Wie ist Ihr Dach ausgerichtet?',
+  pvPowerConsumption: 'Stromverbrauch in kWh/Jahr',
+  pvBatteryStorage: 'Stromspeicher gewünscht?',
+  pvAvailability: 'Erreichbarkeit?',
+  tlLiftType: 'Was für einen Lift suchen Sie?',
+  tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
+  tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
+  tlTimeFrame: 'Wann wird der Lift benötigt?',
+  tlIsOwner: 'Eigentum oder Miete?',
+  tlFloors: 'Wie viele Etagen müssen überwunden werden?',
+  tlCareLevel: 'Liegt ein Pflegegrad vor?',
+  tlStairCourse: 'Wie verläuft die Treppe?',
+  tlMobility: 'Mobilität des Nutzers',
+  tlStairWidth: 'Treppenbreite (in cm)',
+  tlStepCount: 'Anzahl der Stufen',
+  tlHeightDiff: 'Höhenunterschied (in cm)',
+  tlOutdoor: 'Innen oder außen?',
+  tlNutzer: 'Für wen ist der Lift?',
+  tlKontaktWunsch: 'Kontaktwunsch',
+  tlAvailability: 'Treppenlift · Erreichbarkeit',
+  wpCurrentSystem: 'Aktuelles Heizsystem?',
+  wpHeatingAge: 'Alter der Heizung?',
+  wpLivingSpace: 'Wohnfläche (in m²)?',
+  wpInstallTime: 'Wann soll die Wärmepumpe installiert werden?',
+  badProjectType: 'Welches Badprojekt möchten Sie angehen?',
+  badSize: 'Wie groß ist das Badezimmer?',
+  badBarrierFree: 'Soll das Bad barrierefrei sein?',
+  badFeatures: 'Welche Ausstattung wünschen Sie?',
+  badBudget: 'Was darf der Badumbau kosten?',
+  badTimeFrame: 'Wann wird der Badumbau benötigt?',
+  badIsOwner: 'Sind Sie Eigentümer/Entscheider?',
+  emModelType: 'Für welches Modell interessieren Sie sich?',
+  emUsageArea: 'Wo soll die überwiegende Nutzung stattfinden?',
+  emUserWeight: 'Für welches Gewicht muss das Modell geeignet sein?',
+  emTargetPerson: 'Für wen ist das Elektromobil / der Elektrorollstuhl gedacht?',
+  emHealthInsurance: 'Sind Sie gesetzlich krankenversichert?',
+  emBudgetLimit: 'Wo liegt die Budgetgrenze für das Modell?',
+  emWheelchairSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektrorollstuhl sein?',
+  emWheelchairRange: 'Welche Reichweite soll der Elektrorollstuhl haben?',
+  emScooterSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektromobil sein?',
+  emScooterRange: 'Welche Reichweite soll das Elektromobil haben?',
+  emTimeFrame: 'Wann wird das Elektromobil / der Elektrorollstuhl benötigt?',
+};
 
 @Injectable()
 export class LeadsService {
@@ -13,7 +66,7 @@ export class LeadsService {
   ) {}
 
   /**
-   * List leads with filtering and search.
+   * List leads with filtering and search (database only when a database is configured).
    */
   async listLeads(
     tenantId: string,
@@ -25,264 +78,142 @@ export class LeadsService {
       limit?: number;
     } = {}
   ) {
-    const page = Number(query.page) || 1;
+    const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(Number(query.limit) || 25, 100);
     const offset = (page - 1) * limit;
 
     try {
-      let sql = `
-        SELECT l.id, l.first_name, l.last_name, l.phone_raw, l.phone_e164, l.line_type,
-               l.email, l.postal_code, l.city, l.street, l.house_number, l.status,
-               l.consent_verified, l.dnc_flag, l.created_at,
-               p.id as project_id, p.name as project_name, p.slug as project_slug, p.icon as project_icon
-        FROM leads l
-        LEFT JOIN projects p ON p.id = l.project_id
-        WHERE l.tenant_id = $1
-      `;
+      let where = 'WHERE l.tenant_id = $1';
       const params: any[] = [tenantId];
-      let paramIdx = 2;
-
+      let i = 2;
       if (query.projectId) {
-        sql += ` AND l.project_id = $${paramIdx++}`;
+        where += ` AND l.project_id = $${i++}`;
         params.push(query.projectId);
       }
-
       if (query.status && query.status !== 'ALL') {
-        sql += ` AND l.status = $${paramIdx++}`;
+        where += ` AND l.status = $${i++}`;
         params.push(query.status);
       }
-
       if (query.search) {
-        sql += ` AND (
-          l.first_name ILIKE $${paramIdx} OR
-          l.last_name ILIKE $${paramIdx} OR
-          l.phone_e164 ILIKE $${paramIdx} OR
-          l.email ILIKE $${paramIdx} OR
-          l.city ILIKE $${paramIdx}
-        )`;
+        where += ` AND (l.first_name ILIKE $${i} OR l.last_name ILIKE $${i} OR l.phone_e164 ILIKE $${i}
+                   OR l.email ILIKE $${i} OR l.city ILIKE $${i} OR l.postal_code ILIKE $${i})`;
         params.push(`%${query.search}%`);
-        paramIdx++;
+        i++;
       }
 
-      sql += ` ORDER BY l.created_at DESC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
-      params.push(limit, offset);
-
-      const res = await this.db.query(sql, params);
-
-      const countRes = await this.db.query(
-        `SELECT COUNT(*) as total FROM leads WHERE tenant_id = $1`,
-        [tenantId]
+      const res = await this.db.query(
+        `SELECT l.id, l.first_name, l.last_name, l.phone_raw, l.phone_e164, l.line_type,
+                l.email, l.postal_code, l.city, l.street, l.house_number, l.status,
+                l.consent_verified, l.dnc_flag, l.created_at, l.extra_data,
+                p.id as project_id, p.name as project_name, p.slug as project_slug, p.icon as project_icon
+         FROM leads l
+         LEFT JOIN projects p ON p.id = l.project_id
+         ${where}
+         ORDER BY l.created_at DESC LIMIT $${i} OFFSET $${i + 1}`,
+        [...params, limit, offset],
       );
-      const total = parseInt(countRes.rows[0]?.total || '0', 10);
+      const countRes = await this.db.query(`SELECT COUNT(*)::int AS total FROM leads l ${where}`, params);
+      const total = countRes.rows[0]?.total || 0;
 
-      if (res.rows.length > 0) {
-        return {
-          data: res.rows,
-          meta: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-        };
+      return {
+        data: res.rows,
+        meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+      };
+    } catch (err) {
+      if (isDatabaseConfigured()) {
+        throw err;
       }
-    } catch {
-      // DB offline fallback
     }
 
-    // Default seeded sample leads
-    const sampleLeads = [
-      {
-        id: '77777777-0000-0000-0000-000000000001',
-        first_name: 'Maximilian',
-        last_name: 'Weber',
-        phone_raw: '0171 4567890',
-        phone_e164: '+491714567890',
-        line_type: 'MOBILE',
-        email: 'm.weber@beispiel-solar.de',
-        postal_code: '80331',
-        city: 'München',
-        street: 'Sendlinger Str.',
-        house_number: '14',
-        status: 'CONFIRMED',
-        consent_verified: true,
-        dnc_flag: false,
-        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-        project_id: 'cccccccc-0000-0000-0000-000000000001',
-        project_name: 'Photovoltaik',
-        project_slug: 'photovoltaik',
-        project_icon: 'Sun',
-      },
-      {
-        id: '77777777-0000-0000-0000-000000000002',
-        first_name: 'Claudia',
-        last_name: 'Fischer',
-        phone_raw: '040 7654321',
-        phone_e164: '+49407654321',
-        line_type: 'FIXED_LINE',
-        email: 'c.fischer@nord-mail.de',
-        postal_code: '20095',
-        city: 'Hamburg',
-        street: 'Mönckebergstraße',
-        house_number: '42',
-        status: 'QC_PENDING',
-        consent_verified: true,
-        dnc_flag: false,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        project_id: 'cccccccc-0000-0000-0000-000000000002',
-        project_name: 'Wärmepumpe',
-        project_slug: 'waermepumpe',
-        project_icon: 'Flame',
-      },
-      {
-        id: '77777777-0000-0000-0000-000000000003',
-        first_name: 'Gerhard',
-        last_name: 'Müller',
-        phone_raw: '069 8877665',
-        phone_e164: '+49698877665',
-        line_type: 'FIXED_LINE',
-        email: 'g.mueller@web.de',
-        postal_code: '60311',
-        city: 'Frankfurt am Main',
-        street: 'Zeil',
-        house_number: '105',
-        status: 'NEW',
-        consent_verified: false, // NO CONSENT PROOF
-        dnc_flag: false,
-        created_at: new Date().toISOString(),
-        project_id: 'cccccccc-0000-0000-0000-000000000003',
-        project_name: 'Treppenlift',
-        project_slug: 'treppenlift',
-        project_icon: 'MoveUp',
-      },
-      {
-        id: '77777777-0000-0000-0000-000000000004',
-        first_name: 'Stefan',
-        last_name: 'Klaus',
-        phone_raw: '0170 9999999',
-        phone_e164: '+491709999999',
-        line_type: 'MOBILE',
-        email: 's.klaus@t-online.de',
-        postal_code: '70173',
-        city: 'Stuttgart',
-        street: 'Königstraße',
-        house_number: '28',
-        status: 'NEW',
-        consent_verified: true,
-        dnc_flag: true, // DNC SUPPRESSED
-        created_at: new Date().toISOString(),
-        project_id: 'cccccccc-0000-0000-0000-000000000001',
-        project_name: 'Photovoltaik',
-        project_slug: 'photovoltaik',
-        project_icon: 'Sun',
-      },
-    ];
-
-    const memList = Array.from(memoryLeads.values()).map((mem) => ({
-      id: mem.id,
-      first_name: mem.first_name || mem.firstName || '',
-      last_name: mem.last_name || mem.lastName || '',
-      phone_raw: mem.phone_raw || mem.phoneRaw || mem.phoneE164 || '',
-      phone_e164: mem.phone_e164 || mem.phoneE164 || '',
-      line_type: mem.line_type || mem.lineType || 'FIXED_LINE',
-      email: mem.email || null,
-      postal_code: mem.postal_code || mem.postalCode || null,
-      city: mem.city || null,
-      street: mem.street || null,
-      house_number: mem.house_number || mem.houseNumber || null,
-      status: mem.status || 'NEW',
-      consent_verified: mem.consent_verified !== undefined ? mem.consent_verified : (mem.consentVerified !== undefined ? mem.consentVerified : true),
-      dnc_flag: mem.dnc_flag !== undefined ? mem.dnc_flag : (mem.dncFlag !== undefined ? mem.dncFlag : false),
-      created_at: mem.created_at || mem.createdAt || new Date().toISOString(),
-      project_id: mem.project_id || mem.projectId || 'cccccccc-0000-0000-0000-000000000001',
-      project_name: mem.project_name || mem.projectName || 'Photovoltaik',
-      project_slug: mem.project_slug || mem.projectSlug || 'photovoltaik',
-      project_icon: mem.project_icon || mem.projectIcon || 'Sun',
-      formattedAnswers: mem.formattedAnswers || [],
-      answers: mem.answers || {},
-      notiz: mem.notiz || mem.notes,
-      audioFileName: mem.audioFileName,
-    }));
-
-    let filtered = [...memList, ...sampleLeads];
-    if (query.status && query.status !== 'ALL') {
-      filtered = filtered.filter((l) => l.status === query.status);
-    }
+    // Local development without a database: leads created in this process only (no demo data)
+    let filtered = Array.from(memoryLeads.values())
+      .filter((mem) => !mem.tenantId || mem.tenantId === tenantId)
+      .map((mem) => ({
+        id: mem.id,
+        first_name: mem.first_name || mem.firstName || '',
+        last_name: mem.last_name || mem.lastName || '',
+        phone_raw: mem.phone_raw || mem.phoneRaw || mem.phoneE164 || '',
+        phone_e164: mem.phone_e164 || mem.phoneE164 || '',
+        line_type: mem.line_type || mem.lineType || 'FIXED_LINE',
+        email: mem.email || null,
+        postal_code: mem.postal_code || mem.postalCode || null,
+        city: mem.city || null,
+        street: mem.street || null,
+        house_number: mem.house_number || mem.houseNumber || null,
+        status: mem.status || 'NEW',
+        consent_verified: mem.consent_verified ?? mem.consentVerified ?? false,
+        dnc_flag: mem.dnc_flag ?? mem.dncFlag ?? false,
+        created_at: mem.created_at || mem.createdAt || new Date().toISOString(),
+        project_id: mem.project_id || mem.projectId,
+        project_name: mem.project_name || mem.projectName,
+        project_slug: mem.project_slug || mem.projectSlug,
+        project_icon: mem.project_icon || mem.projectIcon,
+        extra_data: mem.extraData || {},
+      }));
+    if (query.projectId) filtered = filtered.filter((l) => l.project_id === query.projectId);
+    if (query.status && query.status !== 'ALL') filtered = filtered.filter((l) => l.status === query.status);
     if (query.search) {
-      const s = query.search.toLowerCase();
-      filtered = filtered.filter(
-        (l) =>
-          (l.first_name || '').toLowerCase().includes(s) ||
-          (l.last_name || '').toLowerCase().includes(s) ||
-          (l.phone_e164 || '').includes(s) ||
-          (l.email && l.email.toLowerCase().includes(s)) ||
-          (l.city && l.city.toLowerCase().includes(s))
+      const q = query.search.toLowerCase();
+      filtered = filtered.filter((l) =>
+        [l.first_name, l.last_name, l.phone_e164, l.email, l.city, l.postal_code].some((v) =>
+          String(v || '').toLowerCase().includes(q),
+        ),
       );
     }
-
     return {
-      data: filtered,
-      meta: {
-        page: 1,
-        limit: 25,
-        total: filtered.length,
-        totalPages: 1,
-      },
+      data: filtered.slice(offset, offset + limit),
+      meta: { page, limit, total: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / limit)) },
     };
   }
 
+  /** Converts stored answers (extra_data) into the list shown in the lead detail view. */
+  private answersFromExtraData(extra: any): any[] {
+    if (!extra || typeof extra !== 'object') return [];
+    if (Array.isArray(extra.formattedAnswers) && extra.formattedAnswers.length > 0) {
+      return extra.formattedAnswers;
+    }
+    if (extra.answers && typeof extra.answers === 'object') {
+      return Object.entries(extra.answers)
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => ({ question_code: k, question_label: ANSWER_LABELS[k] || k, value_raw: String(v) }));
+    }
+    return [];
+  }
+
   /**
-   * Get full lead details including answers, provenance, consents, timeline, and dial eligibility.
+   * Full lead details: profile, answers, provenance, timeline and dial eligibility.
+   * Only real records are returned – nothing is invented when data is missing.
    */
   async getLeadDetail(tenantId: string, leadId: string) {
     let lead: any = null;
-    let project: any = null;
     let provenance: any[] = [];
-    let answers: any[] = [];
     let events: any[] = [];
 
-    try {
-      const res = await this.db.query(
-        `SELECT l.*, p.name as project_name, p.slug as project_slug, p.icon as project_icon
-         FROM leads l
-         LEFT JOIN projects p ON p.id = l.project_id
-         WHERE l.id = $1 AND l.tenant_id = $2`,
-        [leadId, tenantId]
-      );
-      if (res.rows.length > 0) {
-        lead = res.rows[0];
-
-        const provRes = await this.db.query(
-          `SELECT * FROM lead_provenance WHERE lead_id = $1 ORDER BY opt_in_timestamp DESC`,
-          [leadId]
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(leadId);
+    if (isUuid) {
+      try {
+        const res = await this.db.query(
+          `SELECT l.*, p.name as project_name, p.slug as project_slug, p.icon as project_icon
+           FROM leads l
+           LEFT JOIN projects p ON p.id = l.project_id
+           WHERE l.id = $1 AND l.tenant_id = $2`,
+          [leadId, tenantId],
         );
-        provenance = provRes.rows;
-
-        const ansRes = await this.db.query(
-          `SELECT la.*, q.code as question_code, q.label as question_label
-           FROM lead_answers la
-           LEFT JOIN questions q ON q.id = la.question_id
-           WHERE la.lead_id = $1`,
-          [leadId]
-        );
-        answers = ansRes.rows;
-
-        const evRes = await this.db.query(
-          `SELECT * FROM lead_events WHERE lead_id = $1 ORDER BY created_at DESC`,
-          [leadId]
-        );
-        events = evRes.rows;
+        lead = res.rows[0] || null;
+        if (lead) {
+          provenance = (
+            await this.db.query(`SELECT * FROM lead_provenance WHERE lead_id = $1 ORDER BY opt_in_timestamp DESC`, [leadId])
+          ).rows;
+          events = (await this.db.query(`SELECT * FROM lead_events WHERE lead_id = $1 ORDER BY created_at DESC`, [leadId])).rows;
+        }
+      } catch (err) {
+        if (isDatabaseConfigured()) throw err;
       }
-    } catch {
-      // DB offline
     }
 
-    // Fallback sample detail if not found in DB
-    if (!lead) {
-      const memCandidate = memoryLeads.get(leadId);
-      // In-memory leads are tenant-scoped as well
-      if (memCandidate && (!memCandidate.tenantId || memCandidate.tenantId === tenantId)) {
-        const mem = memCandidate;
+    if (!lead && !isDatabaseConfigured()) {
+      const mem = memoryLeads.get(leadId);
+      if (mem && (!mem.tenantId || mem.tenantId === tenantId)) {
         lead = {
           id: mem.id,
           first_name: mem.first_name || mem.firstName,
@@ -295,152 +226,36 @@ export class LeadsService {
           street: mem.street,
           house_number: mem.house_number || mem.houseNumber,
           status: mem.status || 'NEW',
-          consent_verified: mem.consent_verified !== undefined ? mem.consent_verified : true,
-          dnc_flag: mem.dnc_flag || false,
+          consent_verified: mem.consent_verified ?? mem.consentVerified ?? false,
+          dnc_flag: mem.dnc_flag ?? mem.dncFlag ?? false,
           extra_data: mem.extra_data || mem.extraData || {},
-          project_id: mem.project_id || mem.projectId || 'cccccccc-0000-0000-0000-000000000001',
-          project_name: mem.project_name || 'Photovoltaik',
-          project_slug: (mem.project_name || 'Photovoltaik').toLowerCase(),
-          project_icon: mem.project_icon || 'Sun',
-          created_at: mem.created_at || (mem.createdAt ? new Date(mem.createdAt).toISOString() : new Date().toISOString()),
+          project_id: mem.project_id || mem.projectId,
+          project_name: mem.project_name || mem.projectName,
+          project_slug: mem.project_slug || mem.projectSlug,
+          project_icon: mem.project_icon || mem.projectIcon,
+          created_at: mem.created_at || mem.createdAt,
         };
-        provenance = memoryProvenance.get(leadId) || [
-          {
-            id: 'prov-' + leadId,
-            source: mem.source || 'Agent-Direkterfassung',
-            campaign_name: lead.project_name,
-            opt_in_timestamp: lead.created_at,
-            consent_text: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
-            consent_version: 'v2.1',
-            consent_channel: 'PHONE',
-          },
-        ];
-        const labelMap: Record<string, string> = {
-          pvInstallLocation: 'Wo möchten Sie die Photovoltaik installieren?',
-          pvRoofAge: 'Wie alt ist Ihr Dach?',
-          pvRoofArea: 'Wie groß ist Ihre nutzbare Dachfläche?',
-          pvRoofShape: 'Welche Dachform hat Ihr Haus?',
-          pvRoofCover: 'Womit ist ihr Dach gedeckt? (Dachdeckungstyp)',
-          pvIsOwner: 'Handelt es sich bei dem Interessenten um den Eigentümer/Entscheider?',
-          pvInstallTime: 'Wann soll die Photovoltaik installiert werden?',
-          pvFinancing: 'Welche Finanzierung kommt für Sie in Frage?',
-          pvRoofOrientation: 'Wie ist Ihr Dach ausgerichtet?',
-          pvPowerConsumption: 'Stromverbrauch in kWh/Jahr',
-          pvBatteryStorage: 'Stromspeicher gewünscht?',
-          pvAvailability: 'Erreichbarkeit?',
-          tlLiftType: 'Was für einen Lift suchen Sie?',
-          tlBuildingType: 'Um welchen Gebäudetyp handelt es sich?',
-          tlUserWeight: 'Welches Nutzergewicht soll der Lift befördern?',
-          tlTimeFrame: 'Wann wird der Lift benötigt?',
-          tlIsOwner: 'Eigentum oder Miete?',
-          tlFloors: 'Wie viele Etagen müssen überwunden werden?',
-          tlCareLevel: 'Liegt ein Pflegegrad vor?',
-          tlStairCourse: 'Wie verläuft die Treppe?',
-          tlMobility: 'Mobilität des Nutzers',
-          tlStairWidth: 'Treppenbreite (in cm)',
-          tlStepCount: 'Anzahl der Stufen',
-          tlHeightDiff: 'Höhenunterschied (in cm)',
-          tlOutdoor: 'Innen oder außen?',
-          tlNutzer: 'Für wen ist der Lift?',
-          tlKontaktWunsch: 'Kontaktwunsch',
-          tlAvailability: 'Treppenlift · Erreichbarkeit',
-          wpCurrentSystem: 'Aktuelles Heizsystem?',
-          wpHeatingAge: 'Alter der Heizung?',
-          wpLivingSpace: 'Wohnfläche (in m²)?',
-          wpInstallTime: 'Wann soll die Wärmepumpe installiert werden?',
-          badProjectType: 'Welches Badprojekt möchten Sie angehen?',
-          badSize: 'Wie groß ist das Badezimmer?',
-          badBarrierFree: 'Soll das Bad barrierefrei sein?',
-          badFeatures: 'Welche Ausstattung wünschen Sie?',
-          badBudget: 'Was darf der Badumbau kosten?',
-          badTimeFrame: 'Wann wird der Badumbau benötigt?',
-          badIsOwner: 'Sind Sie Eigentümer/Entscheider?',
-          emModelType: 'Für welches Modell interessieren Sie sich?',
-          emUsageArea: 'Wo soll die überwiegende Nutzung stattfinden?',
-          emUserWeight: 'Für welches Gewicht muss das Modell geeignet sein?',
-          emTargetPerson: 'Für wen ist das Elektromobil / der Elektrorollstuhl gedacht?',
-          emHealthInsurance: 'Sind Sie gesetzlich krankenversichert?',
-          emBudgetLimit: 'Wo liegt die Budgetgrenze für das Modell?',
-          emWheelchairSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektrorollstuhl sein?',
-          emWheelchairRange: 'Welche Reichweite soll der Elektrorollstuhl haben?',
-          emScooterSpeed: 'Wie hoch soll die maximale Geschwindigkeit beim Elektromobil sein?',
-          emScooterRange: 'Welche Reichweite soll das Elektromobil haben?',
-          emTimeFrame: 'Wann wird das Elektromobil / der Elektrorollstuhl benötigt?',
-        };
-
-        if (Array.isArray(mem.formattedAnswers) && mem.formattedAnswers.length > 0) {
-          answers = mem.formattedAnswers;
-        } else if (Array.isArray(mem.answers) && mem.answers.length > 0) {
-          answers = mem.answers;
-        } else if (typeof mem.answers === 'object' && mem.answers !== null) {
-          answers = Object.entries(mem.answers).map(([k, v]) => ({
-            question_code: k,
-            question_label: labelMap[k] || k,
-            value_raw: String(v),
-          }));
-        } else {
-          answers = [];
-        }
-        events = memoryEvents.get(leadId) || [
-          {
-            id: 'ev-1',
-            event_type: 'LEAD_INGESTED',
-            created_at: lead.created_at,
-            payload: { channel: 'Agent-Erfassung' },
-          },
-        ];
-      } else {
-        const list = await this.listLeads(tenantId, {});
-        lead = list.data.find((l: any) => l.id === leadId);
-        if (!lead) {
-          throw new NotFoundException(`Lead ${leadId} not found`);
-        }
-      }
-
-      if (lead.consent_verified && provenance.length === 0) {
-        provenance = [
-          {
-            id: 'prov-1',
-            source: 'Google Ads Search',
-            campaign_name: 'PV_Muenchen_Q4',
-            opt_in_timestamp: new Date(Date.now() - 86400000).toISOString(),
-            ip_address: '194.25.0.12',
-            landing_page_url: 'https://angebot.solarenergie-portal.de/pv-muenchen',
-            consent_text: 'Ich erkläre mich damit einverstanden, telefonisch kontaktiert zu werden.',
-            consent_version: 'v2.1',
-            consent_channel: 'ONLINE_FORM',
-          },
-        ];
-      }
-
-      if (answers.length === 0) {
-        answers = [
-          { question_code: 'PROPERTY_OWNERSHIP', question_label: 'Sind Sie Eigentümer der Immobilie?', value_raw: 'Ja, Alleineigentümer' },
-          { question_code: 'ROOF_TYPE', question_label: 'Welche Dachform hat das Gebäude?', value_raw: 'Satteldach' },
-          { question_code: 'ANNUAL_CONSUMPTION', question_label: 'Jährlicher Stromverbrauch (kWh)?', value_raw: '5200' },
-        ];
-      }
-
-      if (events.length === 0) {
-        events = [
-          {
-            id: 'ev-1',
-            event_type: 'LEAD_CREATED',
-            created_at: lead.created_at,
-            payload: { source: 'Google Ads' },
-          },
-        ];
+        provenance = memoryProvenance.get(leadId) || [];
+        events = memoryEvents.get(leadId) || [];
       }
     }
 
-    const canDial = this.checkCanDial(lead);
+    if (!lead) {
+      throw new NotFoundException(`Lead ${leadId} not found`);
+    }
+
+    const extra = lead.extra_data || {};
+    // Convenience fields used by the lead detail view
+    lead.notes = lead.notes ?? extra.notes ?? null;
+    lead.notiz = lead.notiz ?? extra.notes ?? null;
+    lead.audioFileName = lead.audioFileName ?? extra.audioFileName ?? null;
 
     return {
       lead,
       provenance,
-      answers,
+      answers: this.answersFromExtraData(extra),
       events,
-      canDial,
+      canDial: this.checkCanDial(lead),
     };
   }
 

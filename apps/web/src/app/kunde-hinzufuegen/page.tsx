@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { RankingList, rankingTitleDate } from '@/components/dashboard/RankingList';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
@@ -215,11 +216,7 @@ export default function KundeHinzufuegenPage() {
 
   // Chat State
   const [chatTab, setChatTab] = useState<'TEAM' | 'FIRMA'>('TEAM');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { id: '1', sender: 'Murat Dere', text: 'Bugün randevular çok iyi gidiyor!', time: '14:22' },
-    { id: '2', sender: 'System', text: 'Floor 1 aktif arama modunda.', time: '14:30', isSystem: true },
-    { id: '3', sender: 'Umut', text: 'Yeni PV listesi yüklendi mi?', time: '14:45' },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
   const showToast = (msg: string) => {
@@ -543,69 +540,13 @@ export default function KundeHinzufuegenPage() {
         Elektromobil: 'Accessibility',
       };
 
-      const newLeadObj = {
-        id: leadId,
-        first_name: vorname.trim(),
-        last_name: nachname.trim(),
-        phone_raw: cleanPhone,
-        phone_e164: phoneE164,
-        line_type: cleanPhone.startsWith('015') || cleanPhone.startsWith('016') || cleanPhone.startsWith('017') || cleanPhone.startsWith('+4915') || cleanPhone.startsWith('+4916') || cleanPhone.startsWith('+4917') ? 'MOBILE' : 'FIXED_LINE',
-        email: email.trim() || null,
-        postal_code: plz.trim() || null,
-        city: ort.trim() || null,
-        street: adresse.trim() || null,
-        house_number: hausnummer.trim(),
-        status: 'NEW',
-        consent_verified: true,
-        dnc_flag: false,
-        created_at: new Date().toISOString(),
-        project_id: projectUuidMap[selectedProject] || 'cccccccc-0000-0000-0000-000000000001',
-        project_name: selectedProject === 'PV' ? 'Photovoltaik' : selectedProject,
-        project_slug: selectedProject.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        project_icon: projectIconMap[selectedProject] || 'Sun',
-        source: 'Agent-Erfassung (' + agentName + ')',
-        formattedAnswers,
-        answers,
-        notiz: notiz.trim() || undefined,
-        audioFileName: audioFileName || undefined,
-        provenance: [
-          {
-            id: 'prov-' + leadId,
-            source: 'Agent-Erfassung (' + agentName + ')',
-            campaign_name: selectedProject,
-            opt_in_timestamp: new Date().toISOString(),
-            consent_text: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
-            consent_version: 'v2.1',
-            consent_channel: 'PHONE',
-          },
-        ],
-      };
-
-      // Save to linkora_custom_leads in localStorage for admin panel
-      const existingLeads = JSON.parse(localStorage.getItem('linkora_custom_leads') || '[]');
-      const leadsToSave = [newLeadObj];
-
-      // If additional projects checked, generate lead for each project
-      additionalProjects.forEach((proj) => {
-        const extraLeadId = 'lead-' + Date.now() + '-' + proj.toLowerCase().replace(/[^a-z0-9]/g, '-');
-        leadsToSave.push({
-          ...newLeadObj,
-          id: extraLeadId,
-          project_id: projectUuidMap[proj] || 'cccccccc-0000-0000-0000-000000000001',
-          project_name: proj === 'PV' ? 'Photovoltaik' : proj,
-          project_slug: proj.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          project_icon: projectIconMap[proj] || 'Sun',
-          source: `Agent-Erfassung (Cross-Project: ${proj})`,
-        });
-      });
-
-      localStorage.setItem('linkora_custom_leads', JSON.stringify([...leadsToSave, ...existingLeads]));
+      let createdLeadId: string | null = null;
 
       // Also post to backend API (primary project and any cross-project leads)
       try {
         const primaryProjectId = projectUuidMap[selectedProject] || 'cccccccc-0000-0000-0000-000000000001';
 
-        await fetch('/api/v1/leads', {
+        const primaryRes = await fetch('/api/v1/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -639,6 +580,18 @@ export default function KundeHinzufuegenPage() {
             audioFileName: audioFileName || undefined,
           }),
         });
+
+        const primaryBody = await primaryRes.json().catch(() => null);
+        if (!primaryRes.ok || !primaryBody?.success) {
+          const msg = primaryBody?.message
+            ? Array.isArray(primaryBody.message) ? primaryBody.message[0] : primaryBody.message
+            : primaryBody?.isQuarantined
+            ? 'Daten fehlerhaft – Lead wurde zur Prüfung in Quarantäne gelegt.'
+            : `Fehler beim Speichern (HTTP ${primaryRes.status}).`;
+          showToast(`❌ Kunde nicht gespeichert: ${msg}`);
+          return;
+        }
+        createdLeadId = primaryBody.leadId || null;
 
         // Also post each additional checked project as a separate lead
         for (const extraProj of additionalProjects) {
@@ -678,22 +631,22 @@ export default function KundeHinzufuegenPage() {
           });
         }
       } catch {
-        // Handled
+        showToast('❌ Server nicht erreichbar – Kunde wurde nicht gespeichert.');
+        return;
       }
 
-      // If Wiedervorlage is given, save to callback store
-      if (wiedervorlageDate) {
-        const callbackEntry = {
-          id: 'cb-' + Date.now(),
-          customerName: `${anrede} ${vorname} ${nachname}`.trim(),
-          phone: telefonnummer.trim(),
-          project: selectedProject,
-          dueAt: wiedervorlageDate,
-          agentName,
-          note: notiz.trim() || 'Wiedervorlage aus Erfassungsformular',
-        };
-        const existingCb = JSON.parse(localStorage.getItem('linkora_custom_callbacks') || '[]');
-        localStorage.setItem('linkora_custom_callbacks', JSON.stringify([callbackEntry, ...existingCb]));
+      // If Wiedervorlage is given, create a real callback on the server
+      if (wiedervorlageDate && createdLeadId) {
+        await fetch('/api/v1/callbacks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            leadId: createdLeadId,
+            scheduledAt: new Date(wiedervorlageDate).toISOString(),
+            timezone: 'Europe/Berlin',
+            notes: notiz.trim() || 'Wiedervorlage aus Erfassungsformular',
+          }),
+        }).catch(() => null);
         showToast('📅 Wiedervorlage gespeichert! Erinnerung wurde zu den Rückrufen hinzugefügt.');
       } else {
         showToast(`✅ Kunde "${vorname} ${nachname}" für Projekt "${selectedProject}" erfolgreich angelegt!`);
@@ -2330,39 +2283,21 @@ export default function KundeHinzufuegenPage() {
             {/* Card 2: Tagesrangliste */}
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 text-slate-800">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-bold text-slate-900">Tagesrangliste (31.10.2026)</h2>
+                <h2 className="text-xs font-bold text-slate-900">Tagesrangliste ({rankingTitleDate('today')})</h2>
                 <span className="bg-[#16a34a] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                   <span>Live</span>
                 </span>
               </div>
-              <div className="py-3 text-center text-xs text-slate-400 font-medium">
-                Keine Daten verfügbar
-              </div>
+              <RankingList period="today" />
             </div>
 
             {/* Card 3: Monatsrangliste */}
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 text-slate-800">
               <h2 className="text-xs font-bold text-slate-900 mb-2.5">
-                Monatsrangliste (10/2026)
+                Monatsrangliste ({rankingTitleDate('month')})
               </h2>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between py-1 px-2 rounded-xl">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                    <span className="text-base">🏆</span>
-                    <span>Murat Dere</span>
-                  </div>
-                  <span className="text-emerald-600 font-extrabold text-xs">203</span>
-                </div>
-
-                <div className="flex items-center justify-between py-1 px-2 rounded-xl">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                    <span className="text-base">🥈</span>
-                    <span>Murat.D</span>
-                  </div>
-                  <span className="text-emerald-600 font-extrabold text-xs">8</span>
-                </div>
-              </div>
+              <RankingList period="month" />
             </div>
 
             {/* Card 4: Chat */}

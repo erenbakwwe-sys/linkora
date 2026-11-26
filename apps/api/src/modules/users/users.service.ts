@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { DatabaseService } from '../../common/services/database.service.js';
+import { DatabaseService, isDatabaseConfigured } from '../../common/services/database.service.js';
 import { scryptSync } from 'node:crypto';
 import { DEFAULT_TENANT_ID, safeEqual } from '../../common/security/secrets.js';
 import * as fs from 'node:fs';
@@ -283,6 +283,21 @@ export class UsersService implements OnModuleInit {
     }
   }
 
+  /**
+   * Accounts that can be written to the database by the bootstrap: built-in accounts with a
+   * configured per-account hash plus EXTRA_USERS / panel-created accounts with a hash.
+   */
+  getAccountsWithPasswordHash(): Array<{ email: string; username: string; role: string; team: string; passwordHash: string; isActive: boolean }> {
+    const builtinHashes = this.getBuiltinPasswordHashes();
+    const out: Array<{ email: string; username: string; role: string; team: string; passwordHash: string; isActive: boolean }> = [];
+    for (const u of this.inMemoryUsers) {
+      const hash = u.passwordHash || (u.builtin ? builtinHashes[u.email.toLowerCase()] : undefined);
+      if (!hash) continue;
+      out.push({ email: u.email, username: u.username, role: u.role, team: u.team, passwordHash: hash, isActive: u.isActive });
+    }
+    return out;
+  }
+
   /** Verifies a password against an in-memory user record (no master passwords). */
   verifyUserPassword(user: UserItem, password: string): boolean {
     if (!password) return false;
@@ -304,7 +319,166 @@ export class UsersService implements OnModuleInit {
     return false;
   }
 
+  // ------------------------------------------------------------------
+  // Database-backed user management (used whenever a database is configured)
+  // ------------------------------------------------------------------
+
+  private static readonly UI_TO_SLUG: Record<string, string> = {
+    'Firmen-Admin': 'COMPANY_ADMIN',
+    Teamleiter: 'TEAM_LEAD',
+    Agent: 'AGENT',
+    'QC-Prüfer': 'QC_REVIEWER',
+  };
+
+  private static readonly SLUG_TO_UI: Record<string, UserItem['role']> = {
+    SUPER_ADMIN: 'Firmen-Admin',
+    COMPANY_ADMIN: 'Firmen-Admin',
+    TEAM_LEAD: 'Teamleiter',
+    AGENT: 'Agent',
+    QC_REVIEWER: 'QC-Prüfer',
+  };
+
+  private mapDbUser(row: any): PublicUserItem {
+    const name = row.display_name || `${row.first_name || ''} ${row.last_name || ''}`.trim();
+    return {
+      id: row.id,
+      userNumber: '#' + String(row.id).slice(0, 4).toUpperCase(),
+      username: name,
+      name,
+      email: row.email,
+      role: UsersService.SLUG_TO_UI[row.role_slug] || 'Agent',
+      team: row.team || '—',
+      isActive: row.is_active,
+      callerIdNumber: row.caller_id_number || null,
+      lastLogin: row.last_login_at ? new Date(row.last_login_at).toLocaleString('de-DE') : '—',
+      createdAt: row.created_at ? new Date(row.created_at).toLocaleDateString('de-DE') : '—',
+      tenantId: row.tenant_id,
+    };
+  }
+
+  private async dbFindUser(tenantId: string, id: string): Promise<any> {
+    const isUuid = /^[0-9a-f-]{36}$/i.test(id);
+    const res = await this.db.query(
+      `SELECT u.*, (SELECT r.slug FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+                     WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id LIMIT 1) AS role_slug
+       FROM users u WHERE u.tenant_id = $1 AND ${isUuid ? 'u.id = $2::uuid' : 'LOWER(u.email) = LOWER($2)'}`,
+      [tenantId, id],
+    );
+    if (!res.rows[0]) throw new NotFoundException(`Benutzer mit ID ${id} nicht gefunden`);
+    return res.rows[0];
+  }
+
+  private async dbSetRole(tenantId: string, userId: string, uiRole: string) {
+    const slug = UsersService.UI_TO_SLUG[uiRole] || 'AGENT';
+    await this.db.query(`DELETE FROM user_roles WHERE user_id = $1 AND tenant_id = $2`, [userId, tenantId]);
+    await this.db.query(
+      `INSERT INTO user_roles (user_id, role_id, tenant_id)
+       SELECT $1, r.id, $2 FROM roles r WHERE r.slug = $3 AND r.tenant_id IS NULL
+       ON CONFLICT DO NOTHING`,
+      [userId, tenantId, slug],
+    );
+  }
+
+  private async dbListUsers(tenantId: string): Promise<PublicUserItem[]> {
+    const res = await this.db.query(
+      `SELECT u.*, (SELECT r.slug FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+                     WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id LIMIT 1) AS role_slug
+       FROM users u WHERE u.tenant_id = $1 ORDER BY u.created_at DESC`,
+      [tenantId],
+    );
+    return res.rows.map((r: any) => this.mapDbUser(r));
+  }
+
+  private async dbCreateUser(
+    tenantId: string,
+    dto: { username: string; email: string; role: string; team?: string; callerIdNumber?: string | null; password: string },
+  ): Promise<PublicUserItem> {
+    const exists = await this.db.query(`SELECT 1 FROM users WHERE tenant_id = $1 AND LOWER(email) = LOWER($2)`, [
+      tenantId,
+      dto.email,
+    ]);
+    if (exists.rows.length > 0) {
+      throw new BadRequestException('Ein Benutzer mit dieser E-Mail existiert bereits.');
+    }
+    const [first, ...rest] = dto.username.trim().split(/\s+/);
+    const slug = UsersService.UI_TO_SLUG[dto.role] || 'AGENT';
+    const ins = await this.db.query(
+      `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, default_mode, is_active, display_name, team, caller_id_number)
+       VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9) RETURNING id`,
+      [
+        tenantId,
+        dto.email.trim(),
+        this.hashPassword(dto.password),
+        first,
+        rest.join(' '),
+        slug === 'AGENT' ? 'AGENT' : 'MANAGER',
+        dto.username.trim(),
+        dto.team && dto.team !== '—' ? dto.team.trim() : null,
+        dto.callerIdNumber || null,
+      ],
+    );
+    const id = ins.rows[0].id;
+    await this.dbSetRole(tenantId, id, dto.role);
+    return this.mapDbUser({ ...(await this.dbFindUser(tenantId, id)) });
+  }
+
+  private async dbUpdateUser(
+    tenantId: string,
+    id: string,
+    dto: {
+      username?: string;
+      name?: string;
+      role?: string;
+      team?: string;
+      isActive?: boolean;
+      callerIdNumber?: string | null;
+      newPassword?: string;
+    },
+  ): Promise<PublicUserItem> {
+    const user = await this.dbFindUser(tenantId, id);
+    const display = (dto.username ?? dto.name)?.trim();
+    const sets: string[] = [];
+    const params: any[] = [];
+    const add = (col: string, val: any) => {
+      params.push(val);
+      sets.push(`${col} = $${params.length}`);
+    };
+    if (display) {
+      const [first, ...rest] = display.split(/\s+/);
+      add('display_name', display);
+      add('first_name', first);
+      add('last_name', rest.join(' '));
+    }
+    if (dto.team !== undefined) add('team', dto.team && dto.team !== '—' ? dto.team : null);
+    if (dto.isActive !== undefined) {
+      add('is_active', dto.isActive);
+      if (!dto.isActive) add('caller_id_number', null); // number is released on deactivation
+    }
+    if (dto.callerIdNumber !== undefined && dto.isActive !== false) add('caller_id_number', dto.callerIdNumber || null);
+    if (dto.newPassword && dto.newPassword.trim()) {
+      if (dto.newPassword.trim().length < 8) {
+        throw new BadRequestException('Das Passwort muss mindestens 8 Zeichen lang sein.');
+      }
+      add('password_hash', this.hashPassword(dto.newPassword.trim()));
+    }
+    if (sets.length > 0) {
+      params.push(user.id, tenantId);
+      await this.db.query(
+        `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${params.length - 1} AND tenant_id = $${params.length}`,
+        params,
+      );
+    }
+    if (dto.role) {
+      if (!UsersService.UI_TO_SLUG[dto.role]) throw new BadRequestException('Ungültige Rolle.');
+      await this.dbSetRole(tenantId, user.id, dto.role);
+    }
+    return this.mapDbUser(await this.dbFindUser(tenantId, user.id));
+  }
+
   async getAllUsers(tenantId: string = DEFAULT_TENANT_ID): Promise<PublicUserItem[]> {
+    if (isDatabaseConfigured()) {
+      return this.dbListUsers(tenantId);
+    }
     try {
       const dbUsers = await this.db.query(
         `SELECT id, email, first_name, last_name, default_mode, is_active, created_at, last_login_at
@@ -353,12 +527,18 @@ export class UsersService implements OnModuleInit {
     );
   }
 
-  getFreeSystemNumbers(): string[] {
-    const assignedNumbers = new Set(
-      this.inMemoryUsers
-        .filter(u => u.isActive && u.callerIdNumber)
-        .map(u => u.callerIdNumber)
-    );
+  async getFreeSystemNumbers(tenantId: string = DEFAULT_TENANT_ID): Promise<string[]> {
+    let assigned: string[] = this.inMemoryUsers
+      .filter((u) => u.isActive && u.callerIdNumber)
+      .map((u) => u.callerIdNumber as string);
+    if (isDatabaseConfigured()) {
+      const res = await this.db.query(
+        `SELECT caller_id_number FROM users WHERE tenant_id = $1 AND is_active = true AND caller_id_number IS NOT NULL`,
+        [tenantId],
+      );
+      assigned = res.rows.map((r: any) => r.caller_id_number);
+    }
+    const assignedNumbers = new Set(assigned);
     return this.freeCallerNumbers.filter(n => !assignedNumbers.has(n));
   }
 
@@ -375,6 +555,9 @@ export class UsersService implements OnModuleInit {
       newPassword?: string;
     }
   ): Promise<PublicUserItem> {
+    if (isDatabaseConfigured()) {
+      return this.dbUpdateUser(tenantId, id, dto);
+    }
     const user = this.findInTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`Benutzer mit ID ${id} nicht gefunden`);
@@ -445,6 +628,20 @@ export class UsersService implements OnModuleInit {
     const allowedRoles = ['Firmen-Admin', 'Teamleiter', 'Agent', 'QC-Prüfer'];
     if (dto.role && !allowedRoles.includes(dto.role)) {
       throw new BadRequestException('Ungültige Rolle.');
+    }
+    if (isDatabaseConfigured()) {
+      const pwd = dto.password?.trim() || '';
+      if (pwd.length < 8) {
+        throw new BadRequestException('Das Passwort muss mindestens 8 Zeichen lang sein.');
+      }
+      return this.dbCreateUser(tenantId, {
+        username,
+        email,
+        role: dto.role || 'Agent',
+        team: dto.team,
+        callerIdNumber: dto.callerIdNumber,
+        password: pwd,
+      });
     }
     if (this.inMemoryUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
       throw new BadRequestException('Ein Benutzer mit dieser E-Mail existiert bereits.');
@@ -544,6 +741,10 @@ export class UsersService implements OnModuleInit {
   }
 
   async toggleStatus(tenantId: string, id: string): Promise<PublicUserItem> {
+    if (isDatabaseConfigured()) {
+      const current = await this.dbFindUser(tenantId, id);
+      return this.dbUpdateUser(tenantId, current.id, { isActive: !current.is_active });
+    }
     const user = this.findInTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`Benutzer mit ID ${id} nicht gefunden`);

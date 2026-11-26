@@ -26,41 +26,11 @@ export interface AgentStatusInfo {
   durationFormatted: string;
   durationCategory: 'light' | 'medium' | 'dark'; // hell 0-5m, mittel 5-10m, dunkel 10+m
   currentCallId?: string;
+  tenantId?: string;
 }
 
-// In-memory agent state store with demo defaults matching reference screenshot
-const memoryAgentStates = new Map<string, AgentStatusInfo>([
-  [
-    '99999999-0000-0000-0000-000000000005',
-    {
-      agentId: '99999999-0000-0000-0000-000000000005',
-      name: 'Umut',
-      companyName: 'Call-Center Izmir',
-      status: 'WAITING',
-      statusLabelDe: 'Wartend',
-      statusLabelTr: 'Bekliyor',
-      startedAt: new Date(Date.now() - 9918 * 1000), // 165 min 18 sec
-      durationSeconds: 9918,
-      durationFormatted: '165:18',
-      durationCategory: 'dark',
-    },
-  ],
-  [
-    '99999999-0000-0000-0000-000000000006',
-    {
-      agentId: '99999999-0000-0000-0000-000000000006',
-      name: 'Erensamsun',
-      companyName: 'Call-Center Izmir',
-      status: 'WAITING',
-      statusLabelDe: 'Wartend',
-      statusLabelTr: 'Bekliyor',
-      startedAt: new Date(Date.now() - 39 * 1000), // 39 sec
-      durationSeconds: 39,
-      durationFormatted: '00:39',
-      durationCategory: 'light',
-    },
-  ],
-]);
+// In-memory live agent state (filled when agents log in / change state; no demo entries)
+const memoryAgentStates = new Map<string, AgentStatusInfo>();
 
 @Injectable()
 export class AgentStateService {
@@ -125,6 +95,7 @@ export class AgentStateService {
       durationFormatted: '00:00',
       durationCategory: 'light',
       currentCallId: options.callId,
+      tenantId,
     };
 
     memoryAgentStates.set(agentId, updated);
@@ -146,6 +117,8 @@ export class AgentStateService {
     const list: AgentStatusInfo[] = [];
 
     for (const info of memoryAgentStates.values()) {
+      if (info.tenantId && info.tenantId !== tenantId) continue;
+      if (info.status === 'OFFLINE') continue;
       const durationSeconds = Math.max(
         0,
         Math.round((now.getTime() - info.startedAt.getTime()) / 1000)

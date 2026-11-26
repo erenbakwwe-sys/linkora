@@ -207,69 +207,20 @@ export default function LeadsPage() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
-      let apiLeads: Lead[] = [];
-      try {
-        const res = await fetch(`/api/v1/leads?${params.toString()}`);
-        if (res.ok) {
-          const json = await res.json();
-          apiLeads = json.data || [];
-        }
-      } catch {
-        // API offline fallback
+      // Only real leads from the server (no browser-local copies, no demo data)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('linkora_custom_leads');
+        localStorage.removeItem('linkora_lead_deliveries');
       }
-
-      // Check localStorage for newly registered customers
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
-      const customLeads: Lead[] = customRaw ? JSON.parse(customRaw) : [];
-
-      // Deduplicate by ID
-      const existingIds = new Set(apiLeads.map((l) => l.id));
-      let merged = [...customLeads.filter((l) => !existingIds.has(l.id)), ...apiLeads];
-
-      // Merge delivery tracking from localStorage
-      const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
-      const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
-
-      merged = merged.map((l) => {
-        if (deliveries[l.id]) {
-          return {
-            ...l,
-            partnerName: deliveries[l.id].partnerName || 'Aroundhome GmbH',
-            partnerStatus: deliveries[l.id].partnerStatus,
-            partnerDeliveryId: deliveries[l.id].partnerDeliveryId,
-            commissionEur: deliveries[l.id].commissionEur,
-            status:
-              deliveries[l.id].partnerStatus === 'SOLD'
-                ? 'SOLD'
-                : deliveries[l.id].partnerStatus === 'REJECTED'
-                ? 'STORNO'
-                : l.status,
-          };
-        }
-        return l;
-      });
-
-      // Filter by status if set
-      if (statusFilter !== 'ALL') {
-        merged = merged.filter((l) => l.status === statusFilter);
+      const res = await fetch(`/api/v1/leads?${params.toString()}&limit=100`);
+      if (res.ok) {
+        const json = await res.json();
+        setLeads(json.data || []);
+      } else {
+        setLeads([]);
       }
-      // Filter by search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        merged = merged.filter(
-          (l) =>
-            l.first_name.toLowerCase().includes(q) ||
-            l.last_name.toLowerCase().includes(q) ||
-            (l.email && l.email.toLowerCase().includes(q)) ||
-            (l.city && l.city.toLowerCase().includes(q)) ||
-            l.phone_e164.includes(q)
-        );
-      }
-
-      setLeads(merged);
     } catch {
-      const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
-      setLeads(customRaw ? JSON.parse(customRaw) : []);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -288,95 +239,18 @@ export default function LeadsPage() {
     setSelectedLeadId(leadId);
     setDetailLoading(true);
 
-    const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
-    const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
-
     try {
       const res = await fetch(`/api/v1/leads/${leadId}`);
       if (res.ok) {
-        const json = await res.json();
-        if (deliveries[leadId]) {
-          json.lead = {
-            ...json.lead,
-            partnerName: deliveries[leadId].partnerName,
-            partnerStatus: deliveries[leadId].partnerStatus,
-            partnerDeliveryId: deliveries[leadId].partnerDeliveryId,
-            commissionEur: deliveries[leadId].commissionEur,
-            status:
-              deliveries[leadId].partnerStatus === 'SOLD'
-                ? 'SOLD'
-                : deliveries[leadId].partnerStatus === 'REJECTED'
-                ? 'STORNO'
-                : json.lead.status,
-          };
-        }
-        setLeadDetail(json);
-        return;
+        setLeadDetail(await res.json());
+      } else {
+        setLeadDetail(null);
+        setSelectedLeadId(null);
       }
     } catch {
-      //
+      setLeadDetail(null);
     } finally {
       setDetailLoading(false);
-    }
-
-    // Check custom leads in localStorage
-    const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
-    const customLeads = customRaw ? JSON.parse(customRaw) : [];
-    let found = customLeads.find((l: any) => l.id === leadId);
-    if (found) {
-      if (deliveries[leadId]) {
-        found = {
-          ...found,
-          partnerName: deliveries[leadId].partnerName,
-          partnerStatus: deliveries[leadId].partnerStatus,
-          partnerDeliveryId: deliveries[leadId].partnerDeliveryId,
-          commissionEur: deliveries[leadId].commissionEur,
-          status:
-            deliveries[leadId].partnerStatus === 'SOLD'
-              ? 'SOLD'
-              : deliveries[leadId].partnerStatus === 'REJECTED'
-              ? 'STORNO'
-              : found.status,
-        };
-      }
-
-      setLeadDetail({
-        lead: found,
-        provenance: found.provenance || [
-          {
-            id: 'prov-' + found.id,
-            source: found.source || 'Agent-Direkterfassung',
-            campaign_name: found.project_name,
-            opt_in_timestamp: found.created_at,
-            consent_text: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt (UWG § 7).',
-            consent_version: 'v2.1',
-            consent_channel: 'PHONE',
-          },
-        ],
-        answers: Array.isArray(found.formattedAnswers) && found.formattedAnswers.length > 0
-          ? found.formattedAnswers
-          : Array.isArray(found.answers) && found.answers.length > 0
-          ? found.answers
-          : typeof found.answers === 'object' && found.answers !== null
-          ? Object.entries(found.answers).map(([k, v]) => ({
-              question_code: k,
-              question_label: QUESTION_LABELS[k] || k,
-              value_raw: String(v),
-            }))
-          : [],
-        events: [
-          {
-            id: 'ev-1',
-            event_type: 'LEAD_INGESTED',
-            created_at: found.created_at,
-            payload: { channel: 'Agent-Erfassung' },
-          },
-        ],
-        canDial: {
-          allowed: true,
-          message: 'Lead ist zur Anwahl im Dialer freigegeben.',
-        },
-      });
     }
   };
 

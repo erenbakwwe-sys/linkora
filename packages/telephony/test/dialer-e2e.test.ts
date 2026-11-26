@@ -5,6 +5,7 @@ import { LeadsService } from '../../../apps/api/src/modules/leads/leads.service.
 import { DatabaseService } from '../../../apps/api/src/common/services/database.service.js';
 import { AuditService } from '../../../apps/api/src/modules/audit/audit.service.js';
 import { LiveGateway } from '../../../apps/api/src/modules/gateway/live.gateway.js';
+import { IngestionService } from '../../../apps/api/src/modules/leads/ingestion.service.js';
 
 describe('Phase 2: End-to-End Mock Campaign & Dialer Session Tests', () => {
   let db: DatabaseService;
@@ -17,10 +18,11 @@ describe('Phase 2: End-to-End Mock Campaign & Dialer Session Tests', () => {
 
   const tenantId = '11111111-1111-1111-1111-111111111111';
   const agentId = '99999999-0000-0000-0000-000000000005'; // Umut Kaya
-  const confirmedLeadId = '77777777-0000-0000-0000-000000000001'; // Maximilian Weber (Consent OK)
-  const noConsentLeadId = '77777777-0000-0000-0000-000000000003'; // Gerhard Müller (No Consent)
+  // Test leads are created by the test itself (the app no longer ships demo leads)
+  let confirmedLeadId = '';
+  let noConsentLeadId = '';
 
-  beforeAll(() => {
+  beforeAll(async () => {
     db = new DatabaseService();
     try {
       db.onModuleInit();
@@ -33,6 +35,36 @@ describe('Phase 2: End-to-End Mock Campaign & Dialer Session Tests', () => {
     // Marketplace forwarding is not under test here – stub it so no external delivery is attempted
     const marketplaceStub = { deliverLeadDirectly: async () => null } as any;
     dialerService = new DialerService(db, auditService, leadsService, agentStateService, liveGateway, marketplaceStub);
+
+    const ingestion = new IngestionService(db, auditService);
+    const withConsent = await ingestion.ingestLeadRow(tenantId, {
+      projectId: 'cccccccc-0000-0000-0000-000000000001',
+      firstName: 'Test',
+      lastName: 'MitEinwilligung',
+      phone: '+491701234501',
+      phoneCountry: 'DE',
+      answers: {},
+      extraData: {},
+      provenance: {
+        source: 'Test',
+        optInTimestamp: new Date().toISOString(),
+        consentText: 'Ausdrückliche Werbeeinwilligung telefonisch erteilt.',
+        consentVersion: 'v1',
+        consentChannel: 'PHONE',
+        proofMetadata: {},
+      },
+    } as any);
+    const withoutConsent = await ingestion.ingestLeadRow(tenantId, {
+      projectId: 'cccccccc-0000-0000-0000-000000000001',
+      firstName: 'Test',
+      lastName: 'OhneEinwilligung',
+      phone: '+491701234502',
+      phoneCountry: 'DE',
+      answers: {},
+      extraData: {},
+    } as any);
+    confirmedLeadId = withConsent.leadId as string;
+    noConsentLeadId = withoutConsent.leadId as string;
   });
 
   afterAll(async () => {

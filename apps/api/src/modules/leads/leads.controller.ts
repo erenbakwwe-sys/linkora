@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, Headers, Req, BadRequestException } from '@nestjs/common';
+import { runAsTenant } from '../../common/services/request-context.js';
 import { ApiTags, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { CurrentTenant, CurrentUser } from '../../common/guards/user.decorator.js';
 import { LeadsService } from './leads.service.js';
@@ -199,11 +200,13 @@ export class LeadsController {
       },
     };
 
-    const result = await this.ingestionService.ingestLeadRow(tenantId, leadInput, {
-      channel: 'PUBLIC_LANDING_PAGE',
-      actorId: 'web-public-guest',
-      rawPayload: body,
-    });
+    const result = await runAsTenant(tenantId, () =>
+      this.ingestionService.ingestLeadRow(tenantId, leadInput, {
+        channel: 'PUBLIC_LANDING_PAGE',
+        actorId: 'web-public-guest',
+        rawPayload: body,
+      }),
+    );
 
     // Dispatch instant Telegram notification (asynchronous, non-blocking)
     this.telegramService

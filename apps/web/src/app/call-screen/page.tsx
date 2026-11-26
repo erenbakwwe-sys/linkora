@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { RankingList, rankingTitleDate } from '@/components/dashboard/RankingList';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/context/I18nContext';
@@ -101,11 +102,7 @@ export default function CallScreenPage() {
   // Right Sidecar State
   const [callsToday, setCallsToday] = useState(0);
   const [salesToday, setSalesToday] = useState(0);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { id: '1', sender: 'Murat Dere', text: 'Bugün randevular çok iyi gidiyor!', time: '14:22' },
-    { id: '2', sender: 'System', text: 'Floor 1 aktif arama modunda.', time: '14:30', isSystem: true },
-    { id: '3', sender: 'Umut', text: 'Yeni PV listesi yüklendi mi?', time: '14:45' },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
   // Toast State
@@ -908,47 +905,22 @@ export default function CallScreenPage() {
           <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-slate-800 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="font-bold text-xs text-slate-900">
-                Tagesrangliste (29.10.2026)
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-sky-500 text-white text-[10px] font-bold font-mono">
-                13s
+                Tagesrangliste ({rankingTitleDate('today')})
               </span>
             </div>
 
-            <div className="py-4 text-center text-xs text-slate-400 font-medium">
-              Keine Daten
-            </div>
+            <RankingList period="today" />
           </div>
 
-          {/* Card 3: Monatsrangliste (10.2026) */}
+          {/* Card 3: Monatsrangliste */}
           <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-200/90 text-slate-800 space-y-3">
             <div className="border-b border-slate-100 pb-2">
               <span className="font-bold text-xs text-slate-900">
-                Monatsrangliste (10.2026)
+                Monatsrangliste ({rankingTitleDate('month')})
               </span>
             </div>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🥇</span>
-                  <span className="font-bold text-slate-800">Murat Dere</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs">
-                  185
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🥈</span>
-                  <span className="font-bold text-slate-800">Murat.D</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs">
-                  8
-                </span>
-              </div>
-            </div>
+            <RankingList period="month" />
           </div>
 
           {/* Card 4: Sohbet (Live Team Chat Sidecar) */}

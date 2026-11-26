@@ -2,6 +2,7 @@ import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
 import { INIT_SQL, FULL_SCHEMA_SQL } from './schema-sql.js';
+import { RLS_POLICY_SQL, SCHEMA_PATCH_SQL } from './rls-policies.js';
 
 const { Pool } = pg;
 
@@ -27,6 +28,8 @@ export async function runMigrations(pool?: pg.Pool) {
 
     const schemaSql = fs.existsSync(schemaPath) ? fs.readFileSync(schemaPath, 'utf8') : FULL_SCHEMA_SQL;
     await client.query(schemaSql);
+    await client.query(SCHEMA_PATCH_SQL);
+    await client.query(RLS_POLICY_SQL);
 
     console.log('Migrations completed successfully.');
   } finally {

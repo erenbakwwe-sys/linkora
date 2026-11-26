@@ -30,7 +30,10 @@
       "BERICHTE": "REPORTS",
       "BENUTZER": "USERS",
       "ALLGEMEIN": "GENERAL",
-      "LEAD_MARKTPLATZ": "LEAD MARKETPLACE"
+      "LEAD_MARKTPLATZ": "LEAD MARKETPLACE",
+      "MANAGEMENT": "MANAGEMENT",
+      "ADMINISTRATION": "ADMINISTRATION",
+      "HANDELSPLATZ": "MARKETPLACE"
     },
     "items": {
       "call_screen": "Call Screen",
@@ -69,7 +72,18 @@
       "buyers": "Buyers",
       "price_lists": "Price Lists",
       "returns_credits": "Returns & Credits",
-      "api_webhooks": "API & Webhooks"
+      "api_webhooks": "API & Webhooks",
+      "leads": "Lead Customers",
+      "qc": "QC Review",
+      "projects": "Projects",
+      "auto_dial": "Auto Dial",
+      "recordings": "Recordings",
+      "excel_import": "Excel Import",
+      "analytics_calibration": "AI Calibration",
+      "branding": "Branding",
+      "returns": "Returns",
+      "users": "Users",
+      "vacation": "Vacation"
     }
   },
   "dashboard": {

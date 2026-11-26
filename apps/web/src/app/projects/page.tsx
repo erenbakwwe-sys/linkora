@@ -441,7 +441,7 @@ export default function ProjectsPage() {
           </div>
 
           {/* Multi-column checkbox grid matching screenshot */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs stagger-items">
             {availableGlobalTypes.map((item) => {
               const isChecked = selectedGlobalToActivate.includes(item);
               const isAlreadyActive = activeProjectTypes.some(
@@ -512,7 +512,7 @@ export default function ProjectsPage() {
                   <th className="py-3 px-6 w-1/2">ANTEIL</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 stagger-items">
                 {leadStats.items.map((stat) => (
                   <tr key={stat.name} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-4 font-bold text-slate-800">

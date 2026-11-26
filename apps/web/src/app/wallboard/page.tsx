@@ -139,14 +139,14 @@ export default function WallboardPage() {
 
   return (
     <AppShell noPadding>
-      <div className="min-h-full bg-slate-950 text-white p-5 md:p-8 flex flex-col justify-between select-none relative overflow-hidden">
+      <div className="min-h-full bg-slate-950 text-white p-3 sm:p-5 md:p-8 flex flex-col justify-between select-none relative overflow-hidden">
         {/* Ambient Top Glow Orbs */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top TV Bar */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-6 relative z-10">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4 mb-6 relative z-10">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <Link
               href="/dashboard"
               className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-800 transition shadow-sm group flex items-center gap-2"
@@ -161,18 +161,18 @@ export default function WallboardPage() {
                 <Tv className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-lg md:text-xl font-black tracking-tight text-white">TEAM-WALLBOARD</h1>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" /> LIVE FLOOR
                   </span>
                 </div>
-                <span className="text-xs text-slate-400">Call-Center Multi-Tenant Floor Monitor & Leaderboard</span>
+                <span className="text-xs text-slate-400 hidden sm:block">Call-Center Multi-Tenant Floor Monitor & Leaderboard</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-white transition"
@@ -199,7 +199,7 @@ export default function WallboardPage() {
         </div>
 
         {/* High-Impact TV KPI Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 relative z-10 stagger-items">
           <div className="glass-panel-dark rounded-2xl p-5 border border-slate-800/80 hover:border-sky-500/40 transition-all duration-300">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1">
               <div className="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">

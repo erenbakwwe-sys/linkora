@@ -158,9 +158,9 @@ export const TopBar: React.FC = () => {
           </div>
 
           {/* Right: User name pill, Logout, Language, Live Beacon, Sun */}
-          <div className="flex items-center space-x-1.5 sm:space-x-3">
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0 min-w-0">
             {/* User Badge */}
-            <div className="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 border border-slate-200/90 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold text-slate-800 shadow-xs">
+            <div className="hidden min-[400px]:flex items-center space-x-1 sm:space-x-1.5 bg-slate-100 border border-slate-200/90 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold text-slate-800 shadow-xs">
               <UserIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span className="truncate max-w-[70px] sm:max-w-none">{displayName}</span>
             </div>
@@ -200,7 +200,7 @@ export const TopBar: React.FC = () => {
             </div>
 
             {/* Green Live Radar Beacon */}
-            <div className="flex items-center space-x-1 sm:space-x-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 sm:px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
+            <div className="hidden sm:flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="hidden sm:inline">Live</span>
             </div>
@@ -218,7 +218,7 @@ export const TopBar: React.FC = () => {
         </header>
 
         {/* Mobile Bottom Navigation Bar for Agents */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-2 py-1.5 flex items-center justify-around select-none">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom-full duration-300 flex items-center justify-around select-none">
           {/* 1. Startseite */}
           <Link
             href="/dashboard"
@@ -303,7 +303,7 @@ export const TopBar: React.FC = () => {
   return (
     <header className="h-14 bg-[#090e1a]/95 backdrop-blur-md border-b border-slate-800/80 text-white px-3 sm:px-6 flex items-center justify-between select-none z-40 shadow-xs">
       {/* Left: Hamburger menu (mobile) + User Welcome & Mode Switcher */}
-      <div className="flex items-center space-x-2 sm:space-x-3 text-sm">
+      <div className="flex items-center gap-1.5 sm:gap-3 text-sm min-w-0">
         <button
           type="button"
           onClick={(e) => {
@@ -319,7 +319,7 @@ export const TopBar: React.FC = () => {
 
         <div className="flex items-center space-x-1.5 sm:space-x-2 bg-slate-800/60 border border-slate-700/60 px-2 sm:px-3 py-1 rounded-xl text-xs font-semibold text-slate-200 shadow-inner">
           <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse"></span>
-          <span className="truncate max-w-[85px] sm:max-w-none">{user?.firstName || 'Erensamsun'}</span>
+          <span className="truncate max-w-[70px] sm:max-w-none">{user?.firstName || 'Erensamsun'}</span>
         </div>
 
         <span className="text-slate-600 hidden sm:inline">·</span>
@@ -343,7 +343,7 @@ export const TopBar: React.FC = () => {
       </div>
 
       {/* Right: Company Switcher, Language Toggle, Live Indicator */}
-      <div className="flex items-center space-x-1.5 sm:space-x-3">
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0 min-w-0">
         {/* Company Dropdown */}
         <div className="relative">
           <button
@@ -351,7 +351,7 @@ export const TopBar: React.FC = () => {
             className="flex items-center space-x-1.5 sm:space-x-2 bg-[#121c33]/90 hover:bg-[#182645] text-slate-200 text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-xl border border-slate-700/80 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.98]"
           >
             <Building2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span className="truncate max-w-[90px] sm:max-w-[130px]">{tenant?.name || 'Linkora'}</span>
+            <span className="truncate max-w-[64px] sm:max-w-[130px]">{tenant?.name || 'Linkora'}</span>
             <ChevronDown className="w-3 h-3 text-slate-400 transition-transform flex-shrink-0" />
           </button>
 
@@ -412,7 +412,7 @@ export const TopBar: React.FC = () => {
         </div>
 
         {/* Green Live Radar Beacon */}
-        <div className="flex items-center space-x-1 sm:space-x-1.5 bg-emerald-950/60 text-emerald-300 border border-emerald-600/40 px-2 sm:px-2.5 py-1 rounded-full text-[11px] font-semibold shadow-xs">
+        <div className="hidden sm:flex items-center space-x-1.5 bg-emerald-950/60 text-emerald-300 border border-emerald-600/40 px-2.5 py-1 rounded-full text-[11px] font-semibold shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-400 live-beacon-pulse"></span>
           <span className="hidden sm:inline">{t('common.live')}</span>
         </div>

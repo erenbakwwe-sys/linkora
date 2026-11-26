@@ -347,7 +347,7 @@ export default function UsersPage() {
         </div>
 
         {/* Summary Metric KPI Cards Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 stagger-items">
           {/* 1: Total */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:shadow-md transition">
             <div className="text-3xl font-black text-slate-900 font-mono">{totalCount}</div>
@@ -514,7 +514,7 @@ export default function UsersPage() {
                   <th className="py-3.5 px-6 text-right">AKTION</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 stagger-items">
                 {filteredUsers.map((user) => (
                   <tr
                     key={user.id}
@@ -734,7 +734,7 @@ export default function UsersPage() {
         {/* EDIT USER MODAL ("Benutzer bearbeiten")                 */}
         {/* ======================================================== */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
               {/* Modal Header */}
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
@@ -940,7 +940,7 @@ export default function UsersPage() {
         {/* NEW USER MODAL                                          */}
         {/* ======================================================== */}
         {showNewUserModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
                 <div className="flex items-center gap-2">
@@ -1067,7 +1067,7 @@ export default function UsersPage() {
         {/* ADD TEAM MODAL                                          */}
         {/* ======================================================== */}
         {showTeamModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">

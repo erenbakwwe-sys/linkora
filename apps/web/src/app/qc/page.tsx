@@ -187,12 +187,12 @@ export default function QcQueuePage() {
         </div>
 
         {/* Status Filters */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
           {['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'RE_CALL_REQUESTED'].map((st) => (
             <button
               key={st}
               onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${
                 filterStatus === st
                   ? 'bg-purple-600 text-white border-purple-600'
                   : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
@@ -290,9 +290,9 @@ export default function QcQueuePage() {
         {/* Right: Detailed Inspection Card */}
         <div className="lg:col-span-7">
           {selectedItem ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-6">
               {/* Inspection Header */}
-              <div className="flex items-start justify-between border-b pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold text-slate-900">{selectedItem.customerName}</h2>
@@ -300,7 +300,7 @@ export default function QcQueuePage() {
                       Band {selectedItem.scoreBand} • {selectedItem.score} Pkt.
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
                     <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {selectedItem.phone}</span>
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {selectedItem.city}</span>
                     <span>Produkt: {selectedItem.product}</span>

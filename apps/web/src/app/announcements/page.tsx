@@ -118,7 +118,7 @@ export default function AnnouncementsPage() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 modal-overlay">
           <div className="bg-white rounded-xl shadow-xl border p-6 max-w-lg w-full space-y-4">
             <h3 className="text-lg font-bold text-slate-900">Neue Mitteilung verfassen</h3>
             <form onSubmit={handleCreate} className="space-y-3 text-xs">

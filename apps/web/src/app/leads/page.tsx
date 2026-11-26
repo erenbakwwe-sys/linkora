@@ -684,7 +684,7 @@ export default function LeadsPage() {
                   <th className="py-3 px-4 text-right">Aktion</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 stagger-items">
                 {leads.map((lead) => {
                   const badge = statusBadges[lead.status] || statusBadges.NEW;
                   return (

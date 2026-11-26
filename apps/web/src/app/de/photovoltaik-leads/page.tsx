@@ -44,7 +44,7 @@ export default function PhotovoltaikLeadsPage() {
 
         {/* Feature Points */}
         <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 stagger-items">
             <div className="bg-slate-800/40 p-8 rounded-3xl border border-slate-700/60">
               <Sun className="w-12 h-12 text-amber-400 mb-4" />
               <h3 className="font-bold text-xl text-white mb-3">Qualifizierte Datenpunkte</h3>

@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import animate from 'tailwindcss-animate';
 
 const config: Config = {
   content: [
@@ -22,13 +23,35 @@ const config: Config = {
           lightBlue: '#e0f2fe',
         },
       },
+      spacing: {
+        '4.5': '1.125rem',
+      },
       borderRadius: {
         '2xl': '1rem',
         '3xl': '1.25rem',
       },
+      keyframes: {
+        'fade-in-up': {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'pop-in': {
+          '0%': { opacity: '0', transform: 'scale(0.94)' },
+          '60%': { opacity: '1', transform: 'scale(1.02)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'spin-slow': {
+          to: { transform: 'rotate(360deg)' },
+        },
+      },
+      animation: {
+        'fade-in-up': 'fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards',
+        'pop-in': 'pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards',
+        'spin-slow': 'spin-slow 3s linear infinite',
+      },
     },
   },
-  plugins: [],
+  plugins: [animate],
 };
 
 export default config;

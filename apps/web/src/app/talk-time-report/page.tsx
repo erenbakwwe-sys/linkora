@@ -96,7 +96,7 @@ export default function TalkTimeReportPage() {
                 <th className="py-3 px-4 text-right">Scorecard-Note</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-100 font-sans stagger-items">
               {data?.agents?.map((a: any) => (
                 <tr key={a.name} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{a.name}</td>

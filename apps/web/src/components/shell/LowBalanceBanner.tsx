@@ -17,16 +17,16 @@ export const LowBalanceBanner: React.FC = () => {
   const balanceFormatted = (tenant.walletBalance || 10.0).toFixed(2);
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-full px-4 select-none animate-in fade-in slide-in-from-bottom-4">
-      <div className="bg-rose-600 text-white rounded-2xl shadow-xl p-3 px-5 flex items-center justify-between space-x-4 border border-rose-500">
-        <div className="flex items-center space-x-3 text-xs sm:text-sm font-semibold">
+    <div className="fixed top-16 md:top-auto md:bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-full px-3 sm:px-4 select-none animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 duration-500">
+      <div className="bg-rose-600 text-white rounded-2xl shadow-xl p-2.5 px-3.5 sm:p-3 sm:px-5 flex items-center justify-between gap-3 border border-rose-500">
+        <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-semibold min-w-0">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 fill-amber-300 text-rose-600" />
           <span>
             {t('common.low_balance_warning', { amount: balanceFormatted })}
           </span>
         </div>
 
-        <div className="flex items-center space-x-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           <button
             onClick={() => alert('Guthaben aufladen (Phase 4 / 5)')}
             className="bg-white hover:bg-slate-50 text-rose-700 font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition cursor-pointer"

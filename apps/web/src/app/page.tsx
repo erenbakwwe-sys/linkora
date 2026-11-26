@@ -133,7 +133,7 @@ export default function PublicLandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 stagger-items">
             <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
               <h3 className="font-bold text-base text-amber-600 mb-3">{content.infra.col1Title}</h3>
               <ul className="space-y-2 text-xs text-slate-600">
@@ -191,7 +191,7 @@ export default function PublicLandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-items">
             <div className="bg-slate-50/70 hover:bg-slate-50 p-7 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between transition">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold mb-4">

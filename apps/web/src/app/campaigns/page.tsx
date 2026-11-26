@@ -572,7 +572,7 @@ export default function CampaignsPage() {
                       <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
                         Vorhandene Datenpakete ({camp.dataPackages.length}):
                       </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 stagger-items">
                         {camp.dataPackages.map((pkg) => (
                           <div
                             key={pkg.id}

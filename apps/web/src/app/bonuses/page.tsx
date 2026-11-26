@@ -49,7 +49,7 @@ export default function BonusesPage() {
       </div>
 
       {/* Active Rules Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-items">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
           <div className="p-3 bg-amber-100 rounded-lg text-amber-700">
             <Trophy className="w-6 h-6" />

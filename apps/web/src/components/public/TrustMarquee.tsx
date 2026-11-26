@@ -19,7 +19,7 @@ export const TrustMarquee: React.FC = () => {
           Zertifizierte Sicherheit & Carrier-Grade Technologie für den D-A-CH Markt
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-center">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-center stagger-items">
           {partners.map((p, idx) => {
             const Icon = p.icon;
             return (

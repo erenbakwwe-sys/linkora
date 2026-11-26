@@ -127,7 +127,7 @@ export default function AutoDialSettingsPage() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs stagger-items">
                 <div>
                   <label className="text-slate-700 font-semibold block mb-1">
                     Aktion bei erkanntem Anrufbeantworter:
@@ -176,7 +176,7 @@ export default function AutoDialSettingsPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs stagger-items">
                 <div>
                   <label className="text-slate-700 font-semibold block mb-1">
                     Max. erlaubte Abbruchquote (Abandon Rate):
@@ -228,7 +228,7 @@ export default function AutoDialSettingsPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs stagger-items">
                 <div>
                   <label className="text-slate-700 font-semibold block mb-1">
                     Rotationsintervall:

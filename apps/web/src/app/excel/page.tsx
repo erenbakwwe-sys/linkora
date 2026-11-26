@@ -275,7 +275,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
         </div>
 
         {activeTab === 'IMPORT' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 stagger-items">
             {/* Left Column: Upload & Configuration */}
             <div className="lg:col-span-1 space-y-4">
               <div className="bg-white rounded-xl shadow-xs border border-slate-200/80 p-4 space-y-4">
@@ -407,7 +407,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
                 {previewData ? (
                   <div className="space-y-4">
                     {/* Mapping grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs stagger-items">
                       {[
                         { key: 'firstName', label: 'Vorname * (Pflicht)' },
                         { key: 'lastName', label: 'Nachname * (Pflicht)' },
@@ -452,7 +452,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-slate-100 stagger-items">
                             {previewData.sampleRows.map((r, rIdx) => (
                               <tr key={rIdx} className="hover:bg-slate-50">
                                 {previewData.headers.map((h) => (
@@ -528,7 +528,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
                     <th className="py-2.5 px-3 text-right">Aktion</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 stagger-items">
                   {quarantineItems.map((item) => (
                     <tr key={item.id} className="hover:bg-rose-50/20">
                       <td className="py-2.5 px-3 whitespace-nowrap text-slate-400">
@@ -581,7 +581,7 @@ Laura,Schmidt,0152 77665544,l@test.de,20095,Hamburg,Ads,"",2026-10-28T09:30:00Z`
 
       {/* Quarantine Edit Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4 modal-overlay">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">

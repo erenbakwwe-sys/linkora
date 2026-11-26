@@ -168,9 +168,9 @@ export default function VacationPage() {
 
           <div className="divide-y divide-slate-100">
             {leaves.map((leave) => (
-              <div key={leave.id} className="p-4 flex items-center justify-between hover:bg-slate-50/70">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+              <div key={leave.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-slate-900 text-sm">{leave.userName}</span>
                     <span className="text-xs px-2 py-0.5 rounded bg-slate-100 font-semibold">{leave.leaveType}</span>
                     <span
@@ -185,7 +185,7 @@ export default function VacationPage() {
                       {leave.status === 'APPROVED' ? 'Genehmigt' : leave.status === 'REJECTED' ? 'Abgelehnt' : 'Ausstehend'}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-3">
+                  <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span>
                       {leave.startDate} bis {leave.endDate}
                     </span>

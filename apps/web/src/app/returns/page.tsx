@@ -76,7 +76,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* Grid: Returns on Left, Official Credit Notes on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger-items">
         {/* Left: Return Requests */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">

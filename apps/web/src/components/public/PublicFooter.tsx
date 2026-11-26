@@ -18,7 +18,7 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({ brandName = 'Linkora
   return (
     <footer className="bg-slate-50 text-slate-600 text-xs border-t border-slate-200/90 py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12 stagger-items">
           {/* Brand Col */}
           <div className="col-span-2">
             <div className="flex items-center space-x-3 mb-3">

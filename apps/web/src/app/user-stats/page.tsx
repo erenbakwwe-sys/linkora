@@ -63,7 +63,7 @@ export default function UserStatsPage() {
                 <th className="py-3 px-4 text-right">KI-Qualität</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-100 font-sans stagger-items">
               {stats.map((s) => (
                 <tr key={s.agentId} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{s.name}</td>

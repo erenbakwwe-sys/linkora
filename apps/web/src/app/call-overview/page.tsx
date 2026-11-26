@@ -79,7 +79,7 @@ export default function CallOverviewPage() {
                 <th className="py-3 px-4 text-right">Aufnahme</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-100 font-sans stagger-items">
               {cdrs.map((cdr) => (
                 <tr key={cdr.id} className="hover:bg-slate-50/70">
                   <td className="py-3.5 px-4 text-xs text-slate-500">

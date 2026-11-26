@@ -230,7 +230,7 @@ export default function CompanyManagementPage() {
           </div>
 
           <form onSubmit={handleCreate} className="space-y-4 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 stagger-items">
               {/* Firmenname */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
@@ -323,7 +323,7 @@ export default function CompanyManagementPage() {
                   <th className="py-3 px-4 text-right">BEARBEITEN</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-sans">
+              <tbody className="divide-y divide-slate-100 font-sans stagger-items">
                 {subCompanies.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-xs text-slate-400 font-medium">
@@ -371,7 +371,7 @@ export default function CompanyManagementPage() {
         {/* EDIT SUBCOMPANY MODAL                                    */}
         {/* ======================================================== */}
         {editingSub && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in-up">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 modal-overlay">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
                 <div className="flex items-center gap-2">

@@ -101,14 +101,10 @@ export class ConnectorsService {
         }
         statusText = res.ok ? 'DELIVERED' : 'FAILED';
       } catch (err: any) {
-        // Fallback gracefully for mock or sandbox demo endpoints
-        statusCode = 200;
-        statusText = 'DELIVERED';
-        partnerResponse = {
-          simulated: true,
-          note: 'Demo / Sandbox Zustellung erfolgreich simuliert',
-          partnerLeadId: `AH-${Math.floor(100000 + Math.random() * 900000)}`,
-        };
+        // Never report a failed delivery as successful
+        statusCode = 0;
+        statusText = 'FAILED';
+        partnerResponse = { error: err?.name === 'AbortError' ? 'timeout' : String(err?.message || err) };
       }
     }
 

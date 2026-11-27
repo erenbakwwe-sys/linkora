@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, Headers, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentTenant } from '../../common/guards/user.decorator.js';
 import { getGitasisWebhookTokens, matchesAny } from '../../common/security/secrets.js';
@@ -6,6 +6,9 @@ import { MarketplaceService } from './marketplace.service.js';
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
 import { ConnectorsService } from './connectors.service.js';
+import { VipCallDeliveryService } from './vipcall-delivery.service.js';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard.js';
+import { CurrentUser } from '../../common/guards/user.decorator.js';
 
 /** Never expose buyer signing secrets / API keys to the browser. */
 function redactBuyer<T extends { signingSecret?: string }>(buyer: T): T {
@@ -20,8 +23,30 @@ export class MarketplaceController {
     private readonly marketplaceService: MarketplaceService,
     private readonly pricingEngine: PricingEngineService,
     private readonly walletLedger: WalletLedgerService,
-    private readonly connectors: ConnectorsService
+    private readonly connectors: ConnectorsService,
+    private readonly vipcall: VipCallDeliveryService,
   ) {}
+
+  @Get('aroundhome/leads/:id/preview')
+  @UseGuards(RolesGuard)
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN', 'TEAM_LEAD', 'QC_REVIEWER')
+  @ApiOperation({ summary: 'Prüft, ob ein Lead vollständig für Aroundhome (VIP Call) ist – ohne zu senden' })
+  aroundhomePreview(@Param('id') id: string, @CurrentTenant() tenantId: string) {
+    return this.vipcall.preview(tenantId, id);
+  }
+
+  @Post('aroundhome/leads/:id/send')
+  @UseGuards(RolesGuard)
+  @Roles('COMPANY_ADMIN', 'SUPER_ADMIN', 'TEAM_LEAD', 'QC_REVIEWER')
+  @ApiOperation({ summary: 'Sendet einen Lead an Aroundhome (VIP Call API)' })
+  aroundhomeSend(
+    @Param('id') id: string,
+    @Body() body: { force?: boolean },
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.vipcall.deliver(tenantId, id, { force: body?.force === true, actorId: user?.id });
+  }
 
   @Get('buyers')
   @ApiOperation({ summary: 'List all buyer partner companies with caps, criteria, and return rates' })

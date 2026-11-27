@@ -5,6 +5,7 @@ import { WebhooksController, VipCallWebhookController } from './webhooks.control
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
 import { ConnectorsService } from './connectors.service.js';
+import { VipCallDeliveryService } from './vipcall-delivery.service.js';
 import { DatabaseService } from '../../common/services/database.service.js';
 
 @Module({
@@ -14,8 +15,9 @@ import { DatabaseService } from '../../common/services/database.service.js';
     PricingEngineService,
     WalletLedgerService,
     ConnectorsService,
+    VipCallDeliveryService,
     DatabaseService,
   ],
-  exports: [MarketplaceService, PricingEngineService, WalletLedgerService, ConnectorsService],
+  exports: [MarketplaceService, PricingEngineService, WalletLedgerService, ConnectorsService, VipCallDeliveryService],
 })
 export class MarketplaceModule {}

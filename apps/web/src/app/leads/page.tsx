@@ -215,7 +215,14 @@ export default function LeadsPage() {
       const res = await fetch(`/api/v1/leads?${params.toString()}&limit=100`);
       if (res.ok) {
         const json = await res.json();
-        setLeads(json.data || []);
+        setLeads(
+          (json.data || []).map((l: any) => {
+            const d = l.extra_data?.aroundhomeDelivery;
+            return d?.ok
+              ? { ...l, partnerName: 'Aroundhome GmbH', partnerStatus: 'ÜBERMITTELT', partnerDeliveryId: d.externalId }
+              : l;
+          })
+        );
       } else {
         setLeads([]);
       }
@@ -254,85 +261,74 @@ export default function LeadsPage() {
     }
   };
 
-  const handleQuickDeliver = async (lead: Lead, buyerId?: string) => {
-    const targetBuyerId = buyerId || selectedBuyerId;
+  const describeErrors = (errors?: Record<string, string>) =>
+    errors ? Object.values(errors).join(', ') : '';
+
+  const handleQuickDeliver = async (lead: Lead, _buyerId?: string) => {
     setDeliveringPartner(true);
     try {
-      const res = await fetch('/api/marketplace/deliver', {
+      const res = await fetch(`/api/marketplace/aroundhome/leads/${lead.id}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          buyerId: targetBuyerId,
-          lead: {
-            id: lead.id,
-            first_name: lead.first_name,
-            last_name: lead.last_name,
-            phone_e164: lead.phone_e164,
-            email: lead.email,
-            postal_code: lead.postal_code,
-            city: lead.city,
-            street: lead.street,
-            house_number: lead.house_number,
-            project_name: lead.project_name,
-          },
-          answers: leadDetail?.answers || [],
-          audioFileName: lead.audioFileName,
-        }),
+        body: JSON.stringify({}),
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        const partnerName = data.recipient || 'Aroundhome GmbH';
-        const deliveryId = data.deliveryId || `dlv-de-${Date.now()}`;
-
-        // Save delivery record in localStorage
-        const deliveriesRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_lead_deliveries') : null;
-        const deliveries = deliveriesRaw ? JSON.parse(deliveriesRaw) : {};
-        deliveries[lead.id] = {
-          partnerName,
-          partnerStatus: 'ÜBERMITTELT',
-          partnerDeliveryId: deliveryId,
-          deliveredAt: new Date().toISOString(),
-        };
-        localStorage.setItem('linkora_lead_deliveries', JSON.stringify(deliveries));
-
-        // Update custom leads list
-        const customRaw = typeof window !== 'undefined' ? localStorage.getItem('linkora_custom_leads') : null;
-        if (customRaw) {
-          const customLeads = JSON.parse(customRaw);
-          const updated = customLeads.map((l: any) =>
-            l.id === lead.id
-              ? {
-                  ...l,
-                  partnerName,
-                  partnerStatus: 'ÜBERMITTELT',
-                  partnerDeliveryId: deliveryId,
-                }
-              : l
-          );
-          localStorage.setItem('linkora_custom_leads', JSON.stringify(updated));
-        }
-
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
         setPartnerToast({
           type: 'success',
-          message: `Lead '${lead.first_name} ${lead.last_name}' erfolgreich per REST-API an '${partnerName}' übermittelt!`,
+          message: data.skipped
+            ? `'${lead.first_name} ${lead.last_name}': ${data.message}`
+            : `Lead '${lead.first_name} ${lead.last_name}' an Aroundhome (VIP Call) übermittelt.`,
         });
-        setTimeout(() => setPartnerToast(null), 4000);
-
-        await fetchLeads();
-        if (selectedLeadId) await openDrawer(selectedLeadId);
       } else {
-        throw new Error(data.message || 'Übermittlung fehlgeschlagen');
+        const detail = describeErrors(data?.errors) || data?.message || `HTTP ${res.status}`;
+        setPartnerToast({ type: 'error', message: `Nicht gesendet: ${detail}` });
       }
+      setTimeout(() => setPartnerToast(null), 6000);
+      await fetchLeads();
+      if (selectedLeadId) await openDrawer(selectedLeadId);
     } catch (err: any) {
-      setPartnerToast({
-        type: 'error',
-        message: `Fehler bei der Partner-Übermittlung: ${err.message || 'Unbekannt'}`,
-      });
-      setTimeout(() => setPartnerToast(null), 4000);
+      setPartnerToast({ type: 'error', message: `Fehler bei der Übermittlung: ${err.message || 'Unbekannt'}` });
+      setTimeout(() => setPartnerToast(null), 6000);
     } finally {
       setDeliveringPartner(false);
     }
+  };
+
+  // Bulk: send all loaded partner leads that were not delivered yet, one after another
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; ok: number; failed: { name: string; reason: string }[] } | null>(null);
+
+  const pendingPartnerLeads = leads.filter(
+    (l: any) => l.extra_data?.partner && !l.extra_data?.aroundhomeDelivery?.ok
+  );
+
+  const handleBulkDeliver = async () => {
+    const list = pendingPartnerLeads;
+    if (list.length === 0) return;
+    if (!window.confirm(`${list.length} Partner-Leads jetzt an Aroundhome (VIP Call) senden?`)) return;
+    const progress = { done: 0, total: list.length, ok: 0, failed: [] as { name: string; reason: string }[] };
+    setBulkProgress({ ...progress });
+    for (const lead of list) {
+      try {
+        const res = await fetch(`/api/marketplace/aroundhome/leads/${lead.id}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.ok) progress.ok++;
+        else
+          progress.failed.push({
+            name: `${lead.first_name} ${lead.last_name}`,
+            reason: describeErrors(data?.errors) || data?.message || `HTTP ${res.status}`,
+          });
+      } catch (err: any) {
+        progress.failed.push({ name: `${lead.first_name} ${lead.last_name}`, reason: err?.message || 'Netzwerkfehler' });
+      }
+      progress.done++;
+      setBulkProgress({ ...progress, failed: [...progress.failed] });
+    }
+    await fetchLeads();
   };
 
   const handlePartnerCallback = async (
@@ -462,14 +458,60 @@ export default function LeadsPage() {
             </p>
           </div>
 
-          <button
-            onClick={fetchLeads}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition shadow-xs self-start"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-sky-600' : ''}`} />
-            <span>{locale === 'tr' ? 'Yenile' : 'Aktualisieren'}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            {pendingPartnerLeads.length > 0 && !bulkProgress && (
+              <button
+                onClick={handleBulkDeliver}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition shadow-xs"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>
+                  {locale === 'tr'
+                    ? `${pendingPartnerLeads.length} partner lead'ini Aroundhome'a gönder`
+                    : `${pendingPartnerLeads.length} Partner-Leads an Aroundhome senden`}
+                </span>
+              </button>
+            )}
+            <button
+              onClick={fetchLeads}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition shadow-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-sky-600' : ''}`} />
+              <span>{locale === 'tr' ? 'Yenile' : 'Aktualisieren'}</span>
+            </button>
+          </div>
         </div>
+
+        {bulkProgress && (
+          <div className="bg-white border border-slate-200 rounded-xl p-4 text-xs space-y-2 shadow-xs animate-in fade-in">
+            <div className="flex items-center justify-between font-semibold text-slate-800">
+              <span>
+                Aroundhome: {bulkProgress.done}/{bulkProgress.total} verarbeitet · {bulkProgress.ok} gesendet
+                {bulkProgress.failed.length > 0 ? ` · ${bulkProgress.failed.length} fehlgeschlagen` : ''}
+              </span>
+              {bulkProgress.done === bulkProgress.total && (
+                <button onClick={() => setBulkProgress(null)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${(bulkProgress.done / Math.max(1, bulkProgress.total)) * 100}%` }}
+              />
+            </div>
+            {bulkProgress.failed.length > 0 && (
+              <ul className="max-h-40 overflow-y-auto text-rose-700 space-y-0.5">
+                {bulkProgress.failed.map((f, i) => (
+                  <li key={i}>
+                    <strong>{f.name}:</strong> {f.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Pipeline Filter Tabs & Search Bar */}
         <div className="bg-white rounded-xl shadow-xs border border-slate-200/80 p-3 space-y-3">

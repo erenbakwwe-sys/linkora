@@ -18,7 +18,7 @@ describe('Phase 4: Marketplace, Ping-Post, Pricing & Multi-Sale Lifecycle', () =
     pricingEngine = new PricingEngineService();
     walletLedger = new WalletLedgerService(db);
     connectors = new ConnectorsService();
-    marketplace = new MarketplaceService(db, pricingEngine, walletLedger, connectors);
+    marketplace = new MarketplaceService(db, pricingEngine, walletLedger, connectors, {} as any);
   });
 
   describe('Dynamic Pricing Engine', () => {

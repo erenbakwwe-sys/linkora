@@ -12,6 +12,7 @@ export const CORE_PROJECTS = [
   { id: 'cccccccc-0000-0000-0000-000000000003', slug: 'treppenlift', name: 'Treppenlift', icon: 'MoveUp', description: 'Treppenlifte, Plattform- und Hublifte' },
   { id: 'cccccccc-0000-0000-0000-000000000004', slug: 'badsanierung', name: 'Badsanierung', icon: 'Bath', description: 'Barrierefreie Badsanierung' },
   { id: 'cccccccc-0000-0000-0000-000000000005', slug: 'elektromobil', name: 'Elektromobil / Elektrorollstuhl', icon: 'Accessibility', description: 'Elektromobile und Elektrorollstühle' },
+  { id: 'cccccccc-0000-0000-0000-000000000006', slug: 'hausnotruf', name: 'Hausnotruf', icon: 'BellRing', description: 'Hausnotruf-Systeme (Partner-Leads)' },
 ];
 
 const ROLES = [

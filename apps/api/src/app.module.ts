@@ -23,6 +23,7 @@ import { OperationsModule } from './modules/operations/operations.module.js';
 import { FinancesModule } from './modules/finances/finances.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { HyperionModule } from './modules/integrations/hyperion/hyperion.module.js';
+import { PartnerInboundModule } from './modules/partner-inbound/partner-inbound.module.js';
 
 import { UsersService } from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
@@ -49,6 +50,7 @@ import { BootstrapService } from './modules/system/bootstrap.service.js';
     FinancesModule,
     ReportsModule,
     HyperionModule,
+    PartnerInboundModule,
   ],
   controllers: [
     AuthController,

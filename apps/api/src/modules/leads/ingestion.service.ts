@@ -242,6 +242,7 @@ export class IngestionService {
       'cccccccc-0000-0000-0000-000000000003': { name: 'Treppenlift', slug: 'treppenlift', icon: 'MoveUp' },
       'cccccccc-0000-0000-0000-000000000004': { name: 'Badsanierung', slug: 'badsanierung', icon: 'Bath' },
       'cccccccc-0000-0000-0000-000000000005': { name: 'Elektromobil', slug: 'elektromobil', icon: 'Zap' },
+      'cccccccc-0000-0000-0000-000000000006': { name: 'Hausnotruf', slug: 'hausnotruf', icon: 'BellRing' },
     };
     const proj = projectInfo[input.projectId] || {
       name: (rawData as any)?.projectName || 'Photovoltaik',

@@ -4,6 +4,7 @@ import { DatabaseService } from '../../common/services/database.service.js';
 import { PricingEngineService } from './pricing-engine.service.js';
 import { WalletLedgerService } from './wallet-ledger.service.js';
 import { ConnectorsService } from './connectors.service.js';
+import { VipCallDeliveryService } from './vipcall-delivery.service.js';
 import { getGitasisWebhookTokens, matchesAny } from '../../common/security/secrets.js';
 import {
   Buyer,
@@ -30,7 +31,8 @@ export class MarketplaceService {
     private readonly db: DatabaseService,
     private readonly pricingEngine: PricingEngineService,
     private readonly walletLedger: WalletLedgerService,
-    private readonly connectors: ConnectorsService
+    private readonly connectors: ConnectorsService,
+    private readonly vipcall: VipCallDeliveryService,
   ) {
     this.seedDefaultGermanBuyers();
   }
@@ -309,87 +311,25 @@ export class MarketplaceService {
   /**
    * Directly dispatches a lead to a specified partner/buyer (e.g. Aroundhome GmbH).
    */
+  /**
+   * Forwards a lead to Aroundhome via the VIP Call Dialer API (real payload, no placeholder data,
+   * no simulated success). Kept for existing callers (deliver endpoint, sale wrap-up).
+   */
   public async deliverLeadDirectly(params: {
     tenantId: string;
     leadId: string;
     buyerId?: string;
     customPayload?: Record<string, any>;
   }) {
-    let buyer = params.buyerId ? this.inMemoryBuyers.get(params.buyerId) : null;
-    if (!buyer) {
-      buyer = Array.from(this.inMemoryBuyers.values()).find(
-        (b) => b.tenantId === params.tenantId && (b.id.includes('aroundhome') || b.name.toLowerCase().includes('aroundhome'))
-      ) || Array.from(this.inMemoryBuyers.values())[0];
-    }
-    if (!buyer) {
-      throw new NotFoundException('Kein aktiver Partner/Abnehmer gefunden.');
-    }
-
-    let lead: any = null;
-    try {
-      const dbRes = await this.db.query(
-        `SELECT l.*, p.name as project_name FROM leads l LEFT JOIN projects p ON p.id = l.project_id WHERE l.id::text = $1`,
-        [params.leadId]
-      );
-      if (dbRes.rows && dbRes.rows.length > 0) {
-        lead = dbRes.rows[0];
-      }
-    } catch {
-      // Fallback
-    }
-
-    const effectiveLeadId = String(params.leadId || params.customPayload?.id || `lead-${Date.now()}`);
-    const payload = {
-      leadId: effectiveLeadId,
-      externalRef: `LNK-${effectiveLeadId.slice(0, 8)}`,
-      timestamp: new Date().toISOString(),
-      partner: buyer.name,
-      customer: {
-        firstName: lead?.first_name || params.customPayload?.first_name || params.customPayload?.firstName || 'Max',
-        lastName: lead?.last_name || params.customPayload?.last_name || params.customPayload?.lastName || 'Mustermann',
-        salutation: lead?.salutation || params.customPayload?.salutation || 'Herr',
-        phone: lead?.phone_e164 || lead?.phone_raw || params.customPayload?.phone_e164 || params.customPayload?.phone || '+491714567890',
-        email: lead?.email || params.customPayload?.email || 'kunde@beispiel.de',
-        address: {
-          street: lead?.street || params.customPayload?.street || 'Musterstr.',
-          houseNumber: lead?.house_number || params.customPayload?.house_number || params.customPayload?.houseNumber || '1',
-          postalCode: lead?.postal_code || params.customPayload?.postal_code || params.customPayload?.postalCode || '80331',
-          city: lead?.city || params.customPayload?.city || 'München',
-          country: 'DE',
-        },
-      },
-      project: {
-        type: lead?.project_name || params.customPayload?.project_name || params.customPayload?.project || 'Photovoltaik',
-        answers: lead?.answers || params.customPayload?.answers || {},
-        note: lead?.notes || params.customPayload?.notiz || params.customPayload?.notes || '',
-        audioRecordingUrl: lead?.audio_recording_url || params.customPayload?.audioRecordingUrl || params.customPayload?.audioFileName || null,
-      },
-      callbackUrl: `${process.env.APP_URL || 'https://linkora-erenbakwwe-4622s-projects.vercel.app'}/api/marketplace/callbacks/partner`,
-    };
-
-    const deliveryResult = await this.connectors.deliverToGermanBuyer(buyer, payload);
-
-    buyer.deliveredToday += 1;
-    buyer.deliveredThisMonth += 1;
-    buyer.totalDelivered += 1;
-
-    try {
-      await this.db.query(
-        `UPDATE leads SET status = 'IN_REVIEW', updated_at = NOW() WHERE id::text = $1`,
-        [params.leadId]
-      );
-    } catch {
-      // Handled
-    }
-
+    const r = await this.vipcall.deliver(params.tenantId, params.leadId);
     return {
-      success: deliveryResult.success,
-      deliveryId: deliveryResult.deliveryId,
-      buyerName: buyer.name,
-      postEndpoint: buyer.postEndpoint,
-      statusCode: deliveryResult.statusCode,
-      message: deliveryResult.message,
-      payloadSent: payload,
+      success: r.ok,
+      skipped: r.skipped || false,
+      buyerName: 'Aroundhome GmbH (via VIP Call)',
+      statusCode: r.httpStatus,
+      message: r.message,
+      errors: r.errors,
+      response: r.response,
     };
   }
 

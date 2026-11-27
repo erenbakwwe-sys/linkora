@@ -32,7 +32,7 @@ describe('Phase 6: Public Website, Anti-Spam Honeypot, Consent & Golden Path', (
     pricingEngine = new PricingEngineService();
     walletLedger = new WalletLedgerService(db);
     connectors = new ConnectorsService();
-    marketplaceService = new MarketplaceService(db, pricingEngine, walletLedger, connectors);
+    marketplaceService = new MarketplaceService(db, pricingEngine, walletLedger, connectors, {} as any);
   });
 
   describe('Anti-Spam Honeypot & Consent Validation (SPEC Section 7)', () => {
